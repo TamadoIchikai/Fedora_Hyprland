@@ -1,0 +1,3 @@
+[submodule "dot_config/installSH/firefox"]
+	path = dot_config/installSH/firefox
+	url = https://github.com/TamadoIchikai/Debian-13_Sway.git
