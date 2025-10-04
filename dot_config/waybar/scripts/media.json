@@ -1,0 +1,30 @@
+{
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-bluetooth": "{volume}% 󰂰",
+    "format-bluetooth-muted": "󰂲",
+    "format-muted": "",
+    "format-icons": {
+      "headphone": "",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": [" ", " ", " "]
+    },
+    "scroll-step": 5,
+    "on-click": "pavucontrol-autoclose.sh"
+  },
+
+  "pulseaudio#mic": {
+    "format": "{icon} {format_source}",
+    "format-source": " {volume}%",
+    "format-source-muted": " ",
+    "scroll-step": 5,
+    "on-click": "pavucontrol-autoclose.sh"
+  },
+
+  "group/media": {
+    "orientation": "horizontal",
+    "modules": ["pulseaudio", "pulseaudio#mic"]
+  }
+}
