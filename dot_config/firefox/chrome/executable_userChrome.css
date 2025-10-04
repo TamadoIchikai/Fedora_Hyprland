@@ -1,0 +1,215 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --urlbar-bg: #0d0d15;
+    --urlbar-border-top: #000;
+    --urldrop-bg: #0d0d15;
+    --urlbar-border-bottom: #404040;
+    --urlbar-height: 30px;
+    --urlbar-outline: #000000;
+
+    --arrowpanel-background: var(--urlbar-bg) !important;
+    --button-hover-bgcolor: rgba(159, 159, 159, 0.35) !important;
+    --button-active-bgcolor: rgba(255, 255, 255, .2) !important;
+    --button-bgcolor: rgba(117, 117, 117, 0.9) !important;
+    --toolbarbutton-icon-fill-opacity: 0.8 !important;
+    --arrowpanel-border-color: rgb(55, 55, 55) !important;
+    --identity-btn-hover-color: rgba(117,117,117) !important;
+
+    --dark-menu-background-color: rgba(34, 34, 36, .5) !important;
+    --dark-menu-border-color: rgb(55, 55, 55) !important;
+    --dark-menuitem-hover-background-color: rgba(159, 159, 159, 0.35) !important;
+
+    --toolbar-bgcolor: #1e1e1e;
+
+    --uc-sidebar-width: 45px;
+    --uc-sidebar-hover-width: 260px;
+  }
+}
+
+/* HIDE DEFAULT TABS */
+.tabbrowser-tab,
+.tab[selected="true"],
+.tabbrowser-tab[visuallyselected="true"] {
+  display: none !important;
+}
+
+/* HIDE TABS TOOLBAR */
+toolbar#TabsToolbar {
+  height: 0px;
+  min-height: 0 !important;
+  background-color: var(--bg) !important;
+}
+.toolbar-items {
+  visibility: collapse;
+}
+
+/* === SIDEBAR: REAL SPACE (45px) + FLOATING EXPANSION === */
+#sidebar-box {
+  min-width: var(--uc-sidebar-width) !important;
+  max-width: var(--uc-sidebar-width) !important;
+  width: var(--uc-sidebar-width) !important;
+  transition:
+    width 0.05s ease-out,
+    min-width 0.25s ease-out,
+    max-width 0.25s ease-out;
+  z-index: 1 !important;
+  position: relative !important;
+  overflow: visible !important;
+  transition: 300ms ease !important;
+}
+
+#sidebar {
+  position: relative !important;
+  width: var(--uc-sidebar-width) !important;
+  min-width: var(--uc-sidebar-width) !important;
+  max-width: var(--uc-sidebar-width) !important;
+
+  background-color: var(--toolbar-bgcolor) !important;
+  pointer-events: auto !important;
+
+  transition: all 300ms ease !important;
+
+}
+
+
+/* === On Hover: Expand & Float === */
+#sidebar-box:hover {
+  width: var(--uc-sidebar-width) !important;
+  z-index: 999 !important;
+  transition:
+    width 300ms ease 0s !important;
+
+}
+
+#sidebar-box:hover #sidebar {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--uc-sidebar-hover-width) !important;
+  min-width: var(--uc-sidebar-hover-width) !important;
+  max-width: var(--uc-sidebar-hover-width) !important;
+
+  height: 100vh !important; /* <- Fix content height loss */
+  overflow: visible !important; /* <- Ensure children render */
+  display: flex !important;
+  flex-direction: column !important;
+
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.4);
+  z-index: 999 !important;
+  transition-delay: 50ms !important;
+}
+
+/* SIDEBAR STYLING */
+#sidebar-header {
+  display: none !important;
+  overflow: hidden;
+  color: var(--bg) !important;
+}
+.sidebar-panel {
+  background-color: transparent !important;
+  color: var(--newtab-text-primary-color) !important;
+}
+.sidebar-panel #search-box {
+  -moz-appearance: none !important;
+  background-color: rgba(249, 249, 250, 0.1) !important;
+  color: inherit !important;
+}
+#sidebar,
+#sidebar-header {
+  background-color: inherit !important;
+  border-inline-width: 0px 1px;
+}
+#sidebar-box[positionend] {
+  direction: rtl;
+}
+#sidebar-box[positionend] > * {
+  direction: ltr;
+}
+
+/* MOVE STATUSPANEL */
+#sidebar-box:hover ~ #appcontent #statuspanel {
+  inset-inline: auto 0px !important;
+}
+#sidebar-box:hover ~ #appcontent #statuspanel-label {
+  margin-inline: 0px !important;
+  border-left-style: solid !important;
+}
+
+/* NAVIGATION BAR + BOOKMARKS BAR */
+#nav-bar, #PersonalToolbar {
+  background-color: var(--bg) !important;
+}
+#navigator-toolbox {
+  border-color: var(--bg) !important;
+}
+
+/* NAVIGATION BUTTONS */
+toolbarbutton:hover {
+  cursor: pointer;
+}
+
+/* TAB CLOSE ON HOVER */
+.tabbrowser-tab:not([pinned]) .tab-close-button {
+  display: -moz-box !important;
+  opacity: 0;
+  visibility: collapse !important;
+  transition: opacity 0.25s, visibility 0.25s ease-in !important;
+}
+.tabbrowser-tab:not([pinned]):hover .tab-close-button {
+  opacity: 1;
+  visibility: visible !important;
+  border-radius: 3px !important;
+}
+
+/* LINE CLEANUPS */
+.tabbrowser-tab::after,
+.titlebar-spacer[type="pre-tabs"] {
+  border: 0 !important;
+}
+
+/* WINDOW BUTTONS PATCHED TO TOOLBAR */
+#appMenu-popup {
+  margin-inline: -244px !important;
+}
+#nav-bar {
+  padding-left: 0px !important;
+  padding-right: 118px !important;
+  position: static !important;
+}
+#navigator-toolbox:not([inFullscreen]) #TabsToolbar .titlebar-buttonbox-container {
+  visibility: visible !important;
+  display: block !important;
+  position: absolute !important;
+  top: 1px !important;
+  right: 0 !important;
+}
+#TabsToolbar .titlebar-min {
+  -moz-box-ordinal-group: 0 !important;
+}
+#TabsToolbar .titlebar-max,
+.titlebar-restore {
+  -moz-box-ordinal-group: 1 !important;
+}
+#TabsToolbar .titlebar-close {
+  -moz-box-ordinal-group: 2 !important;
+}
+.titlebar-buttonbox {
+  z-index: 3 !important;
+  padding-right: 3px;
+}
+.titlebar-buttonbox * {
+  border-radius: 5px;
+  width: 35px;
+  height: 38px;
+}
+:root:not([sizemode="maximized"]) .titlebar-buttonbox-container {
+  padding-top: 3px;
+}
+
+/* MENUBAR BG */
+#toolbar-menubar {
+  background-color: var(--bg) !important;
+}
+
