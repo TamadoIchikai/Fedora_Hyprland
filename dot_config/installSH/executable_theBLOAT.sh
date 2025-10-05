@@ -17,10 +17,26 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile=m
 cargo install zoxide --locked
 
 echo "${BLUE}------->Building rofi for wayland support${NC}"
-sudo dnf install cairo-devel pango-devel glib2-devel libxkbcommon-devel wayland-devel wayland-protocols-devel pkg-config meson cmake gdk-pixbuf2-devel
-cd Downloads/Systems/
-git clone https://github.com/davatorium/rofi.git
-cd rofi
-meson setup build -Dwayland=enabled -Dxcb=disabled
-ninja -C build
+sudo dnf install cairo-devel pango-devel glib2-devel libxkbcommon-devel wayland-devel wayland-protocols-devel pkg-config meson cmake rofi-devel qalc
+cd ~/Downloads/Systems/
+git clone https://github.com/svenstaro/rofi-calc.git
+cd rofi-calc/
+
+echo "${BLUE}-------> Set default application${NC}"
+xdg-mime default swayimg.desktop image/jpeg
+xdg-mime default swayimg.desktop image/png
+xdg-mime default swayimg.desktop image/gif
+xdg-mime default swayimg.desktop image/webp
+xdg-mime default swayimg.desktop image/svg+xml
+xdg-mime default swayimg.desktop image/avif
+xdg-mime default swayimg.desktop image/avifs
+xdg-mime default vlc.desktop video/mpeg
+xdg-mime default vlc.desktop video/ogg
+xdg-mime default vlc.desktop video/webm
+xdg-mime default vlc.desktop video/mp4
+xdg-mime default vlc.desktop audio/mpeg        
+xdg-mime default vlc.desktop audio/mp4         
+xdg-mime default vlc.desktop audio/ogg
+xdg-mime default thunar.desktop inode/directory
+
 echo -e "${GREEN}-------> DONE${NC}"

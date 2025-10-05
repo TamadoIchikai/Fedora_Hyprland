@@ -4,5 +4,5 @@ NC='\033[0m'
 
 set -e
 echo -e "${BLUE}-------> Install image and video related things${NC}"
-sudo dnf install swayimg slurp wl-clipboard grim wtype swappy vlc ImageMagick
+sudo dnf install swayimg slurp wl-clipboard grim wtype swappy vlc ImageMagick hyprpicker
 echo -e "${GREEN}-------> DONE${NC}"

@@ -1,0 +1,39 @@
+// -*- mode: jsonc -*-
+{
+    // "layer": "top", // Waybar at top layer
+    "position": "bottom", // Waybar position (top|bottom|left|right)
+    // "width": 1280, // Waybar width
+    "spacing": 4, // Gaps between modules (4px)
+    // margins
+    "margin-bottom": 5,
+    "margin-left": 10,
+    "margin-right": 10,
+
+    // enable gtk-layer-shell for popups
+    "gtk-layer-shell": true,
+
+    // Choose the order of the modules
+    "include": [
+	"~/.config/waybar/scripts/hardware.json",
+	"~/.config/waybar/scripts/media.json",
+	"~/.config/waybar/scripts/modules.json",
+	"~/.config/waybar/scripts/connection.json"
+    ],
+    "modules-left": [
+	"custom/appmenu",
+	"sway/scratchpad",
+	"group/hardware",
+	"group/mpris"
+    ],
+    "modules-center": [
+        "hyprland/workspaces"
+    ],
+    "modules-right": [
+	"tray",
+        "group/media",
+	"battery",
+	"group/connection",
+        "clock",
+	"custom/notification"
+    ]
+}

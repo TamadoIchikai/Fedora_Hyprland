@@ -1,0 +1,101 @@
+configuration {
+  drun-display-format: "{name}";
+    modi: "calc";
+    display-calc: "=";
+  // enabling the icons
+  show-icons: true;
+  icon-theme: "Papirus";
+}
+@theme "/dev/null"
+
+* {
+  bg: #353535;
+  bg-alt: #585b70;
+  bg-selected: #5D5D5D;
+
+  fg: #8F8F8F;
+  fg-alt: #8F8F8F;
+  fg-selected: #ffffff;
+
+}
+
+window {
+  width: 60%;
+  background-color: @bg;
+  border: 1px;
+  border-radius: 10px;
+  border-color: #acad8b;
+}
+
+mainbox {
+  children: [inputbar, message, listview];
+  background-color: @bg;
+}
+
+inputbar {
+  children: [prompt, entry];
+  background-color: @bg;        /* <- make the whole top bar dark */
+  padding: 0;
+}
+
+prompt {
+  enabled: true;
+  padding: 12 0 12 12;
+  background-color: @bg;
+  text-color: @fg;
+}
+
+/* Old rofi widget that often renders the ":" or prompt text. Style it too. */
+textbox-prompt-colon {
+  background-color: @bg-alt;
+  text-color: @fg;
+}
+
+/* Generic textboxes (some modes use these internally). */
+textbox {
+  background-color: @bg;
+  text-color: @fg;
+}
+
+entry {
+  padding: 12;
+  background-color: @bg;        /* <- match the bar */
+  text-color: @fg;
+  placeholder-color: @fg-alt;
+}
+
+message {
+  padding: 5px;
+  border:  0px 2px 2px 2px;
+  background-color: @bg;
+  text-color: @fg;
+}
+
+listview {
+  background-color: @bg;
+  columns: 1;
+  lines: 10;
+}
+
+element {
+  padding: 8 12;
+  background-color: @bg;
+  text-color: @fg-alt;
+}
+
+element selected {
+  text-color: @fg-selected;
+  background-color: @bg-selected;
+}
+
+element-text {
+  background-color: transparent;
+  text-color: inherit;
+  vertical-align: 0.5;
+}
+
+element-icon {
+  size: 14;
+  padding: 0 10 0 0;
+  background-color: transparent;
+}

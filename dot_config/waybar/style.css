@@ -1,0 +1,182 @@
+/* ===============================
+   Global Styles
+   =============================== */
+* {
+    font-family: "Symbols Nerd Font Mono","JetBrainsMono Nerd Font","Font Awesome 6 Free","Font Awesome 6 Brands",Roboto,Helvetica,Arial,sans-serif;
+    font-size: 13px;
+    color: #ffffff;
+}
+
+window#waybar {
+    background-color: @theme_bg_color;
+    border: 1px solid @theme_bg_color;
+    border-radius: 6px;
+    opacity: 0.6; /* dim by default */
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* ===============================
+   Buttons
+   =============================== */
+button {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 6px;
+    color: #ffffff;
+}
+
+button:hover { 
+    background: rgba(255,255,255,0.1); 
+}
+
+/* ===============================
+   Workspaces
+   =============================== */
+#workspaces {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+}
+
+#workspaces button {
+    padding: 0 6px;
+    background: transparent;
+    color: #aaa;
+    border: 2px dashed transparent;
+    border-bottom: 2px solid transparent; /* invisible underline */
+}
+
+/* Focused workspace = white underline */
+#workspaces button.focused {
+    color: #ffffff;
+    border-bottom: 2px solid #ffe194;
+    border-left: 2px dashed gray;
+    border-right: 2px dashed gray;
+    border-top: 2px dashed gray;
+}
+
+/* Urgent workspace = red underline */
+#workspaces button.urgent {
+    color: #ff5555;
+    border-bottom: 2px solid #ff5555;
+    border-left: 2px dashed gray;
+    border-right: 2px dashed gray;
+    border-top: 2px dashed gray;
+}
+
+/* ===============================
+   Groups (boxed modules)
+   =============================== */
+
+
+#clock,
+#media,
+#hardware,
+#battery,
+#scratchpad,
+#connection{
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+#mpris {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+}
+#custom-appmenu{
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 10px;
+    padding-left: 10px;
+
+}
+
+#tray{
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 3px;
+    padding-left: 3px;
+}
+
+
+/* Debian swirl color for appmenu */
+#custom-appmenu {
+    color: #ff0000;
+    font-size: 15px;
+}
+
+/* ===============================
+   Individual Modules
+   =============================== */
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#mpd,
+#language,
+#keyboard-state,
+#privacy-item {
+    color: #ffffff;
+    padding: 4px;
+}
+
+/* Notifications (icon only) */
+#custom-notification {
+    color: #f3ff03;
+    padding-right: 10px;
+}
+
+/* ===============================
+   CPU / RAM Color States
+   =============================== */
+#cpu.good      { color: #00ff00; }  /* green */
+#cpu.warning   { color: #ffff00; }  /* yellow */
+#cpu.critical   { color: #ff0000; }  /* red */
+
+#memory.good    { color: #00ff00; }
+#memory.warning  { color: #ffaa00; }
+#memory.critical { color: #ff0000; }
+
+/* ===============================
+   Dimmed / Muted States
+   =============================== */
+#pulseaudio.muted,
+#wireplumber.muted,
+#network.disconnected,
+#bluetooth.disabled{
+    color: #888888;
+}
+
+#battery.critical { color: #ff0000; }
+#battery.warning { color: #ffff00; }
+
+
+/* ===============================
+   System Tray
+   =============================== */
+
+#tray>.needs-attention { 
+    -gtk-icon-effect: highlight; 
+    color: #ff5555; 
+}
+
+#custom-kdeconnect{ padding-right: 5px;}
+
+#custom-kdeconnect.disconnected{ padding-right: 5px; color: #888888;}

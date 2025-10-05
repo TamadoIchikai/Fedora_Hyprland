@@ -1,0 +1,105 @@
+{
+  "mpris": {
+    "format": "[   {status_icon} | {dynamic} ]",
+    "format-paused": "[   {status_icon} | {dynamic} ]",
+    "format-stopped": "[   {status_icon} | No media playing ]",
+    "format-disconnected": "[    | No media playing ]",
+    "interval": 1,
+    "status-icons": {
+      "playing": "",
+      "paused": "",
+      "stopped": ""
+    },
+    "dynamic-order": ["artist"]
+  },
+  "custom/mpris": {
+    "exec": "~/.config/waybar/scripts/mpris-fallback.sh",
+    "interval": 1
+  },
+
+  "group/mpris": {
+    "orientation": "horizontal",
+    "modules": ["mpris", "custom/mpris"]
+  },
+
+  "custom/appmenu": {
+    "format": "",
+    "tooltip-format": "Fedora",
+    "on-click": "fuzzel",
+    "on-click-right": "rofi -show power-menu -modi power-menu:rofi-powermenu.sh"
+  },
+
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󱅫",
+      "none": "󰂚",
+      "dnd-notification": "󱅫",
+      "dnd-none": "󰂛",
+      "inhibited-notification": "",
+      "inhibited-none": "",
+      "dnd-inhibited-notification": "",
+      "dnd-inhibited-none": ""
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
+  },
+
+  "sway/scratchpad": {
+    "format": "{icon} {count}",
+    "show-empty": false,
+    "format-icons": ["", ""],
+    "tooltip": true,
+    "tooltip-format": "{app}: {title}"
+  },
+
+  
+  "tray": {
+    "icon-size": 24,
+    "spacing": 10
+  },
+  
+  "clock": {
+    "format": "󰅐  {:%a %d %b %H:%M}",
+    "tooltip-format": "<tt><big>{calendar}</big></tt>",
+    "calendar": {
+		"mode"          : "month",
+		"mode-mon-col"  : 3,
+		"weeks-pos"     : "right",
+		"on-scroll"     : 1,
+		"on-click-right": "mode",
+		"format": {
+			"months":     "<span color='#ffead3'><b>{}</b></span>",
+			"days":       "<span color='#ecc6d9'><b>{}</b></span>",
+			"weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+			"weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+			"today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+		}
+	},
+	"actions": {
+		"on-click-right": "mode",
+		"on-click-forward": "tz_up",
+		"on-click-backward": "tz_down",
+		"on-scroll-up": "shift_up",
+		"on-scroll-down": "shift_down"
+	}
+  },
+
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "󱈑 {capacity}%",
+    "format-charging": "{icon} {capacity}%",
+    "format-plugged": " {capacity}%",
+    "format-alt": "{icon} {time}",
+    "format-icons": ["󰢟", "󰂆", "󰂈", "󰢞", "󱈑"]
+  }
+
+}

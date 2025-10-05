@@ -1,0 +1,31 @@
+{
+  "cpu": {
+    "interval": 0.5,
+    "format": "<tt><small>CPU</small></tt> {icon}",
+    "format-icons": ["󰝦", "󰪞", "󰪟", "󰪠", "󰪡", "󰪢", "󰪣", "󰪤", "󰪥"],
+    "states": {
+	    "good": 0,
+	    "warning": 70,
+	    "critical": 90
+	  },
+    "on-click": "flatpak run io.missioncenter.MissionCenter"
+  },
+
+  "memory": {
+    "interval": 1,
+    "format": "<tt><small>RAM</small></tt> {icon}",
+    "format-icons": ["󰝦", "󰪞", "󰪟", "󰪠", "󰪡", "󰪢", "󰪣", "󰪤", "󰪥"],
+    "max-length": 10,
+    "states": {
+	    "good": 0,
+	    "warning": 60,
+	    "critical": 85
+	  },
+    "on-click": "flatpak run io.missioncenter.MissionCenter"
+  },
+
+  "group/hardware": {
+    "orientation": "horizontal",
+    "modules": ["cpu", "memory"]
+  }
+}

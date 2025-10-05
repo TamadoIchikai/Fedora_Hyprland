@@ -1,0 +1,10 @@
+/* Override swaync’s default translucent backgrounds */
+.control-center, .notification {
+    background-color: @theme_bg_color;  /* pull from GTK theme */
+    opacity: 1.0;                       /* force opaque */
+}
+
+/* Make sure text follows GTK theme too */
+.control-center, .notification {
+    color: @theme_fg_color;
+}

@@ -1,0 +1,14 @@
+{
+  "positionX": "right",
+  "positionY": "bottom",
+  "widgets": [
+      "notifications",
+      "dnd",
+      "clear-all",
+      "title"
+  ],
+  "timeout-low": 1,
+  "timeout": 2,
+  "timeout-critical": 0
+}
+
