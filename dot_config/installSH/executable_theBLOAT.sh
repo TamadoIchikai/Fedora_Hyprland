@@ -15,6 +15,7 @@ flatpak install flathub it.mijorus.gearlever
 
 echo "${BLUE}-------> install minimal cargo for some app like zoxide${NC}"
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile=minimal
+source ~/.bashrc
 cargo install zoxide --locked
 
 echo "${BLUE}------->Building rofi for wayland support${NC}"
