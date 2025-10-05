@@ -5,6 +5,8 @@ NC='\033[0m'
 
 set -e
 echo -e "${BLUE}-------> Install core for my hyprland config ${NC}"
+mkdir -p ~/Downloads/Systems ~/.local/bin/
 sudo dnf copr enable solopasha/hyprland
 sudo dnf install hyprland hyprlock hyprpaper vim neovim fastfetch flatpak meson cmake
-mkdir -p ~/Downloads/Systems ~/.local/bin/
+echo -e "${GREEN}-------> Done${NC}"
+
