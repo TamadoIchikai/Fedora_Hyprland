@@ -48,7 +48,7 @@ button:hover {
 }
 
 /* Focused workspace = white underline */
-#workspaces button.focused {
+#workspaces button.active {
     color: #ffffff;
     border-bottom: 2px solid #ffe194;
     border-left: 2px dashed gray;

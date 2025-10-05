@@ -1,3 +1,4 @@
+#!/bin/bash
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' 
@@ -21,6 +22,11 @@ sudo dnf install cairo-devel pango-devel glib2-devel libxkbcommon-devel wayland-
 cd ~/Downloads/Systems/
 git clone https://github.com/svenstaro/rofi-calc.git
 cd rofi-calc/
+meson setup build
+cd build
+ninja
+sudo ninja install
+cd
 
 echo "${BLUE}-------> Set default application${NC}"
 xdg-mime default swayimg.desktop image/jpeg
@@ -37,6 +43,7 @@ xdg-mime default vlc.desktop video/mp4
 xdg-mime default vlc.desktop audio/mpeg        
 xdg-mime default vlc.desktop audio/mp4         
 xdg-mime default vlc.desktop audio/ogg
+
 xdg-mime default thunar.desktop inode/directory
 
 echo -e "${GREEN}-------> DONE${NC}"
