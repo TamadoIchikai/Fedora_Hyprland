@@ -34,14 +34,18 @@
 	"custom/notification"
     ],
     "hyprland/workspaces":{
-	    "format": "{icon}|{windows}",
+	    "format": "{icon}-{windows}",
 	    "window-rewrite-default": "",
 	    "window-rewrite": {
 		    "foot": "󰽒", 
 		    "code": "󰨞",
 		    "obsidian": "",
 		    "firefox":"",
-		    "thunar": ""
+		    "thunar": "",
+		    "OpenTabletDriver.*": "󰏭",
+		    "it.mijorus.gearlever": "󰈆",
+		    "Write": "",
+		    "com.github.xournalpp.xournalpp": "󱞂"
 	}
     }
 
