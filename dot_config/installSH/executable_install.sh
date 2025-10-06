@@ -11,16 +11,15 @@ run_step() {
     "$@" || { echo -e "${GREEN}✖ Failed at step: $desc${NC}"; exit 1; }
 }
 
-run_step "core package" sudo ~/.config/installSH/core.sh
-run_step "Fonts" sudo ~/.config/installSH/fonts.sh
-run_step "keyboard layout" sudo ~/.config/installSH/fcitx.sh
-run_step "Applications" sudo ~/.config/installSH/theBLOAT.sh
-run_step "File manager" sudo ~/.config/installSH/file_manager.sh
-run_step "Media related" sudo ~/.config/installSH/media.sh
-run_step "Install waybar dependencies" sudo ~/.config/installSH/waybar.sh
-run_step "Firefox Custom" sudo ~/.config/firefox/applyFirefoxCustom.sh
-run_step "Thorium" sudo ~/.config/installSH/thorium_install.sh
-run_step "Obsidian" sudo ~/.config/installSH/obsidianAppimage.sh
+run_step "core package" ~/.config/installSH/core.sh
+run_step "Fonts" ~/.config/installSH/fonts.sh
+run_step "keyboard layout" ~/.config/installSH/fcitx.sh
+run_step "Applications" ~/.config/installSH/theBLOAT.sh
+run_step "File manager" ~/.config/installSH/file_manager.sh
+run_step "Media related" ~/.config/installSH/media.sh
+run_step "Install waybar dependencies" ~/.config/installSH/waybar.sh
+run_step "Thorium" ~/.config/installSH/thorium_install.sh
+run_step "Obsidian" ~/.config/installSH/obsidianAppimage.sh
 
 echo -e "${GREEN}------->DONE please manually start LY installation and check if network scan working correctly, if not please read README.md${NC}"
 
