@@ -3,6 +3,7 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' 
 
+set -e
 echo -e "${BLUE}-------> install zig for ly ${NC}"
 cd ~/Downloads/Systems/
 sudo dnf install kernel-devel pam-devel libxcb-devel xorg-x11-xauth xorg-x11-server-Xorg brightnessctl
