@@ -18,7 +18,7 @@ run_step "Applications" sudo ~/.config/installSH/theBLOAT.sh
 run_step "File manager" sudo ~/.config/installSH/file_manager.sh
 run_step "Media related" sudo ~/.config/installSH/media.sh
 run_step "Install waybar dependencies" sudo ~/.config/installSH/waybar.sh
-run_step "Firefox Custom" sudo ~/.config/installSH/applyFirefoxCustom.sh
+run_step "Firefox Custom" sudo ~/.config/firefox/applyFirefoxCustom.sh
 run_step "Thorium" sudo ~/.config/installSH/thorium_install.sh
 run_step "Obsidian" sudo ~/.config/installSH/obsidianAppimage.sh
 
