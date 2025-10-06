@@ -3,7 +3,7 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' 
 
-mkdir -p ~/Downloads/Systems/ ~/.local/bin/
+mkdir -p ~/Downloads/Systems/ ~/.local/bin/ ~/.local/share/fonts/
 run_step() {
     desc=$1
     shift
