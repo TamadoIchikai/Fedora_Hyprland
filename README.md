@@ -5,7 +5,6 @@
 ```bash
 sudo dnf install neovim git zsh
 sudo sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-chezmoi init https://github.com/TamadoIchikai/Fedora_Hyprland
 chezmoi init --apply https://github.com/TamadoIchikai/Fedora_Hyprland
 chsh -s $(which zsh)
 ```
