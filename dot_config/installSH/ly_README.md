@@ -1,3 +1,4 @@
+```bash
 ------- Don't copy this: path: /etc/pam.d/ly
 #%PAM-1.0
 
@@ -19,5 +20,5 @@ session    include      system-auth
 -------- Don't copy this: path: /etc/ly/config.ini
 allow_empty_password = false
 clear_password = true
-
+```
 
