@@ -9,9 +9,6 @@
     "margin-left": 10,
     "margin-right": 10,
 
-    // enable gtk-layer-shell for popups
-    "gtk-layer-shell": true,
-
     // Choose the order of the modules
     "include": [
 	"~/.config/waybar/scripts/hardware.json",
