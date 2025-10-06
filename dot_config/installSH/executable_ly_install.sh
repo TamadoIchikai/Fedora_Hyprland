@@ -46,20 +46,21 @@ echo -e "${BLUE}-------> Cloning and building Ly into $LY_DIR ${NC}"
 # Remove old Ly if exists
 if [ -d "$LY_DIR" ]; then
     echo "Removing old Ly source..."
-    rm -rf "$LY_DIR"
+    sudo rm -rf "$LY_DIR"
 fi
 
 git clone https://codeberg.org/fairyglade/ly.git "$LY_DIR"
 
 # Build and install Ly
-sudo zig build installexe -Dinit_system=systemd --build-file "$LY_DIR/build.zig" --mod "$LY_DIR"
+cd "$LY_DIR"
+sudo zig build installexe -Dinit_system=systemd
 
 # ---------------------------------------------------------------------
 # Enable Ly as display manager
 # ---------------------------------------------------------------------
 echo -e "${BLUE}-------> Configuring Ly as systemd service ${NC}"
-sudo systemctl disable getty@tty1.service || true
-sudo systemctl disable getty@tty2.service || true
+sudo systemctl disable getty@tty1.service
+sudo systemctl disable getty@tty2.service
 sudo systemctl enable ly.service
 sudo systemctl set-default graphical.target
 
