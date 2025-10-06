@@ -6,6 +6,6 @@ NC='\033[0m'
 set -e
 echo -e "${BLUE}-------> install waybar and some related modules ${NC}"
 sudo dnf copr enable erikreider/SwayNotificationCenter
-sudo dnf install waybar kde-connect blueman pavucontrol zenity SwayNotificationCenter mpv mpv-mpris playerctl
+sudo dnf install -y waybar kde-connect blueman pavucontrol zenity SwayNotificationCenter mpv mpv-mpris playerctl
 echo -e "${GREEN}-------> DONE ${NC}"
 
