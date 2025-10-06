@@ -5,7 +5,7 @@ NC='\033[0m'
 
 set -e
 echo -e "${BLUE}-------> Installing Thunar file manager${NC}"
-sudo dnf install -y thunar thunar-archive-plugin thunar-volman gsettings-desktop-schemas gnome-themes-extra
+sudo dnf install -y thunar thunar-archive-plugin thunar-volman xarchiver gsettings-desktop-schemas gnome-themes-extra
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
