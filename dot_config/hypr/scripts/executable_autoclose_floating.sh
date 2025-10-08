@@ -17,5 +17,5 @@ while true; do
             fi
         fi
     done
-    sleep 0.8  # check focus every 0.8s
+    sleep 0.4  # check focus every 0.8s
 done

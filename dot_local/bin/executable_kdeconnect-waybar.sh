@@ -42,12 +42,12 @@ case "$1" in
       exit 1
     fi
 
-    file=$(zenity --file-selection --title="Choose file to send")
+    file=$(zenity --file-selection --title="Files")
     [ -z "$file" ] && exit 0
 
     dev_line=$(kdeconnect-cli -a | sed -E 's/ \((.*)\)//')
     dev=$(echo "$dev_line" | \
-      zenity --list --title="Choose device" --column="Device" --column="ID" | \
+      zenity --list --title="Devices" --column="Device" --column="ID" | \
       awk -F: '{print $2}' | xargs)
 
     [ -z "$dev" ] && exit 0
