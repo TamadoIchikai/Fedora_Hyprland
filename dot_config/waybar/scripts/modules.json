@@ -25,8 +25,8 @@
   "custom/appmenu": {
     "format": "",
     "tooltip-format": "Fedora",
-    "on-click": "fuzzel",
-    "on-click-right": "rofi -show power-menu -modi power-menu:rofi-powermenu.sh"
+    "on-click": "fuzzel-scale.sh",
+    "on-click-right": "fuzzel-powermenu.sh"
   },
 
   "custom/notification": {
