@@ -33,22 +33,17 @@
         "clock",
 	"custom/notification"
     ],
-    "hyprland/workspaces":{
-	    "format": "{icon}-{windows}",
-	    "window-rewrite-default": "",
-	    "window-rewrite": {
-		    "foot": "󰽒", 
-		    "code": "󰨞",
-		    "obsidian": "",
-		    "firefox":"",
-		    "thunar": "",
-		    "OpenTabletDriver.*": "󰏭",
-		    "it.mijorus.gearlever": "󰈆",
-		    "Write": "",
-		    "com.github.xournalpp.xournalpp": "󱞂",
-		    "anki": "󰘹"
+	"hyprland/workspaces": {
+	    "format": "{icon}:{windows}",
+	    "format-window-separator": "",
+	    "workspace-taskbar": {
+		"enable": true,
+		"update-active-window": true,
+		"format": "{icon}",
+		"icon-size": 15,
+		"on-click-window": "${SCRIPTS}/focus-window.sh {address} {button}"
+	    }
 	}
-    }
 
 
 }
