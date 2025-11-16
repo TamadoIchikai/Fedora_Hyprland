@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SELECTION="$(printf "1 - Lock\n2 - Suspend\n3 - Log out\n4 - Reboot\n5 - Reboot to UEFI\n6 - Hard reboot\n7 - Shutdown" | fuzzel --dmenu -l 7 -p "Power Menu: ")"
+SELECTION="$(printf "1 - Lock\n2 - Suspend\n3 - Hibernate\n4 - Log out\n5 - Reboot\n6 - Reboot to UEFI\n7 - Hard reboot\n8 - Shutdown" | fuzzel --dmenu -l 8 -p "Power Menu: ")"
 
 case $SELECTION in
 	*"Lock")
@@ -8,6 +8,8 @@ case $SELECTION in
 		hyprlock;;
 	*"Suspend")
 		systemctl suspend;;
+	*"Hibernate")
+		systemctl hibernate;;
 	*"Log out")
 		hyprctl dispatch exit;;
 	*"Reboot")
