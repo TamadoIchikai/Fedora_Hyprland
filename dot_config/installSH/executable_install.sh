@@ -18,8 +18,6 @@ run_step "Applications" ~/.config/installSH/theBLOAT.sh
 run_step "File manager" ~/.config/installSH/file_manager.sh
 run_step "Media related" ~/.config/installSH/media.sh
 run_step "Install waybar dependencies" ~/.config/installSH/waybar.sh
-run_step "Thorium" ~/.config/installSH/thorium_install.sh
-run_step "Obsidian" ~/.config/installSH/obsidianAppimage.sh
 
 echo -e "${GREEN}------->DONE please manually start LY installation and check if network scan working correctly, if not please read README.md${NC}"
 

@@ -3,8 +3,8 @@ set -euo pipefail
 
 DESKTOP_FILE="$HOME/.local/share/applications/zen.desktop"
 
-BIN_PATH="/home/ichikai/Downloads/Systems/zen/zen"
-ICON_PATH="/home/ichikai/Downloads/Systems/zen/browser/chrome/icons/default/default64.png"
+BIN_PATH="$HOME/Downloads/Systems/zen/zen"
+ICON_PATH="$HOME/Downloads/Systems/zen/browser/chrome/icons/default/default64.png"
 
 echo "➡️ Creating desktop entry at: $DESKTOP_FILE"
 
