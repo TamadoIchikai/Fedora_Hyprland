@@ -8,6 +8,10 @@ export GLFW_IM_MODULE=ibus
 export EDITOR="nvim"
 export TERMINAL=foot
 export UV_PROJECT_ENVIRONMENT=".env_linux"
+
+export CUDA_HOME=/usr/local/cuda
+export CUDA_PATH=/usr/local/cuda
 export PATH=/usr/local/cuda/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-
+export CPATH=/usr/local/cuda/include:$CPATH
+export LIBRARY_PATH=/usr/local/cuda/lib64:$LIBRARY_PATH
