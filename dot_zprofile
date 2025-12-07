@@ -7,3 +7,4 @@ export SDL_IM_MODULE=fcitx
 export GLFW_IM_MODULE=ibus
 export EDITOR="nvim"
 export TERMINAL=foot
+export UV_PROJECT_ENVIRONMENT=".env_linux"
