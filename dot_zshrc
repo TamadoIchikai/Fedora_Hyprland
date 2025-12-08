@@ -104,6 +104,7 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 alias ls='ls --color'
 alias v='nvim'
 alias c='chezmoi'
+alias rms='trash-put'
 
 # Add in snippets
 zinit snippet OMZL::git.zsh
