@@ -5,7 +5,7 @@ NC='\033[0m'
 
 set -e
 echo -e "${BLUE}-------> Install some bloatwares lmao${NC}"
-sudo dnf install foot fuzzel fzf zsh firefox zoxide cliphist fuse fuse-libs qalculate setxkbmap trash-cli
+sudo dnf install foot fuzzel fzf firefox zoxide cliphist fuse fuse-libs qalculate setxkbmap trash-cli swappy texlive-scheme-medium 
 
 echo -e "${BLUE}------->install flatpak related apps like obsidian, mission center${NC}"
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
