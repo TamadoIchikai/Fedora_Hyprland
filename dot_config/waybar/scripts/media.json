@@ -12,7 +12,7 @@
       "default": [" ", " ", " "]
     },
     "scroll-step": 5,
-    "on-click": "pavucontrol &"
+    "on-click": "~/.config/waybar/scripts/workspace-toggle.sh org.pulseaudio.pavucontrol pavucontrol"
   },
 
   "pulseaudio#mic": {
@@ -20,7 +20,7 @@
     "format-source": " {volume}%",
     "format-source-muted": " ",
     "scroll-step": 5,
-    "on-click": "pavucontrol &"
+    "on-click": "~/.config/waybar/scripts/workspace-toggle.sh org.pulseaudio.pavucontrol pavucontrol"
   },
 
   "group/media": {
