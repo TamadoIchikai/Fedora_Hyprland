@@ -41,6 +41,6 @@
 
 "group/connection": {
     "orientation": "horizontal",
-    "modules": ["custom/warp", "custom/kdeconnect","bluetooth", "network"]
+    "modules": ["custom/kdeconnect","bluetooth", "custom/warp", "network"]
   }
 }

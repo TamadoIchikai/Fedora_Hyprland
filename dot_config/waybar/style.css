@@ -175,10 +175,13 @@ button:hover {
     color: #ff5555; 
 }
 
-#custom-kdeconnect{ padding-right: 5px;}
+#custom-kdeconnect{ padding-right: 4px;}
 
-#custom-kdeconnect.disconnected{ padding-right: 5px; color: #888888;}
+#custom-kdeconnect.disconnected{ padding-right: 4px; color: #888888;}
 
-#custom-warp{ padding-right: 5px;}
+#custom-warp{ padding-right: 3px;}
 
-#custom-warp.disconnected{ padding-right: 5px; color: #888888;}
+#custom-warp.disconnected{ padding-right: 3px; color: #888888;}
+
+#bluetooth, #bluetooth.disable{ padding-right: 3px;}
+
