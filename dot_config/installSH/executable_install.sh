@@ -21,5 +21,5 @@ run_step "Media related" ~/.config/installSH/media.sh
 run_step "Install waybar dependencies" ~/.config/installSH/waybar.sh
 run_step "Install battery health for asus" ~/.config/installSH/bat_asus.sh
 run_step "Install wifi and nvidia drivers" ~/.config/installSH/wifi_nvidia_RPM.sh
-
+run_step "Cloudflare time" ~/.config/installSH/cloudflare.sh
 echo -e "${GREEN}------->check and install ly_install.sh (with ly_README.md)"

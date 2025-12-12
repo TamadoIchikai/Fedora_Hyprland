@@ -178,3 +178,7 @@ button:hover {
 #custom-kdeconnect{ padding-right: 5px;}
 
 #custom-kdeconnect.disconnected{ padding-right: 5px; color: #888888;}
+
+#custom-warp{ padding-right: 5px;}
+
+#custom-warp.disconnected{ padding-right: 5px; color: #888888;}

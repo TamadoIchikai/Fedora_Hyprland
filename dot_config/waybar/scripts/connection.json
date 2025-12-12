@@ -25,15 +25,22 @@
 	  ]
   },
 "custom/kdeconnect": {
-    "exec": "~/.local/bin/kdeconnect-waybar.sh",
+    "exec": "~/.config/waybar/scripts/kdeconnect-waybar.sh",
     "return-type": "json",
-    "on-click": "~/.local/bin/kdeconnect-waybar.sh clipboard",
-    "on-click-right": "~/.local/bin/kdeconnect-waybar.sh file",
+    "on-click": "~/.config/waybar/scripts/kdeconnect-waybar.sh clipboard",
+    "on-click-right": "~/.config/waybar/scripts/kdeconnect-waybar.sh file",
     "interval": 2
+},
+
+"custom/warp": {
+    "exec": "~/.config/waybar/scripts/warp-waybar.sh",
+    "return-type": "json",
+    "interval": 5,
+    "on-click": "~/.config/waybar/scripts/warp-waybar.sh toggle"
 },
 
 "group/connection": {
     "orientation": "horizontal",
-    "modules": ["custom/kdeconnect","bluetooth", "network"]
+    "modules": ["custom/warp", "custom/kdeconnect","bluetooth", "network"]
   }
 }
