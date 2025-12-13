@@ -6,6 +6,6 @@ NC='\033[0m'
 set -e
 echo -e "${BLUE}-------> Install core for my hyprland config ${NC}"
 sudo dnf copr enable solopasha/hyprland
-sudo dnf install hyprland hyprlock hyprpaper vim neovim fastfetch flatpak meson cmake
+sudo dnf install hyprland hyprlock hyprpaper hyprsunset vim neovim fastfetch flatpak meson cmake
 echo -e "${GREEN}-------> Done${NC}"
 

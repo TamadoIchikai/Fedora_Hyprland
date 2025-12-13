@@ -11,6 +11,7 @@ echo -e "${BLUE}------->install flatpak related apps like obsidian, mission cent
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub io.missioncenter.MissionCenter
 flatpak install flathub md.obsidian.Obsidian
+flatpak install flathub org.zotero.Zotero
 
 echo "${BLUE}-------> Set default application${NC}"
 xdg-mime default swayimg.desktop image/jpeg
