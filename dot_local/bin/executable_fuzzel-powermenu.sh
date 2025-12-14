@@ -13,11 +13,11 @@ case $SELECTION in
 	*"Log out")
 		hyprctl dispatch exit;;
 	*"Reboot")
-		hyprshutdown -t 'Restarting...' --post-cmd 'reboot';;
+		systemctl reboot;;
 	*"Reboot to UEFI")
 		systemctl reboot --firmware-setup;;
 	*"Hard reboot")
 		pkexec "echo b > /proc/sysrq-trigger";;
 	*"Shutdown")
-		hyprshutdown -t 'Shutting down...' --post-cmd 'shutdown -P 0';;
+		systemctl poweroff;;
 esac
