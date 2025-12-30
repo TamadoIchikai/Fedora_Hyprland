@@ -4,7 +4,7 @@
 apps=("org.pulseaudio.pavucontrol" "blueman-manager")
 
 declare -A last_focus_time
-grace_ms=500
+grace_ms=1000
 
 now_ms() { date +%s%3N; }
 
