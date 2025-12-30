@@ -8,7 +8,7 @@
 	    "warning": 70,
 	    "critical": 90
 	  },
-    "on-click": "flatpak run io.missioncenter.MissionCenter"
+    "on-click": "foot btop &"
   },
 
   "memory": {
@@ -21,7 +21,7 @@
 	    "warning": 60,
 	    "critical": 85
 	  },
-    "on-click": "flatpak run io.missioncenter.MissionCenter"
+    "on-click": "foot btop &"
   },
 
   "group/hardware": {
