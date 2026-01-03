@@ -3,7 +3,7 @@
 INT=eDP-1
 EXT=HDMI-A-1
 
-SEL="$(printf "1 - Extend\n2 - Internal Only\n3 - External Only\n4 - Mirror" \
+SEL="$(printf "󱄄  󰷜  - Extend\n󰹑  󰶐  - Internal Only\n󰶐  󰹑  - External Only\n󰹑  󰹑  - Mirror" \
   | fuzzel --dmenu -l 8 -p "Display Mode: ")"
 
 case "$SEL" in

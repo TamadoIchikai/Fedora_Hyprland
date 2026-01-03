@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SELECTION="$(printf "1 - Lock\n2 - Suspend\n3 - Hibernate\n4 - Log out\n5 - Reboot\n6 - Reboot to UEFI\n7 - Hard reboot\n8 - Shutdown" | fuzzel --dmenu -l 8 -p "Power Menu: ")"
+SELECTION="$(printf "  - Lock\n󰙧  - Suspend\n󰒲  - Hibernate\n󰗽  - Log out\n󰜉  - Reboot\n  - Reboot to UEFI\n󱖈  - Hard reboot\n  - Shutdown" | fuzzel --dmenu -l 8 -p "Power Menu: ")"
 
 case $SELECTION in
 	*"Lock")
