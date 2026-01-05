@@ -22,10 +22,10 @@ if ! command -v unzip &>/dev/null; then
     sudo dnf install -y unzip
 fi
 
-# Install Font Awesome (system-wide)
+# Install Font Awesome and japanese and korean font (system-wide)
 echo -e "${BLUE}Installing Font Awesome...${NC}"
 sudo dnf install -y fontawesome-fonts || echo -e "${YELLOW}Font Awesome already installed or unavailable.${NC}"
-
+sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts|| echo -e "${YELLOW}noto sans jp fonts and cjk already installed or unavailable.${NC}"
 # Create fonts directory if missing
 mkdir -p "$FONT_DIR"
 
