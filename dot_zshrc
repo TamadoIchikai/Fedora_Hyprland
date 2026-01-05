@@ -106,6 +106,7 @@ alias v='nvim'
 alias c='chezmoi'
 alias rms='trash-put'
 alias lg='lazygit'
+alias df='duf'
 
 # Add in snippets
 zinit snippet OMZL::git.zsh
