@@ -24,12 +24,10 @@
 	    "󰤨"
 	  ]
   },
-"custom/kdeconnect": {
-    "exec": "~/.config/waybar/scripts/kdeconnect-waybar.sh",
-    "return-type": "json",
-    "on-click": "~/.config/waybar/scripts/kdeconnect-waybar.sh clipboard",
-    "on-click-right": "~/.config/waybar/scripts/kdeconnect-waybar.sh file",
-    "interval": 2
+"custom/localsend": {
+    "format":"{icon}",
+    "format-icons": "",
+    "on-click": "~/.config/waybar/scripts/workspace-toggle.sh localsend 'flatpak run org.localsend.localsend_app'"
 },
 
 "custom/warp": {
@@ -41,6 +39,6 @@
 
 "group/connection": {
     "orientation": "horizontal",
-    "modules": ["custom/kdeconnect","bluetooth", "custom/warp", "network"]
+    "modules": ["custom/localsend","bluetooth", "custom/warp", "network"]
   }
 }
