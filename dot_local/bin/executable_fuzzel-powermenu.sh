@@ -1,23 +1,27 @@
 #!/bin/bash
 
-SELECTION="$(printf "  - Lock\n󰙧  - Suspend\n󰒲  - Hibernate\n󰗽  - Log out\n󰜉  - Reboot\n  - Reboot to UEFI\n󱖈  - Hard reboot\n  - Shutdown" | fuzzel --dmenu -l 8 -p "Power Menu: ")"
+SELECTION="$(printf "  - Lock\n󰙧  - Suspend\n󰒲  - Hibernate\n󰗽  - Log out\n󰜉  - Reboot\n  - Reboot to UEFI\n  - Shutdown" | fuzzel --dmenu -l 7 -p "Power Menu: ")"
 
-case $SELECTION in
+case "$SELECTION" in
 	*"Lock")
 		sleep 0.5
 		hyprlock;;
 	*"Suspend")
-		systemctl suspend;;
+		systemctl suspend
+		;;
 	*"Hibernate")
-		systemctl hibernate;;
+		systemctl hibernate
+		;;
 	*"Log out")
-		hyprctl dispatch exit;;
+		hyprshutdown -t 'Restarting...' --post-cmd 'hyprctl dispatch exit'
+		;;
 	*"Reboot")
-		systemctl reboot;;
+		hyprshutdown -t 'Restarting...' --post-cmd 'systemctl reboot'
+		;;
 	*"Reboot to UEFI")
-		systemctl reboot --firmware-setup;;
-	*"Hard reboot")
-		pkexec "echo b > /proc/sysrq-trigger";;
+		hyprshutdown -t 'Restarting...' --post-cmd 'systemctl reboot --firmware-setup'
+		;;
 	*"Shutdown")
-		systemctl poweroff;;
+		hyprshutdown -t 'Shutting down...' --post-cmd 'systemctl poweroff'
+		;;
 esac
