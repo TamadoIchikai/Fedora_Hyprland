@@ -8,7 +8,8 @@
 	    "warning": 70,
 	    "critical": 90
 	  },
-    "on-click": "foot btop &"
+    "on-click": "foot btop &",
+    "on-click-right": "foot gdu -d"
   },
 
   "memory": {
@@ -21,7 +22,8 @@
 	    "warning": 60,
 	    "critical": 85
 	  },
-    "on-click": "foot btop &"
+    "on-click": "foot btop &",
+    "on-click-right": "foot gdu -d"
   },
 
   "group/hardware": {
