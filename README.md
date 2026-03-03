@@ -27,3 +27,15 @@ ExecStart=
 ExecStart=-/usr/bin/agetty --autologin tamadoichikai --noclear %I $TERM
 ```
 - NOTICE that `tamadoichikai` is my current username, remember to check with whoami.
+
+# Fix wifi issues currently in fedora everything
+- Somehow iwlwifi driver isn't in fedora everything so we only need to install it
+```bash
+sudo dnf install iwlwifi\*
+sudo modprobe iwlwifi
+sudo reboot
+```
+- If there's other issues check hardware with
+```bash
+sudo dmesg | grep -i ucode
+```
