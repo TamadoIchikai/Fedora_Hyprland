@@ -8,6 +8,9 @@ echo -e "${BLUE}-------> Install some bloatwares lmao${NC}"
 sudo dnf copr enable dejan/lazygit
 sudo dnf install foot fuzzel fzf zoxide cliphist fuse fuse-libs qalculate setxkbmap trash-cli swappy texlive-scheme-full btop lazygit duf gdu
 
+echo -e "${BLUE}------->install brave browser${NC}"
+curl -fsS https://dl.brave.com/install.sh | sh
+
 echo -e "${BLUE}------->install flatpak related apps like obsidian, mission center${NC}"
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub md.obsidian.Obsidian
