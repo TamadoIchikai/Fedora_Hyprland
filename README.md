@@ -15,3 +15,15 @@ chezmoi init --apply https://github.com/TamadoIchikai/Fedora_Hyprland
 chsh -s $(which zsh)
 .~/.config/installSH/install.sh
 ```
+
+# Autologin via tty
+```bash
+sudo systemctl edit getty@tty1.service
+```
+- Then add below command before the line `## command below this line will be discarded`
+```bash
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --autologin tamadoichikai --noclear %I $TERM
+```
+- NOTICE that `tamadoichikai` is my current username, remember to check with whoami.
