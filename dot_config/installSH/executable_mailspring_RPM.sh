@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Get the latest release info from GitHub API
-LATEST_JSON=$(wget -qO- https://api.github.com/repos/Foundry376/Mailspring/releases/latest)
-
 # Extract the .rpm asset URL
-DOWNLOAD_URL=$(echo "$LATEST_JSON" | grep "browser_.*x86_64.rpm" | grep "browser_download_url" \
-  | head -n1 | cut -d '"' -f 4)
+DOWNLOAD_URL=$(wget -qO- https://api.github.com/repos/Foundry376/Mailspring/releases/latest \
+  | jq -r '.assets[] | select(.name | test("x86_64.rpm")) | .browser_download_url' | head -n1)
 
 if [ -z "$DOWNLOAD_URL" ]; then
   echo "❌ Could not find an x86_64 .rpm package in the latest release."
@@ -28,11 +25,16 @@ echo "➡️ Installing Mailspring..."
 sudo dnf install -y /tmp/mailspring.rpm
 
 # Modify the desktop file to add flags
-DESKTOP_FILE="/usr/share/applications/Mailspring.desktop"
-if [ -f "$DESKTOP_FILE" ]; then
-  echo "➡️ Configuring Mailspring with custom flags..."
-  sudo sed -i 's|^Exec=mailspring |Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 |' "$DESKTOP_FILE"
-  sudo sed -i 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' "$DESKTOP_FILE"
+SYSTEM_DESKTOP="/usr/share/applications/Mailspring.desktop"
+USER_DESKTOP="$HOME/.local/share/applications/Mailspring.desktop"
+
+if [ -f "$SYSTEM_DESKTOP" ]; then
+  echo "➡️ Creating user desktop override..."
+  mkdir -p "$HOME/.local/share/applications"
+  cp "$SYSTEM_DESKTOP" "$USER_DESKTOP"
+  echo "➡️ Adding custom flags..."
+  sed -i 's|^Exec=mailspring |Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 |' "$USER_DESKTOP"	sed -i 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' "$USER_DESKTOP"
+
   echo "✅ Desktop file updated!"
 else
   echo "⚠️  Warning: Desktop file not found at $DESKTOP_FILE"

@@ -6,7 +6,7 @@ NC='\033[0m'
 set -e
 echo -e "${BLUE}-------> Install some bloatwares lmao${NC}"
 sudo dnf copr enable dejan/lazygit
-sudo dnf install foot fuzzel fzf zoxide cliphist fuse fuse-libs qalculate setxkbmap trash-cli swappy texlive-scheme-full btop lazygit duf gdu
+sudo dnf install foot fuzzel fzf zoxide cliphist fuse fuse-libs qalculate setxkbmap trash-cli swappy btop lazygit duf gdu swayimg xournalpp lua-lgi
 
 echo -e "${BLUE}------->install brave browser${NC}"
 curl -fsS https://dl.brave.com/install.sh | sh
