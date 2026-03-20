@@ -177,7 +177,7 @@ button:hover {
 
 #custom-localsend{ padding-right: 4px;}
 
-#custom-warp{ padding-right: 3px;}
+#custom-warp.connected{ padding-right: 3px; color: white}
 
 #custom-warp.disconnected{ padding-right: 3px; color: #888888;}
 
