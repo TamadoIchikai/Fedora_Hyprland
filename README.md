@@ -26,7 +26,30 @@ sudo systemctl edit getty@tty1.service
 ExecStart=
 ExecStart=-/usr/bin/agetty --autologin tamadoichikai --noclear %I $TERM
 ```
-- NOTICE that `tamadoichikai` is my current username, remember to check with whoami.
+- NOTICE that `tamadoichikai` is my current username, remember to check with `whoami`.
+
+# tlp instructions
+- Check battery status and kernel support for current laptop
+```bash
+sudo tlp-stat -b
+```
+- Also check if my battery is `BAT0` or `BAT1` (or both)
+- Then change tlp.conf
+```bash
+sudo nvim /etc/tlp.conf
+```
+- At `Battery Care -- Charge thresholds` remove `#` at corresponding line for
+`BAT0`
+```bash
+START_CHARGE_THRESH_BAT0=75
+STOP_CHARGE_THRESH_BAT0=80
+```
+
+`BAT1`
+```bash
+START_CHARGE_THRESH_BAT1=75
+STOP_CHARGE_THRESH_BAT1=80
+```
 
 # Fix wifi issues currently in fedora everything
 - Somehow iwlwifi driver isn't in fedora everything so we only need to install it
