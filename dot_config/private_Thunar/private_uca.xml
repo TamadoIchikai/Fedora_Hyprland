@@ -11,4 +11,26 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
+<action>
+	<icon></icon>
+	<name>Create Desktop Entry (AppImage)</name>
+	<submenu></submenu>
+	<unique-id>1773980612937256-2</unique-id>
+	<command>bash -lc &quot;$HOME/.local/bin/appimage-to-desktop.sh&quot;</command>
+	<description>Generate .desktop file and icon from AppImage</description>
+	<range>*</range>
+	<patterns>*.AppImage</patterns>
+	<other-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Remove AppImage (from Desktop)</name>
+	<submenu></submenu>
+	<unique-id>1773981952572929-3</unique-id>
+	<command>bash -lc &quot;$HOME/.local/bin/remove-appimage.sh&quot;</command>
+	<description>Remove an installed AppImage + desktop entry + icon</description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
 </actions>
