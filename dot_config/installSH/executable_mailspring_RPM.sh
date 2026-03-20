@@ -33,7 +33,7 @@ if [ -f "$SYSTEM_DESKTOP" ]; then
   mkdir -p "$HOME/.local/share/applications"
   cp "$SYSTEM_DESKTOP" "$USER_DESKTOP"
   echo "➡️ Adding custom flags..."
-  sed -i 's|^Exec=mailspring |Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 |' "$USER_DESKTOP"	sed -i 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' "$USER_DESKTOP"
+  sed -i 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' "$USER_DESKTOP"
 
   echo "✅ Desktop file updated!"
 else

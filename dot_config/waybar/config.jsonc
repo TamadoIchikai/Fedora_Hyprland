@@ -41,7 +41,8 @@
 		"update-active-window": true,
 		"format": "{icon}",
 		"icon-size": 15
-	    }
+	    },
+	    "ignore-workspaces": ["11"]
 	}
 
 

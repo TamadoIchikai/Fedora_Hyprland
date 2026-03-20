@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-readonly TARGET_WORKSPACE=10
+readonly TARGET_WORKSPACE=11
 readonly CHECK_INTERVAL=0.5
 readonly GRACE_PERIOD_SEC=0.5
 
