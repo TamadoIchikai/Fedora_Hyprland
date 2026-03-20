@@ -57,7 +57,7 @@ if [ "$1" = "toggle" ]; then
       notify-send "$ICON_OFF  WARP" "Disconnected" -u low
       log "Disconnect successful"
     else
-      notify-send "$ICON_OFF  WARP" "Failed to disconnect" -u critical
+      notify-send "$ICON_OFF  WARP" "Failed to disconnect" -u normal
       warp-cli disconnect 2>/dev/null &
       log "Disconnect failed"
     fi
@@ -76,7 +76,7 @@ if [ "$1" = "toggle" ]; then
       notify-send "$ICON_ON  WARP" "Connected" -u low
       log "Connect successful"
     else
-      notify-send "$ICON_ON  WARP" "Failed to connect" -u critical
+      notify-send "$ICON_ON  WARP" "Failed to connect" -u normal
       warp-cli disconnect 2>/dev/null &
       log "Connect failed"
     fi
