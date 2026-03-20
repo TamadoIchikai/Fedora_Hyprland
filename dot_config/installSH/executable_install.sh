@@ -19,8 +19,8 @@ run_step "Installing vscode" ~/.config/installSH/vscode_RPM.sh
 run_step "File manager" ~/.config/installSH/file_manager.sh
 run_step "Media related" ~/.config/installSH/media.sh
 run_step "Install waybar dependencies" ~/.config/installSH/waybar.sh
-run_step "Install battery health for asus" ~/.config/installSH/bat_asus.sh
 run_step "Install wifi and nvidia drivers" ~/.config/installSH/wifi_nvidia_RPM.sh
 run_step "Install open tablet driver " ~/.config/installSH/opentabletdriver_RPM.sh
 run_step "Cloudflare time" ~/.config/installSH/cloudflare.sh
+run_step "sioyek installtion" ~/.config/installSH/sioyek.sh
 echo -e "${GREEN}-------> DONE"
