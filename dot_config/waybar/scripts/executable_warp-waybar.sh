@@ -2,7 +2,7 @@
 
 ICON_ON='󰴴'
 ICON_OFF='󰦜'
-TIMEOUT=10
+TIMEOUT=5
 LOG_FILE="${XDG_RUNTIME_DIR}/warp-toggle.log"
 STATE_FILE="${XDG_RUNTIME_DIR}/warp-state"
 
@@ -58,6 +58,7 @@ if [ "$1" = "toggle" ]; then
       log "Disconnect successful"
     else
       notify-send "$ICON_OFF  WARP" "Failed to disconnect" -u critical
+      warp-cli disconnect 2>/dev/null &
       log "Disconnect failed"
     fi
     
@@ -76,6 +77,7 @@ if [ "$1" = "toggle" ]; then
       log "Connect successful"
     else
       notify-send "$ICON_ON  WARP" "Failed to connect" -u critical
+      warp-cli disconnect 2>/dev/null &
       log "Connect failed"
     fi
     
