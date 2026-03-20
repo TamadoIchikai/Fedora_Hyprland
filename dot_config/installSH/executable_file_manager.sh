@@ -5,7 +5,16 @@ NC='\033[0m'
 
 set -e
 echo -e "${BLUE}-------> Installing Thunar file manager${NC}"
-sudo dnf install -y nautilus dconf gvfs gvfs-fuse xarchiver gsettings-desktop-schemas gnome-themes-extra papirus-icon-theme shared-mime-info xdg-utils evince-thumbnailer ffmpegthumbnailer desktop-file-utils
+sudo dnf install -y \
+thunar thunar-archive-plugin thunar-volman \
+gvfs gvfs-fuse udisks2 \
+tumbler \
+xarchiver file-roller unzip p7zip p7zip-plugins unrar \
+dconf gsettings-desktop-schemas \
+gnome-themes-extra papirus-icon-theme \
+shared-mime-info xdg-utils desktop-file-utils \
+evince-thumbnailer ffmpegthumbnailer \
+xdg-desktop-portal xdg-desktop-portal-gtk
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
