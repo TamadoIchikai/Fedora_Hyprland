@@ -199,7 +199,7 @@ button:hover {
  /* --- STATE: DISABLED (00:00, Idle) --- */
  #custom-timer.disabled {
      background: #111111;
-     color: #bfbfbf;
+     color: #cbcdcb;
      opacity: 0.6;
      font-weight: normal;
      animation-duration: 1s;
@@ -210,7 +210,7 @@ button:hover {
  /* --- STATE: IDLE (Active but 00:00) --- */
  #custom-timer.idle {
      background: #111111;
-     color: #bfbfbf;
+     color: #cbcdcb;
  }
 
  /* --- STATE: SELECTION MODE --- */
@@ -221,7 +221,7 @@ button:hover {
 
  /* --- STATE: RUNNING (Normal Timer & Pomodoro Work) --- */
  #custom-timer.running {
-     color: #cccccc;
+     color: #cbcdcb;
      background: #111111;
  }
 

@@ -9,7 +9,7 @@ INACTIVITY_LIMIT=30
 
 # --- POMODORO PRESET ---
 POMO_PRESETS=(
-    "25 5 4"
+    "50 8 4"
 )
 
 # Pomodoro Settings
@@ -18,11 +18,11 @@ POMO_AUTO_BREAK=true
 POMO_AUTO_WORK=true
 
 # --- SOUND EFFECTS ---
-SOUND_TIMER_DONE="${HOME}/.config/waybar/sounds/timer.mp3"
-SOUND_WORK_START="${HOME}/.config/waybar/sounds/timer.mp3"
-SOUND_BREAK_START="${HOME}/.config/waybar/sounds/timer.mp3"
-SOUND_BREAK_END="${HOME}/.config/waybar/sounds/timer.mp3"
-SOUND_COMPLETE="${HOME}/.config/waybar/sounds/timer.mp3"
+SOUND_TIMER_DONE="${HOME}/.config/waybar/sounds/seasion_done.wav"
+SOUND_WORK_START="${HOME}/.config/waybar/sounds/work_on.wav"
+SOUND_BREAK_START="${HOME}/.config/waybar/sounds/break_time.wav"
+SOUND_BREAK_END="${HOME}/.config/waybar/sounds/break_end.wav"
+SOUND_COMPLETE="${HOME}/.config/waybar/sounds/seasion_done.wav"
 
 # --- ICONS ---
 ICON_DISABLED="󰔞 "

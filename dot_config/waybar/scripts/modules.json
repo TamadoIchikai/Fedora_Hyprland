@@ -56,8 +56,8 @@
 	  "on-click": "~/.config/waybar/scripts/timer.sh click",
 	  "on-click-right": "~/.config/waybar/scripts/timer.sh right",
 	  "on-click-middle": "~/.config/waybar/scripts/timer.sh middle",
-	  "on-scroll-up": "~/.config/waybar/scripts/timer.sh down",
-	  "on-scroll-down": "~/.config/waybar/scripts/timer.sh up",
+	  "on-scroll-up": "~/.config/waybar/scripts/timer.sh up",
+	  "on-scroll-down": "~/.config/waybar/scripts/timer.sh down",
 	  "tooltip": true,
 	  "escape": true
   },
