@@ -1,32 +1,46 @@
 #!/usr/bin/env bash
 
-# requires imagemagick to generate thumbnails
-
-thumbnail_size=256
 thumbnail_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cliphist/thumbnails"
 
 cliphist_list=$(cliphist list)
 if [ -z "$cliphist_list" ]; then
-  fuzzel -d --placeholder "cliphist: please store something first" --lines 0
+  fuzzel -d --prompt-only "cliphist: please store something first "
   rm -rf "$thumbnail_dir"
   exit
 fi
 
 [ -d "$thumbnail_dir" ] || mkdir -p "$thumbnail_dir"
 
-# Write square shaped thumbnail to cache if it doesn't exist
+# Write binary image to cache file if it doesn't exist
 read -r -d '' thumbnail <<EOF
 /^[0-9]+\s<meta http-equiv=/ { next }
 match(\$0, /^([0-9]+)\s(\[\[\s)?binary.*(jpg|jpeg|png|bmp)/, grp) {
   cliphist_item_id=grp[1]
   ext=grp[3]
   thumbnail_file=cliphist_item_id"."ext
-  system("[ -f ${thumbnail_dir}/"thumbnail_file" ] || echo " cliphist_item_id "\\\\\t | cliphist decode | magick - -thumbnail ${thumbnail_size}^ -gravity center -extent ${thumbnail_size}x${thumbnail_size} ${thumbnail_dir}/"thumbnail_file)
+  system("[ -f ${thumbnail_dir}/"thumbnail_file" ] || echo " cliphist_item_id "\\\\\t | cliphist decode >${thumbnail_dir}/"thumbnail_file)
   print \$0"\0icon\x1f${thumbnail_dir}/"thumbnail_file
   next
 }
 1
 EOF
+
+# Function to detect focused app and paste accordingly
+paste_to_app() {
+  # Get focused window class from Hyprland
+  app_id=$(hyprctl activewindow -j | jq -r '.class')
+  
+  # Determine which paste keybind to use based on app_id
+  # Add or modify app_ids as needed
+  case "$app_id" in
+    "foot"|"kitty"|"alacritty"|"wezterm")  # Terminal emulators
+      wtype -M shift -M ctrl v
+      ;;
+    *)  # Default for most applications
+      wtype -M ctrl v
+      ;;
+  esac
+}
 
 item=$(echo "$cliphist_list" | gawk "$thumbnail" | fuzzel -d --placeholder "Search clipboard..." --counter --no-sort --with-nth 2)
 exit_code=$?
@@ -43,19 +57,15 @@ elif [ "$exit_code" -eq 10 ]; then
     echo "$item_id" | cliphist delete
     find "$thumbnail_dir" -name "${item_id}.*" -delete
   fi
-else
+# Return (exit code 0) to paste immediately
+elif [ "$exit_code" -eq 0 ]; then
   if [ -n "$item" ]; then
-    # copy the selected entry
     echo "$item" | cliphist decode | wl-copy
-    # optional: also set PRIMARY selection (middle-click paste)
-    # echo "$item" | cliphist decode | wl-copy --primary
-
-    # auto-paste with Ctrl+V (requires: wtype)
-    if command -v wtype >/dev/null 2>&1; then
-      sleep 0.05   # let focus return to previous app
-      wtype -M ctrl v -m ctrl
-    fi
+    sleep 0.05
+    paste_to_app
   fi
+else
+  [ -z "$item" ] || echo "$item" | cliphist decode | wl-copy
 fi
 
 # Delete cached thumbnails that are no longer in cliphist db
