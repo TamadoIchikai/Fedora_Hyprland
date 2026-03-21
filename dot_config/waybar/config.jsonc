@@ -31,6 +31,7 @@
 	"battery",
 	"group/connection",
         "clock",
+	"custom/timer",
 	"custom/notification"
     ],
 	"hyprland/workspaces": {

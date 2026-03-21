@@ -4,7 +4,7 @@
 * {
     font-family: "Symbols Nerd Font Mono","JetBrainsMono Nerd Font","Font Awesome 6 Free","Font Awesome 6 Brands",Roboto,Helvetica,Arial,sans-serif;
     font-size: 13px;
-    color: #ffffff;
+    color: #cbcdcb;
 }
 
 window#waybar {
@@ -131,7 +131,7 @@ button:hover {
 #language,
 #keyboard-state,
 #privacy-item {
-    color: #ffffff;
+    color: #cbcdcb;
     padding: 4px;
 }
 
@@ -144,13 +144,13 @@ button:hover {
 /* ===============================
    CPU / RAM Color States
    =============================== */
-#cpu.good      { color: #00ff00; }  /* green */
-#cpu.warning   { color: #ffff00; }  /* yellow */
-#cpu.critical   { color: #ff0000; }  /* red */
+#cpu.good      { color: #55ac3f; }  /* green */
+#cpu.warning   { color: #b38d38; }  /* yellow */
+#cpu.critical   { color: #c42927; }  /* red */
 
-#memory.good    { color: #00ff00; }
-#memory.warning  { color: #ffaa00; }
-#memory.critical { color: #ff0000; }
+#memory.good    { color: #55ac3f; }
+#memory.warning  { color: #b38d38; }
+#memory.critical { color: #c42927; }
 
 /* ===============================
    Dimmed / Muted States
@@ -182,4 +182,98 @@ button:hover {
 #custom-warp.disconnected{ padding-right: 3px; color: #888888;}
 
 #bluetooth, #bluetooth.disable{ padding-right: 3px;}
+
+ /* Waybar Timer */
+ #custom-timer {
+     /*color: #cdd6f4;*/
+     font-size: 15px;
+     font-weight: 900;
+     transition: all 0.2s ease;
+     background: #111111;
+     border: 1px solid #444444;
+     border-radius: 6px;
+     padding-right: 4px;
+     padding-left: 6px;
+ }
+
+ /* --- STATE: DISABLED (00:00, Idle) --- */
+ #custom-timer.disabled {
+     background: #111111;
+     color: #bfbfbf;
+     opacity: 0.6;
+     font-weight: normal;
+     animation-duration: 1s;
+     animation-timing-function: ease-in-out;
+     animation-direction: alternate;
+ }
+
+ /* --- STATE: IDLE (Active but 00:00) --- */
+ #custom-timer.idle {
+     background: #111111;
+     color: #bfbfbf;
+ }
+
+ /* --- STATE: SELECTION MODE --- */
+ #custom-timer.select {
+     background-color: #373948;
+     color: #85b2fa;
+ }
+
+ /* --- STATE: RUNNING (Normal Timer & Pomodoro Work) --- */
+ #custom-timer.running {
+     color: #cccccc;
+     background: #111111;
+ }
+
+ /* --- STATE: POMODORO BREAK (New) --- */
+ #custom-timer.pomo_break {
+     color: #f9e2af; /* Yellow/Gold to distinguish break from work */
+ }
+
+ /* --- STATE: POMODORO MESSAGE (New: "Work 1/4") --- */
+ #custom-timer.pomo_msg {
+     color: #cba6f7; /* Lavender/Purple for status messages */
+ }
+
+ /* --- STATE: PAUSED --- */
+ #custom-timer.paused {
+     background-color: #404040;
+     color: #f9e2af;
+     /*border: 1px solid #f9e2af; */
+ }
+
+ /* --- STATE: WARNING (< 10s or 30s alert) --- */
+ #custom-timer.warning {
+     animation-name: red-alert;
+     animation-duration: 1s;
+     animation-timing-function: ease-in-out;
+     animation-iteration-count: infinite;
+     animation-direction: alternate;
+ }
+
+ /* --- STATE: DONE --- */
+ #custom-timer.done {
+     background-color: #bfbfbf;
+     color: #11111b;
+ }
+
+ /* --- STATE: RESET ANIMATION --- */
+ #custom-timer.reset {
+     color: #ff4d4d;
+ }
+
+ /* -----------------------------------------------------------------------------
+ * KEYFRAMES: Red Color Fading
+ * ----------------------------------------------------------------------------- */
+ @keyframes red-alert {
+     0% {
+         color: #ff4d4d; /* Bright, visible Red */
+         opacity: 1;
+     }
+     100% {
+         color: #ff4d4d;
+         opacity: 0.8; /* Fade cleanly to 80% transparency */
+         text-shadow: none;
+     }
+ }
 
