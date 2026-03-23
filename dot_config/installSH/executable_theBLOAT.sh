@@ -15,6 +15,7 @@ echo -e "${BLUE}------->install flatpak related apps like obsidian, mission cent
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub md.obsidian.Obsidian
 flatpak install flathub org.zotero.Zotero
+flatpak install flathub org.localsend.localsend_app
 
 echo -e "${GREEN}-------> DONE${NC}"
 
