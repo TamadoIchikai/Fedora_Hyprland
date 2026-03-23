@@ -122,7 +122,7 @@ zinit cdreplay -q
 
 # Shell integrations
 eval "$(fzf --zsh)"
-eval "$(zoxide init --cmd cd zsh)"
+eval "$(zoxide init --cmd ccd zsh)"
 
 export UV_PROJECT_ENVIRONMENT=".env_linux"
 export UID=$(id -u)
