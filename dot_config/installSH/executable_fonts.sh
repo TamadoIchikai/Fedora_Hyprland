@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail  # safer: stop on error, undefined var, or broken pipe
-
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+set -euo pipefail
 
 FONT_DIR="$HOME/.local/share/fonts"
 TMP_DIR="$(mktemp -d)"
@@ -23,9 +18,10 @@ if ! command -v unzip &>/dev/null; then
 fi
 
 # Install Font Awesome and japanese and korean font (system-wide)
-echo -e "${BLUE}Installing Font Awesome...${NC}"
+echo -e "${BLUE}Installing Font Awesome and CJK fonts...${NC}"
 sudo dnf install -y fontawesome-fonts || echo -e "${YELLOW}Font Awesome already installed or unavailable.${NC}"
-sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts|| echo -e "${YELLOW}noto sans jp fonts and cjk already installed or unavailable.${NC}"
+sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts || echo -e "${YELLOW}Noto sans jp/cjk fonts already installed or unavailable.${NC}"
+
 # Create fonts directory if missing
 mkdir -p "$FONT_DIR"
 

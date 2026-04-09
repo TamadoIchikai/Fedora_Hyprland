@@ -1,9 +1,15 @@
-#!/bin/bash
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-NC='\033[0m' 
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
-echo -e "${BLUE}-------> Install image and video related things${NC}"
-sudo dnf install swayimg slurp wl-clipboard grim wtype swappy vlc ImageMagick hyprpicker
-echo -e "${GREEN}-------> DONE${NC}"
+echo -e "${BLUE}-------> Install waybar and related modules ${NC}"
+
+sudo dnf copr enable -y erikreider/SwayNotificationCenter
+sudo dnf install -y waybar blueman pavucontrol zenity SwayNotificationCenter mpv mpv-mpris playerctl ufw
+
+flatpak install -y flathub org.localsend.localsend_app
+
+sudo firewall-cmd --add-port=53317/tcp --add-port=53317/udp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports
+
+echo -e "${GREEN}-------> DONE ${NC}"
