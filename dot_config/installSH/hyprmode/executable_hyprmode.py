@@ -3,85 +3,15 @@
 
 """
 hyprmode - Display Mode Switcher for Hyprland
-Phase 2: Interactive menu with display mode switching
-VERSION: v0.1.0 (with Omarchy theme support)
+Phase 2: Interactive menu with display mode switching via fuzzel
+VERSION: v0.2.0 (Fuzzel Edition)
 """
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
-
-from textual.app import App
-from textual.binding import Binding
-from textual.containers import Container
-from textual.widgets import OptionList, Static
-from textual.widgets.option_list import Option
-from textual.theme import Theme
-
-# Theme loading support
-try:
-    import tomllib  # Python 3.11+
-except ImportError:
-    try:
-        import tomli as tomllib  # Fallback for older Python
-    except ImportError:
-        tomllib = None
-
-
-def normalize_color_format(color):
-    """Convert 0xRRGGBB to #RRGGBB for CSS/Textual compatibility."""
-    if isinstance(color, str) and color.startswith('0x'):
-        return '#' + color[2:]
-    return color
-
-
-def load_omarchy_colors():
-    """
-    Load colors from Omarchy's active theme.
-    Returns dict with RGB color values, or None if not found.
-    """
-    if tomllib is None:
-        return None
-
-    # Try Ghostty (Omarchy v3.2+) first, then fall back to Alacritty for older versions
-    ghostty_theme = Path.home() / ".config/omarchy/current/theme/ghostty"
-    alacritty_theme = Path.home() / ".config/omarchy/current/theme/alacritty.toml"
-
-    theme_file = None
-    if ghostty_theme.exists():
-        theme_file = ghostty_theme
-    elif alacritty_theme.exists():
-        theme_file = alacritty_theme
-    else:
-        return None
-
-    try:
-        with open(theme_file, "rb") as f:
-            data = tomllib.load(f)
-
-        colors = data.get("colors", {})
-        normal = colors.get("normal", {})
-        bright = colors.get("bright", {})
-        primary = colors.get("primary", {})
-
-        return {
-            "accent": normalize_color_format(
-                normal.get("yellow") or bright.get("yellow") or "#EBCB8B"
-            ),
-            "primary": normalize_color_format(
-                normal.get("cyan") or bright.get("cyan") or "#88C0D0"
-            ),
-            "foreground": normalize_color_format(
-                primary.get("foreground") or "#D8DEE9"
-            ),
-            "background": normalize_color_format(
-                primary.get("background") or "#2E3440"
-            ),
-        }
-    except Exception:
-        return None
-
 
 def get_monitors() -> dict:
     """
@@ -151,34 +81,6 @@ def get_monitors() -> dict:
         'external': external
     }
 
-
-def get_lid_state() -> str:
-    """
-    Check laptop lid state from /proc/acpi/button/lid/
-    Returns: 'open', 'closed', or 'unknown'
-    """
-    lid_paths = [
-        Path("/proc/acpi/button/lid/LID/state"),
-        Path("/proc/acpi/button/lid/LID0/state")
-    ]
-    
-    for lid_path in lid_paths:
-        try:
-            content = lid_path.read_text()
-            if "closed" in content.lower():
-                return "closed"
-            elif "open" in content.lower():
-                return "open"
-        except FileNotFoundError:
-            continue
-        except Exception as e:
-            # Other errors (permissions, etc.) - try next path
-            continue
-    
-    # No lid file found - likely a desktop
-    return "unknown"
-
-
 def send_notification(message: str, urgent: bool = False) -> None:
     """Send desktop notification using notify-send"""
     try:
@@ -188,9 +90,7 @@ def send_notification(message: str, urgent: bool = False) -> None:
             cmd.insert(2, "critical")
         subprocess.run(cmd, check=False, timeout=2)
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        # notify-send not available or timed out - continue silently
         pass
-
 
 def clear_mirror_state(laptop: Optional[dict], external: Optional[dict]) -> dict:
     """
@@ -198,369 +98,140 @@ def clear_mirror_state(laptop: Optional[dict], external: Optional[dict]) -> dict
     Returns refreshed monitor data after reload.
     """
     try:
-        # Disable both monitors to clear mirror state
         if external:
-            subprocess.run(
-                ["hyprctl", "keyword", "monitor", f"{external['name']},disable"],
-                timeout=5,
-                stderr=subprocess.DEVNULL
-            )
-        
+            subprocess.run(["hyprctl", "keyword", "monitor", f"{external['name']},disable"], timeout=5, stderr=subprocess.DEVNULL)
         if laptop:
-            subprocess.run(
-                ["hyprctl", "keyword", "monitor", f"{laptop['name']},disable"],
-                timeout=5,
-                stderr=subprocess.DEVNULL
-            )
+            subprocess.run(["hyprctl", "keyword", "monitor", f"{laptop['name']},disable"], timeout=5, stderr=subprocess.DEVNULL)
         
-        # Small delay for state to settle
         import time
         time.sleep(0.3)
-        
-        # CRITICAL: Reload Hyprland config to restore native monitor settings
-        subprocess.run(
-            ["hyprctl", "reload"],
-            timeout=5,
-            stderr=subprocess.DEVNULL
-        )
-        
-        # Small delay for reload to complete
+        subprocess.run(["hyprctl", "reload"], timeout=5, stderr=subprocess.DEVNULL)
         time.sleep(0.3)
-        
-        # RE-DETECT monitors to get the restored native specs
         return get_monitors()
-    
     except Exception:
-        # If error, return original values
         return {'laptop': laptop, 'external': external}
 
-
 def apply_laptop_only(laptop: Optional[dict], external: Optional[dict]) -> None:
-    """Disable external, enable laptop"""
     if not laptop:
         raise RuntimeError("Laptop monitor not detected - cannot enable")
-    
-    # Clear mirror state and get refreshed monitor specs
     monitors = clear_mirror_state(laptop, external)
     laptop = monitors['laptop']
     external = monitors['external']
-    
     try:
-        # Enable laptop with REFRESHED settings (native resolution restored!)
         laptop_config = f"{laptop['name']},{laptop['width']}x{laptop['height']}@{laptop['refreshRate']:.0f},auto,{laptop['scale']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", laptop_config],
-            check=True,
-            timeout=5
-        )
-        # Disable external if it exists
+        subprocess.run(["hyprctl", "keyword", "monitor", laptop_config], check=True, timeout=5)
         if external:
-            subprocess.run(
-                ["hyprctl", "keyword", "monitor", f"{external['name']},disable"],
-                check=True,
-                timeout=5
-            )
+            subprocess.run(["hyprctl", "keyword", "monitor", f"{external['name']},disable"], check=True, timeout=5)
         send_notification("Switched to Laptop Only mode")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         raise RuntimeError(f"Failed to apply laptop only mode: {e}")
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Command timed out while applying mode")
-
 
 def apply_external_only(laptop: Optional[dict], external: dict) -> None:
-    """Disable laptop, enable external"""
     if not external:
         raise RuntimeError("External monitor not detected - cannot enable")
-    
-    # Clear mirror state and get refreshed monitor specs
     monitors = clear_mirror_state(laptop, external)
     laptop = monitors['laptop']
     external = monitors['external']
-    
     try:
-        # Enable external with actual settings
         external_config = f"{external['name']},{external['width']}x{external['height']}@{external['refreshRate']:.0f},auto,{external['scale']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", external_config],
-            check=True,
-            timeout=5
-        )
-        # Disable laptop if it exists (might be None on desktop)
+        subprocess.run(["hyprctl", "keyword", "monitor", external_config], check=True, timeout=5)
         if laptop:
-            subprocess.run(
-                ["hyprctl", "keyword", "monitor", f"{laptop['name']},disable"],
-                check=True,
-                timeout=5
-            )
+            subprocess.run(["hyprctl", "keyword", "monitor", f"{laptop['name']},disable"], check=True, timeout=5)
         send_notification("Switched to External Only mode")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         raise RuntimeError(f"Failed to apply external only mode: {e}")
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Command timed out while applying mode")
-
 
 def apply_extend(laptop: Optional[dict], external: dict) -> None:
-    """Enable both, position external to the right"""
-    if not laptop:
-        raise RuntimeError("Laptop monitor not detected - cannot enable")
-    if not external:
-        raise RuntimeError("External monitor not detected - cannot extend")
-    
-    # Clear mirror state and get refreshed monitor specs
+    if not laptop or not external:
+        raise RuntimeError("Both laptop and external monitors required for extend mode")
     monitors = clear_mirror_state(laptop, external)
     laptop = monitors['laptop']
     external = monitors['external']
-    
     try:
-        # Enable laptop at 0x0 with actual settings
         laptop_config = f"{laptop['name']},{laptop['width']}x{laptop['height']}@{laptop['refreshRate']:.0f},0x0,{laptop['scale']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", laptop_config],
-            check=True,
-            timeout=5
-        )
-        # Enable external to the right with actual settings
+        subprocess.run(["hyprctl", "keyword", "monitor", laptop_config], check=True, timeout=5)
         external_config = f"{external['name']},{external['width']}x{external['height']}@{external['refreshRate']:.0f},auto-right,{external['scale']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", external_config],
-            check=True,
-            timeout=5
-        )
+        subprocess.run(["hyprctl", "keyword", "monitor", external_config], check=True, timeout=5)
         send_notification("Switched to Extend mode")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         raise RuntimeError(f"Failed to apply extend mode: {e}")
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Command timed out while applying mode")
-
 
 def apply_mirror(laptop: Optional[dict], external: dict) -> None:
-    """Enable both displays with same content (mirror mode)"""
-    if not laptop:
-        raise RuntimeError("Laptop monitor not detected - cannot enable")
-    if not external:
-        raise RuntimeError("External monitor not detected - cannot mirror")
-    
-    # Clear any existing mirror state and get refreshed monitor specs
+    if not laptop or not external:
+        raise RuntimeError("Both laptop and external monitors required for mirror mode")
     monitors = clear_mirror_state(laptop, external)
     laptop = monitors['laptop']
     external = monitors['external']
-    
     try:
         import time
-        
-        # Use EXTERNAL's native resolution/refresh rate (what it can actually support)
-        # This prevents forcing incompatible specs on the external monitor
-        mirror_width = external['width']
-        mirror_height = external['height']
-        mirror_refresh = external['refreshRate']
-        
-        # Step 1: Configure laptop to output at external's resolution
-        # Laptop will downscale its content to match external
+        mirror_width, mirror_height, mirror_refresh = external['width'], external['height'], external['refreshRate']
         laptop_config = f"{laptop['name']},{mirror_width}x{mirror_height}@{mirror_refresh:.0f},0x0,{laptop['scale']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", laptop_config],
-            check=True,
-            timeout=5
-        )
-        
-        # Step 2: Wait for laptop to stabilize
+        subprocess.run(["hyprctl", "keyword", "monitor", laptop_config], check=True, timeout=5)
         time.sleep(0.3)
-        
-        # Step 3: Configure external to mirror laptop at its native resolution
         external_config = f"{external['name']},{mirror_width}x{mirror_height}@{mirror_refresh:.0f},0x0,{external['scale']},mirror,{laptop['name']}"
-        subprocess.run(
-            ["hyprctl", "keyword", "monitor", external_config],
-            check=True,
-            timeout=5
-        )
-        
+        subprocess.run(["hyprctl", "keyword", "monitor", external_config], check=True, timeout=5)
         send_notification(f"Mirror mode applied - using {mirror_width}x{mirror_height}@{mirror_refresh:.0f}Hz")
-    
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         raise RuntimeError(f"Failed to apply mirror mode: {e}")
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Command timed out while applying mode")
 
-
-class HyprModeApp(App):
-    """Hyprland display mode switcher TUI"""
-    
-    TITLE = "HyprMode"
-    
-    CSS = """
-    Screen {
-        align: center middle;
-    }
-    
-    Container {
-        min-width: 60;
-        max-width: 80;
-        height: auto;
-        padding: 2 4;
-        border: solid $accent;
-    }
-    
-    Static {
-        margin: 1 0;
-        min-width: 50;
-    }
-    
-    OptionList {
-        margin: 1 0;
-        height: auto;
-        min-height: 8;
-    }
-    
-    .title {
-        text-style: bold;
-        color: $accent;
-    }
-    
-    .error {
-        color: $error;
-    }
-    
-    .help {
-        color: $text-muted;
-    }
-    """
-    
-    BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
+def main():
+    try:
+        monitors = get_monitors()
+    except RuntimeError as e:
+        send_notification(str(e), urgent=True)
+        sys.exit(1)
+        
+    options = [
+        "󰌢  Laptop Only",
+        "󰹑  External Only",
+        "󰍺  Extend",
+        "  Mirror"
     ]
-    
-    def __init__(self):
-        super().__init__()
-        
-        # Load Omarchy theme if available
-        omarchy_colors = load_omarchy_colors()
-        
-        if omarchy_colors:
-            self.register_theme(
-                Theme(
-                    name="omarchy-auto",
-                    primary=omarchy_colors["primary"],
-                    secondary=omarchy_colors["accent"],
-                    accent=omarchy_colors["accent"],
-                    foreground=omarchy_colors["foreground"],
-                    background=omarchy_colors["background"],
-                    surface=omarchy_colors["background"],
-                    panel=omarchy_colors["background"],
-                    dark=True,
-                )
-            )
-            self.theme = "omarchy-auto"
-        else:
-            self.theme = "textual-dark"
-        
-        try:
-            self.monitors = get_monitors()
-            self.lid_state = get_lid_state()
-            self.error = None
-        except RuntimeError as e:
-            self.monitors = None
-            self.lid_state = "unknown"
-            self.error = str(e)
-    
-    def compose(self):
-        """Display monitor info and interactive menu"""
-        with Container():
-            if self.error:
-                yield Static("❌ HyprMode - Error", classes="title error")
-                yield Static("")
-                yield Static(self.error, classes="error")
-                yield Static("")
-                yield Static("Press 'q' to quit", classes="help")
-            else:
-                yield Static("🖥️  HyprMode - Display Mode Switcher", classes="title")
-                yield Static("")
-                yield Static(f"Lid State: {self.lid_state.upper()}")
-                
-                if self.monitors['laptop']:
-                    laptop = self.monitors['laptop']
-                    yield Static(
-                        f"Laptop: {laptop['name']} "
-                        f"({laptop['width']}x{laptop['height']}@{laptop['refreshRate']:.0f}Hz)"
-                    )
-                
-                if self.monitors['external']:
-                    external = self.monitors['external']
-                    yield Static(
-                        f"External: {external['name']} "
-                        f"({external['width']}x{external['height']}@{external['refreshRate']:.0f}Hz)"
-                    )
-                else:
-                    yield Static("External: None")
-                
-                yield Static("")
-                yield Static("Select Display Mode:", classes="title")
-                yield OptionList(
-                    Option("󰌢 Laptop Only", id="laptop"),
-                    Option("󰹑  External Only", id="external"),
-                    Option("󰍺  Extend", id="extend"),
-                    Option(" Mirror", id="mirror")
-                )
-                yield Static("")
-                yield Static("j/k: navigate  |  Enter: apply  |  q: quit", classes="help")
-    
-    def action_cursor_down(self) -> None:
-        """Move cursor down in option list"""
-        option_list = self.query_one(OptionList)
-        option_list.action_cursor_down()
-    
-    def action_cursor_up(self) -> None:
-        """Move cursor up in option list"""
-        option_list = self.query_one(OptionList)
-        option_list.action_cursor_up()
-    
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        """Handle mode selection"""
-        if self.error or not self.monitors:
-            return
-        
-        mode = event.option.id
-        laptop = self.monitors['laptop']
-        external = self.monitors['external']
-        
-        try:
-            if mode == "laptop":
-                if not laptop:
-                    send_notification("Laptop display not detected. Try: hyprctl keyword monitor 'eDP-2,preferred,auto,1'", urgent=True)
-                    return
-                apply_laptop_only(laptop, external)
-                self.exit()
-            elif mode == "external":
-                if not external:
-                    send_notification("No external monitor detected", urgent=True)
-                    return
-                apply_external_only(laptop, external)
-                self.exit()
-            elif mode == "extend":
-                if not laptop:
-                    send_notification("Laptop display not detected. Try: hyprctl keyword monitor 'eDP-2,preferred,auto,1'", urgent=True)
-                    return
-                if not external:
-                    send_notification("No external monitor detected", urgent=True)
-                    return
-                apply_extend(laptop, external)
-                self.exit()
-            elif mode == "mirror":
-                if not laptop:
-                    send_notification("Laptop display not detected. Try: hyprctl keyword monitor 'eDP-2,preferred,auto,1'", urgent=True)
-                    return
-                if not external:
-                    send_notification("No external monitor detected", urgent=True)
-                    return
-                apply_mirror(laptop, external)
-                self.exit()
-        except RuntimeError as e:
-            send_notification(str(e), urgent=True)
-            # Don't exit on validation errors - let user try another mode
+    menu_text = "\n".join(options)
 
+    # Call fuzzel via subprocess
+    try:
+        result = subprocess.run(
+            ["fuzzel", "--dmenu", "-l", "4", "-p", "Display Mode: "],
+            input=menu_text,
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        selection = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        # User hit escape or closed fuzzel
+        sys.exit(0)
+    except FileNotFoundError:
+        send_notification("fuzzel not found. Please install fuzzel.", urgent=True)
+        sys.exit(1)
+
+    laptop = monitors['laptop']
+    external = monitors['external']
+
+    try:
+        if "Laptop Only" in selection:
+            if not laptop:
+                send_notification("Laptop display not detected.", urgent=True)
+                return
+            apply_laptop_only(laptop, external)
+        elif "External Only" in selection:
+            if not external:
+                send_notification("No external monitor detected", urgent=True)
+                return
+            apply_external_only(laptop, external)
+        elif "Extend" in selection:
+            if not laptop or not external:
+                send_notification("Both laptop and external monitors needed for extend", urgent=True)
+                return
+            apply_extend(laptop, external)
+        elif "Mirror" in selection:
+            if not laptop or not external:
+                send_notification("Both laptop and external monitors needed for mirror", urgent=True)
+                return
+            apply_mirror(laptop, external)
+    except RuntimeError as e:
+        send_notification(str(e), urgent=True)
 
 if __name__ == "__main__":
-    app = HyprModeApp()
-    app.run()
-
+    main()

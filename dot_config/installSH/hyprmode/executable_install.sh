@@ -1,22 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
+SOURCE_DIR="$HOME/.config/installSH/hyprmode"
+
 echo "Clearing Python cache..."
-# Clear local project cache
-find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-find . -type f -name "*.pyc" -delete 2>/dev/null || true
-
-# Clear user cache directories that might have stale bytecode
-rm -rf ~/.cache/textual/ 2>/dev/null || true
-
-echo "Installing dependency python-textual..."
-sudo dnf install python3-textual
+# Clear local project cache in the source directory
+find "$SOURCE_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find "$SOURCE_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
 
 echo "Installing HyprMode and Emergency Recovery Daemon..."
 
-# Check if running from correct directory
-if [ ! -f "hyprmode.py" ] || [ ! -f "hyprmode-daemon.py" ]; then
-    echo "Error: Required files not found."
+# Check if required files exist in the source directory
+if [ ! -f "$SOURCE_DIR/hyprmode.py" ] || [ ! -f "$SOURCE_DIR/hyprmode-daemon.py" ]; then
+    echo "Error: Required files not found in $SOURCE_DIR"
     exit 1
 fi
 
@@ -25,20 +21,19 @@ mkdir -p ~/.local/bin
 
 # Install main HyprMode tool
 echo "Installing HyprMode main tool to ~/.local/bin..."
-cp hyprmode.py ~/.local/bin/hyprmode || exit 1
+cp "$SOURCE_DIR/hyprmode.py" ~/.local/bin/hyprmode || exit 1
 chmod +x ~/.local/bin/hyprmode
 
 # Install daemon files
 echo "Installing emergency recovery daemon to ~/.local/bin..."
-cp hyprmode-daemon.py ~/.local/bin/hyprmode-daemon || exit 1
-cp hyprmode-daemon-wrapper ~/.local/bin/hyprmode-daemon-wrapper || exit 1
+cp "$SOURCE_DIR/hyprmode-daemon.py" ~/.local/bin/hyprmode-daemon || exit 1
+cp "$SOURCE_DIR/hyprmode-daemon-wrapper" ~/.local/bin/hyprmode-daemon-wrapper || exit 1
 chmod +x ~/.local/bin/hyprmode-daemon
 chmod +x ~/.local/bin/hyprmode-daemon-wrapper
 
 # Verify daemon file is correct
 echo "Verifying daemon installation..."
-diff hyprmode-daemon.py ~/.local/bin/hyprmode-daemon
-if [ $? -eq 0 ]; then
+if diff "$SOURCE_DIR/hyprmode-daemon.py" ~/.local/bin/hyprmode-daemon > /dev/null; then
     echo "✓ Daemon file verified"
 else
     echo "✗ Warning: Daemon files don't match!"
@@ -50,7 +45,7 @@ mkdir -p ~/.config/systemd/user/
 
 # Copy systemd service file
 echo "Installing systemd service..."
-cp hyprmode-daemon.service ~/.config/systemd/user/hyprmode-daemon.service || exit 1
+cp "$SOURCE_DIR/hyprmode-daemon.service" ~/.config/systemd/user/hyprmode-daemon.service || exit 1
 
 # Reload systemd daemon
 systemctl --user daemon-reload
