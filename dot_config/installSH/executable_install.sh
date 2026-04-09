@@ -22,6 +22,7 @@ run_step "Install waybar dependencies" ~/.config/installSH/waybar.sh
 run_step "Install wifi and nvidia drivers" ~/.config/installSH/wifi_nvidia_RPM.sh
 run_step "Install open tablet driver " ~/.config/installSH/opentabletdriver_RPM.sh
 run_step "Cloudflare time" ~/.config/installSH/cloudflare.sh
-run_step "Install display mode switcher" ~/.config/installSH/hyprmode/install.sh
+run_step "Display mode switcher" ~/.config/installSH/hyprmode/install.sh
+run_step "Battery charge threshold (TLP)" ~/.config/installSH/tlp-change.sh
 run_step "sioyek installtion" ~/.config/installSH/sioyek.sh
 echo -e "${GREEN}-------> DONE"
