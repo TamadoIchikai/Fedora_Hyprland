@@ -27,7 +27,7 @@
 "custom/localsend": {
     "format":"{icon}",
     "format-icons": "",
-    "on-click": "~/.config/waybar/scripts/workspace-toggle.sh localsend 'flatpak run org.localsend.localsend_app'"
+    "on-click": "~/.config/waybar/scripts/workspace-toggle.sh localsend_app LocalSend.Appimage"
 },
 
 "custom/warp": {

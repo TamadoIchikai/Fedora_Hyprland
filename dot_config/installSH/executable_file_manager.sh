@@ -5,7 +5,7 @@ echo -e "${BLUE}-------> Installing Thunar file manager and dependencies${NC}"
 
 sudo dnf install -y \
 thunar thunar-archive-plugin thunar-volman \
-gvfs gvfs-fuse udisks2 \
+gvfs gvfs-fuse udisks2 gvfs-smb \
 tumbler \
 xarchiver file-roller unzip p7zip p7zip-plugins unrar \
 dconf gsettings-desktop-schemas \

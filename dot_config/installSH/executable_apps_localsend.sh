@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ---- CONFIG ----
-REPO="ahrm/sioyek"
-ASSET_PATTERN="sioyek-release-linux.zip"
-TMP_FILE="/tmp/sioyek-release-linux.zip"
-INSTALL_DIR="$HOME/Downloads/Studies/sioyek"
+REPO="localsend/localsend"
+ASSET_SUFFIX="linux-x86-64.AppImage"
+INSTALL_DIR="$HOME/Downloads/Systems/localsend/"
+APPIMAGE_PATH="$INSTALL_DIR/LocalSend.AppImage"
 BINARY_DIR="$HOME/.local/bin"
-APPIMAGE_BIN="$BINARY_DIR/sioyek.AppImage"
+APPIMAGE_BIN="$BINARY_DIR/LocalSend.AppImage"
 DESKTOP_DIR="${DESKTOP_DIR:-$HOME/.local/share/applications}"
 ICON_DIR="${ICON_DIR:-$HOME/.local/share/icons}"
 
@@ -19,43 +19,32 @@ HAS_NOTIFY=false
 command -v notify-send >/dev/null 2>&1 && HAS_NOTIFY=true
 
 # ---- FETCH DOWNLOAD URL ----
-echo "➡️ Fetching latest Sioyek release..."
+echo "➡️ Fetching latest LocalSend release..."
 
 DOWNLOAD_URL=$(wget -qO- "https://api.github.com/repos/${REPO}/releases/latest" \
-  | jq -r ".assets[] | select(.name == \"${ASSET_PATTERN}\") | .browser_download_url")
+  | jq -r ".assets[] | select(.name | endswith(\"${ASSET_SUFFIX}\")) | .browser_download_url" | head -n 1)
 
 if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
-  echo "❌ Could not find ${ASSET_PATTERN} in latest release."
+  echo "❌ Could not find Linux AppImage in the latest release."
   exit 1
 fi
 
 echo "➡️ Downloading from:"
 echo "$DOWNLOAD_URL"
 
-# ---- DOWNLOAD ----
-wget -O "$TMP_FILE" "$DOWNLOAD_URL"
-
 # ---- PREPARE INSTALL DIR ----
 echo "➡️ Preparing install directory..."
 
-# Only remove if directory is NOT empty
 if [ -n "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
   echo "➡️ Cleaning existing files in $INSTALL_DIR..."
   rm -rf "$INSTALL_DIR"/*
 fi
 
-# ---- EXTRACT ----
-echo "➡️ Extracting to $INSTALL_DIR..."
-unzip -o "$TMP_FILE" -d "$INSTALL_DIR" >/dev/null
+# ---- DOWNLOAD DIRECTLY ----
+echo "➡️ Downloading AppImage to $INSTALL_DIR..."
+wget -O "$APPIMAGE_PATH" "$DOWNLOAD_URL"
 
 # ---- MAKE EXECUTABLE & COPY TO BIN ----
-APPIMAGE_PATH=$(find "$INSTALL_DIR" -maxdepth 1 -name "Sioyek*" -type f | head -n 1)
-
-if [ -z "$APPIMAGE_PATH" ]; then
-  echo "❌ No Sioyek executable found in $INSTALL_DIR"
-  exit 1
-fi
-
 echo "➡️ Setting executable permission on original file..."
 chmod +x "$APPIMAGE_PATH"
 
@@ -95,7 +84,7 @@ ICON_DEST=""
 
   if [[ -n "${ICON_PATH:-}" && -f "$ICON_PATH" ]]; then
     EXT="${ICON_PATH##*.}"
-    ICON_DEST="$ICON_DIR/sioyek.$EXT"
+    ICON_DEST="$ICON_DIR/localsend.$EXT"
     cp -f -- "$ICON_PATH" "$ICON_DEST"
     echo "Icon extracted: $ICON_DEST"
   fi
@@ -106,7 +95,7 @@ rm -rf "$TMP_DIR"
 
 # Fallback icon if none extracted
 if [[ -z "$ICON_DEST" ]]; then
-  ICON_DEST="$ICON_DIR/sioyek.png"
+  ICON_DEST="$ICON_DIR/localsend.png"
   if [[ -f /usr/share/pixmaps/gnome-application-x-executable.png ]]; then
     cp -f -- /usr/share/pixmaps/gnome-application-x-executable.png "$ICON_DEST" || true
     echo "No icon found in AppImage; using fallback: $ICON_DEST"
@@ -117,21 +106,20 @@ fi
 
 # ---- CREATE DESKTOP FILE ----
 echo "➡️ Creating desktop file..."
-DESKTOP_FILE="$DESKTOP_DIR/sioyek.desktop"
+DESKTOP_FILE="$DESKTOP_DIR/localsend.desktop"
 
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Sioyek
-Comment=PDF viewer designed for research papers
-Exec="$APPIMAGE_BIN" %F
+Name=LocalSend
+Comment=Share files to nearby devices
+Exec="$APPIMAGE_BIN" %u
 TryExec=$APPIMAGE_BIN
 Icon=$ICON_DEST
 Terminal=false
 StartupNotify=true
-Categories=Office;Utility;Application;
-MimeType=application/pdf;
-Keywords=pdf;viewer;
+Categories=Network;Utility;
+Keywords=share;files;network;transfer;
 EOF
 
 chmod +x -- "$DESKTOP_FILE"
@@ -142,12 +130,12 @@ fi
 
 # ---- DONE ----
 echo ""
-echo "✅ Sioyek installed successfully!"
-echo "📁 Original Extracted to: $INSTALL_DIR"
+echo "✅ LocalSend installed successfully!"
+echo "📁 Original downloaded to: $INSTALL_DIR"
 echo "🚀 Executable: $APPIMAGE_BIN"
 echo "📋 Desktop file: $DESKTOP_FILE"
 echo "🎨 Icon: $ICON_DEST"
 
 if $HAS_NOTIFY; then
-  notify-send "Sioyek Installed" "Sioyek is ready in your launcher" || true
+  notify-send "LocalSend Installed" "LocalSend is ready in your launcher" || true
 fi

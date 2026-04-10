@@ -56,6 +56,7 @@ run_step "VSCode" "apps_vscode.sh"
 run_step "Mailspring" "apps_mailspring.sh"
 run_step "Sioyek PDF Viewer" "apps_sioyek.sh"
 run_step "OpenTabletDriver" "apps_opentablet.sh"
+run_step "LocalSend (AppImages)" "apps_localsend.sh"
 run_step "Flatpaks and Extras" "apps_extra.sh"
 
 echo -e "\n${GREEN}==========================================${NC}"

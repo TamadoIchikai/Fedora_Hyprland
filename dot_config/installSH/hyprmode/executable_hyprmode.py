@@ -4,12 +4,14 @@
 """
 hyprmode - Display Mode Switcher for Hyprland
 Phase 2: Interactive menu with display mode switching via fuzzel
-VERSION: v0.2.0 (Fuzzel Edition)
+VERSION: v0.2.1 (Fuzzel + Hyprsunset Recovery Edition)
 """
 
 import json
 import subprocess
 import sys
+import shlex
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -17,10 +19,6 @@ def get_monitors() -> dict:
     """
     Execute hyprctl monitors -j and parse monitor data.
     Also gets disabled monitors from hyprctl monitors all -j
-    Returns: {
-        'laptop': {'name': 'eDP-1', 'width': 1920, 'height': 1080, 'refreshRate': 60.0} or None,
-        'external': {'name': 'HDMI-A-1', 'width': 2560, 'height': 1440, 'refreshRate': 144.0} or None
-    }
     """
     try:
         # Try to get all monitors (including disabled)
@@ -92,6 +90,42 @@ def send_notification(message: str, urgent: bool = False) -> None:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
 
+def get_hyprsunset_cmd() -> Optional[list]:
+    """Capture the exact command line currently running hyprsunset (if any)."""
+    try:
+        # pgrep -a returns "PID COMMAND"
+        result = subprocess.run(["pgrep", "-a", "-x", "hyprsunset"], capture_output=True, text=True)
+        if result.stdout.strip():
+            # In case of multiple instances, just take the first one
+            line = result.stdout.strip().split('\n')[0]
+            parts = line.split(' ', 1)
+            if len(parts) > 1:
+                return shlex.split(parts[1])
+            return ["hyprsunset"]
+    except Exception:
+        pass
+    return None
+
+def restore_hyprsunset(cmd: Optional[list]) -> None:
+    """Kill any broken instances and restart hyprsunset with its previous arguments."""
+    if not cmd:
+        return
+        
+    try:
+        # Verify it's installed
+        if subprocess.run(["which", "hyprsunset"], capture_output=True).returncode != 0:
+            send_notification("hyprsunset not found but was requested.", urgent=True)
+            return
+
+        # Kill any existing/broken instances hanging onto old displays
+        subprocess.run(["pkill", "-x", "hyprsunset"], stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+
+        # Start it detached
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        send_notification(f"Failed to restore hyprsunset: {e}", urgent=True)
+
 def clear_mirror_state(laptop: Optional[dict], external: Optional[dict]) -> dict:
     """
     Clear any existing mirror relationship and restore native monitor specs.
@@ -103,7 +137,6 @@ def clear_mirror_state(laptop: Optional[dict], external: Optional[dict]) -> dict
         if laptop:
             subprocess.run(["hyprctl", "keyword", "monitor", f"{laptop['name']},disable"], timeout=5, stderr=subprocess.DEVNULL)
         
-        import time
         time.sleep(0.3)
         subprocess.run(["hyprctl", "reload"], timeout=5, stderr=subprocess.DEVNULL)
         time.sleep(0.3)
@@ -163,7 +196,6 @@ def apply_mirror(laptop: Optional[dict], external: dict) -> None:
     laptop = monitors['laptop']
     external = monitors['external']
     try:
-        import time
         mirror_width, mirror_height, mirror_refresh = external['width'], external['height'], external['refreshRate']
         laptop_config = f"{laptop['name']},{mirror_width}x{mirror_height}@{mirror_refresh:.0f},0x0,{laptop['scale']}"
         subprocess.run(["hyprctl", "keyword", "monitor", laptop_config], check=True, timeout=5)
@@ -209,27 +241,37 @@ def main():
     laptop = monitors['laptop']
     external = monitors['external']
 
+    # Capture hyprsunset state BEFORE switching
+    sunset_cmd = get_hyprsunset_cmd()
+
     try:
         if "Laptop Only" in selection:
             if not laptop:
                 send_notification("Laptop display not detected.", urgent=True)
                 return
             apply_laptop_only(laptop, external)
+            
         elif "External Only" in selection:
             if not external:
                 send_notification("No external monitor detected", urgent=True)
                 return
             apply_external_only(laptop, external)
+            
         elif "Extend" in selection:
             if not laptop or not external:
                 send_notification("Both laptop and external monitors needed for extend", urgent=True)
                 return
             apply_extend(laptop, external)
+            
         elif "Mirror" in selection:
             if not laptop or not external:
                 send_notification("Both laptop and external monitors needed for mirror", urgent=True)
                 return
             apply_mirror(laptop, external)
+            
+        # Restore hyprsunset state AFTER switching
+        restore_hyprsunset(sunset_cmd)
+        
     except RuntimeError as e:
         send_notification(str(e), urgent=True)
 

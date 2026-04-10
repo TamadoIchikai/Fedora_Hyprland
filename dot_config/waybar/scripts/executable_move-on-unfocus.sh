@@ -11,6 +11,7 @@ readonly APPS=(
   "org.pulseaudio.pavucontrol"
   "blueman-manager"
   "localsend"
+  "localsend_app"
 )
 
 declare -A last_interaction_time
