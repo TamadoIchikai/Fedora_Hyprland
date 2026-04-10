@@ -108,6 +108,11 @@ alias rms='trash-put'
 alias lg='lazygit'
 alias df='duf'
 
+# For "e" to chezmoi edit a file and apply change
+e() {
+  chezmoi edit "$@" || return
+  chezmoi apply --include=files "$@"
+}
 # Add in snippets
 zinit snippet OMZL::git.zsh
 zinit snippet OMZP::git
