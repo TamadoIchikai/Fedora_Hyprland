@@ -8,6 +8,42 @@ STOP_VAL=80
 
 echo "=== TLP Battery Threshold Setup ==="
 
+# --- 0. Detect Fedora ---
+IS_FEDORA=0
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    if [[ "${ID:-}" == "fedora" ]]; then
+        IS_FEDORA=1
+        echo "[INFO] Fedora detected"
+    fi
+fi
+
+# --- 0.1 Remove conflicting services (Fedora only) ---
+if [[ "$IS_FEDORA" -eq 1 ]]; then
+    echo "[INFO] Removing conflicting power management services..."
+
+    SERVICES=(
+        power-profiles-daemon
+        tuned
+        tuned-ppd
+    )
+
+    for svc in "${SERVICES[@]}"; do
+        if systemctl list-unit-files --type=service | grep -q "^${svc}.service"; then
+            echo "[INFO] Disabling and masking $svc..."
+            sudo systemctl stop "$svc" 2>/dev/null || true
+            sudo systemctl disable "$svc" 2>/dev/null || true
+            sudo systemctl mask "$svc" 2>/dev/null || true
+        fi
+    done
+
+    # Optional cleanup
+    if command -v dnf >/dev/null 2>&1; then
+        echo "[INFO] Removing tuned packages (optional)..."
+        sudo dnf remove -y tuned tuned-ppd 2>/dev/null || true
+    fi
+fi
+
 # --- 1. Ensure TLP exists ---
 if ! command -v tlp-stat >/dev/null 2>&1; then
     echo "[INFO] TLP not found. Installing..."
@@ -37,11 +73,11 @@ fi
 
 echo "[INFO] Detected battery: $BAT"
 
-# --- 3. Backup config (safe) ---
+# --- 3. Backup config ---
 echo "[INFO] Backing up config..."
 sudo cp -n "$CONF" "${CONF}.bak" 2>/dev/null || true
 
-# --- 4. Update /etc/tlp.conf ---
+# --- 4. Update config ---
 echo "[INFO] Updating $CONF ..."
 
 sudo sed -i '/^#\?START_CHARGE_THRESH_BAT[0-9]\+=/d' "$CONF"
@@ -55,26 +91,7 @@ echo "[INFO] Applying TLP settings..."
 sudo systemctl restart tlp
 sudo tlp setcharge || true
 
-# --- 6. Configure systemd override ---
-echo "[INFO] Configuring systemd override..."
-
-OVERRIDE_DIR="/etc/systemd/system/tlp.service.d"
-OVERRIDE_FILE="$OVERRIDE_DIR/override.conf"
-
-sudo mkdir -p "$OVERRIDE_DIR"
-
-sudo tee "$OVERRIDE_FILE" >/dev/null <<EOF
-[Service]
-ExecStartPost=/usr/bin/bash -c '/usr/bin/tlp setcharge || true'
-EOF
-
-sudo systemctl daemon-reexec
-sudo systemctl daemon-reload
-sudo systemctl restart tlp
-
-echo "[INFO] Systemd override applied."
-
-# --- 7. Final status ---
+# --- 6. Final status ---
 echo
 echo "=== Final TLP Status ==="
 
