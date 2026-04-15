@@ -33,8 +33,11 @@ if [ -f "$SYSTEM_DESKTOP" ]; then
   mkdir -p "$HOME/.local/share/applications"
   cp "$SYSTEM_DESKTOP" "$USER_DESKTOP"
   echo "➡️ Adding custom flags..."
-  sed -i 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' "$USER_DESKTOP"
-
+  sed -i \
+  -e 's|^Exec=mailspring .*|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 %U|' \
+  -e 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' \
+  -e 's|^Exec=mailspring mailto:|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 mailto:|' \
+  "$USER_DESKTOP"
   echo "✅ Desktop file updated!"
 else
   echo "⚠️  Warning: Desktop file not found at $DESKTOP_FILE"

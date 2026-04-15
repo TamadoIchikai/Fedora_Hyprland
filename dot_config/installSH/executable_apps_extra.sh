@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo -e "${BLUE}-------> Installing brave browser${NC}"
-curl -fsS https://dl.brave.com/install.sh | sh
+#echo -e "${BLUE}-------> Installing brave browser${NC}"
+#curl -fsS https://dl.brave.com/install.sh | sh
 
 echo -e "${BLUE}-------> Installing flatpak apps (OBS)${NC}"
 sudo dnf install -y flatpak
