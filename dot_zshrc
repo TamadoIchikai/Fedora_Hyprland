@@ -107,6 +107,7 @@ alias c='chezmoi'
 alias rms='trash-put'
 alias lg='lazygit'
 alias df='duf'
+alias n='nnn'
 
 # For "e" to chezmoi edit a file and apply change
 e() {
