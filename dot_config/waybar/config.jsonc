@@ -18,7 +18,6 @@
     ],
     "modules-left": [
 	"custom/appmenu",
-	"sway/scratchpad",
 	"group/hardware",
 	"group/mpris"
     ],
@@ -34,7 +33,7 @@
 	"custom/timer",
 	"custom/notification"
     ],
-	"hyprland/workspaces": {
+    "hyprland/workspaces": {
 	    "format": "{icon}:{windows}",
 	    "format-window-separator": "",
 	    "workspace-taskbar": {
