@@ -14,6 +14,10 @@ shared-mime-info xdg-utils desktop-file-utils \
 evince-thumbnailer ffmpegthumbnailer \
 xdg-desktop-portal xdg-desktop-portal-gtk
 
+echo -e "${BLUE}-------> Configuring GVfs services${NC}"
+# Ensure the GVfs daemon is not masked (common issue in minimal installs)
+systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
+
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
@@ -53,7 +57,7 @@ xdg-mime default code.desktop application/x-shellscript
 xdg-mime default code.desktop text/yaml
 xdg-mime default code.desktop application/xml
 
-xdg-mime default nautilus.desktop inode/directory
+xdg-mime default thunar.desktop inode/directory
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
