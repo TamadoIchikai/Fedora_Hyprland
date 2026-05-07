@@ -51,18 +51,18 @@ chmod +x -- "$APPIMAGE_DEST"
 
 # ---- EXTRACT ICON ----
 TMP_DIR="$(mktemp -d)"
+# Use a more robust cleanup that doesn't interfere with the main flow
 cleanup() { rm -rf -- "$TMP_DIR"; }
 trap cleanup EXIT
 
 ICON_DEST=""
 
-(
+# Run extraction in a way that doesn't kill the main script on failure
+{
   cd "$TMP_DIR"
-  "$APPIMAGE_DEST" --appimage-extract >/dev/null 2>&1 || true
-
-  ICON_PATH="$(
-    find squashfs-root -type f \( -iname "*.png" -o -iname "*.svg" \) 2>/dev/null \
-    | awk '
+  # Some AppImages require --appimage-extract to be the only argument
+  if "$APPIMAGE_DEST" --appimage-extract >/dev/null 2>&1; then
+    ICON_PATH="$(find squashfs-root -type f \( -iname "*.png" -o -iname "*.svg" \) 2>/dev/null | awk '
         BEGIN { IGNORECASE=1 }
         {
           p=$0
@@ -73,19 +73,18 @@ ICON_DEST=""
           else if (p ~ /64/) score+=64
           else if (p ~ /48/) score+=48
           print score "\t" p
-        }' \
-    | sort -nr \
-    | head -n 1 \
-    | cut -f2-
-  )"
+        }' | sort -nr | head -n 1 | cut -f2-)"
 
-  if [[ -n "${ICON_PATH:-}" && -f "$ICON_PATH" ]]; then
-    EXT="${ICON_PATH##*.}"
-    ICON_DEST="$ICON_DIR/$APP_NAME.$EXT"
-    cp -f -- "$ICON_PATH" "$ICON_DEST"
-    echo "Icon extracted: $ICON_DEST"
+    if [[ -n "${ICON_PATH:-}" && -f "$ICON_PATH" ]]; then
+      EXT="${ICON_PATH##*.}"
+      ICON_DEST="$ICON_DIR/$APP_NAME.$EXT"
+      cp -f -- "$ICON_PATH" "$ICON_DEST"
+      echo "Icon extracted: $ICON_DEST"
+    fi
+  else
+    echo "Warning: AppImage extraction failed. Proceeding with fallback icon."
   fi
-)
+} || true # The '|| true' ensures the main script doesn't exit here
 
 # Fallback icon if none extracted
 if [[ -z "$ICON_DEST" ]]; then
