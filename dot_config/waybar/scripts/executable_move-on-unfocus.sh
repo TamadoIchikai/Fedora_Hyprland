@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Move specific apps to workspace 10 (only when safe to do so)
+# Move specific apps to workspace 11 (only when safe to do so)
+# Updated for Hyprland 0.55 Lua dispatcher syntax.
 
 set -euo pipefail
 
@@ -16,12 +17,10 @@ readonly APPS=(
 
 declare -A last_interaction_time
 
-# Get timestamp in milliseconds for better precision
 get_timestamp_ms() {
   date +%s%3N
 }
 
-# Convert seconds to milliseconds
 sec_to_ms() {
   awk "BEGIN {print int($1 * 1000)}"
 }
@@ -34,58 +33,60 @@ is_app_monitored() {
   return 1
 }
 
+move_window_silent() {
+  local address="$1"
+
+  hyprctl dispatch \
+    "hl.dsp.window.move({ workspace = ${TARGET_WORKSPACE}, window = 'address:${address}', follow = false })" \
+    &>/dev/null || true
+}
+
 main() {
-  local grace_period_ms=$(sec_to_ms "$GRACE_PERIOD_SEC")
-  
+  local grace_period_ms
+  grace_period_ms=$(sec_to_ms "$GRACE_PERIOD_SEC")
+
   echo "Window mover started (workspace ${TARGET_WORKSPACE})"
   echo "Monitoring: ${APPS[*]}"
   echo "Grace period: ${GRACE_PERIOD_SEC}s"
 
   while true; do
     now=$(get_timestamp_ms)
-    
-    # Get current workspace and focused window
-    active_data=$(hyprctl activewindow -j 2>/dev/null)
+
+    active_data=$(hyprctl activewindow -j 2>/dev/null || true)
     focused_class=$(echo "$active_data" | jq -r '.class // empty')
     current_ws=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty')
-    
-    # Update interaction time for focused window
+
     if [[ -n "$focused_class" ]] && is_app_monitored "$focused_class"; then
       last_interaction_time["$focused_class"]=$now
     fi
-    
-    # Only process if we're NOT on the target workspace
+
     if [[ "$current_ws" == "$TARGET_WORKSPACE" ]]; then
       sleep "$CHECK_INTERVAL"
       continue
     fi
-    
-    # Find windows to move
-    hyprctl clients -j 2>/dev/null | jq -r '.[] | 
-      select(.workspace.id != '"$TARGET_WORKSPACE"') | 
+
+    hyprctl clients -j 2>/dev/null | jq -r '.[] |
+      select(.workspace.id != '"$TARGET_WORKSPACE"') |
       "\(.class)|\(.address)|\(.workspace.id)"
     ' | while IFS='|' read -r class address workspace; do
       [[ -z "$class" ]] && continue
-      
-      # Check if this is a monitored app
+      [[ -z "$address" ]] && continue
+
       is_app_monitored "$class" || continue
-      
-      # Never move currently focused window
+
+      # Never move currently focused window.
       [[ "$class" == "$focused_class" ]] && continue
-      
-      # Check grace period (now in milliseconds)
+
       last_seen=${last_interaction_time["$class"]:-0}
       time_since_interaction=$((now - last_seen))
-      
+
       if (( time_since_interaction < grace_period_ms )); then
         continue
       fi
-      
-      # Move the window
+
       echo "Moving $class to workspace $TARGET_WORKSPACE"
-      hyprctl dispatch movetoworkspacesilent "${TARGET_WORKSPACE},address:${address}" &>/dev/null
-      
-      # Small delay to avoid race conditions
+      move_window_silent "$address"
+
       sleep 0.05
     done
 
