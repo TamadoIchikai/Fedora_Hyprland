@@ -73,7 +73,7 @@ hl.on("hyprland.start", function()
 
     -- Dirty fix: after Hyprland finishes initial startup, reload once.
     -- This fixes the cursor being stuck on eDP-1 until manual `hyprctl reload`.
-    hl.exec_cmd("sh -c 'sleep 1; hyprctl reload' &")
+    hl.exec_cmd("sh -c 'sleep 3; hyprctl reload' &")
 end)
 
 -------------------------------
@@ -463,4 +463,8 @@ hl.window_rule({
     float = true,
 })
 
-
+hl.window_rule({
+    name  = "vivaldi-bitwarden-popups",
+    match = { class = "vivaldi-stable", title = "Bitwarden - Vivaldi" },
+    float = true,
+})
