@@ -41,7 +41,7 @@ hl.env("EXTERNAL_SCALE", "1")
 local terminal      = "foot"
 local fileManager   = "thunar -w"
 local menu          = "fuzzel-scale.sh"
-local browser       = "./Downloads/Systems/zen/zen"
+local browser       = "nohup vivaldi-stable >/dev/null 2>&1 &"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
 local clipBoard     = "fuzzel-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
