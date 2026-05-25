@@ -6,12 +6,13 @@ set -euo pipefail
 
 echo -e "${BLUE}-------> Install xournal dev via luya copr${NC}"
 sudo dnf copr enable -y luya/xournalpp
-sudo dnf install lua-lgi xournalpp
+sudo dnf install -y lua-lgi xournalpp keepassxc
 echo -e "${GREEN}-------> DONE${NC}"
 
 echo -e "${BLUE}-------> Installing flatpak apps (OBS)${NC}"
 sudo dnf install -y flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub com.obsproject.Studio
+flatpak install -y flathub io.github.mpc_qt.mpc-qt
 
 echo -e "${GREEN}-------> DONE${NC}"

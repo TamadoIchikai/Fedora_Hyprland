@@ -11,10 +11,10 @@
 
     // Choose the order of the modules
     "include": [
-	"~/.config/waybar/scripts/hardware.json",
-	"~/.config/waybar/scripts/media.json",
-	"~/.config/waybar/scripts/modules.json",
-	"~/.config/waybar/scripts/connection.json"
+	"${SCRIPTS}/scripts/hardware.json",
+	"${SCRIPTS}/scripts/media.json",
+	"${SCRIPTS}/scripts/modules.json",
+	"${SCRIPTS}/scripts/connection.json"
     ],
     "modules-left": [
 	"custom/appmenu",
@@ -40,10 +40,9 @@
 		"enable": true,
 		"update-active-window": true,
 		"format": "{icon}",
-		"icon-size": 15
+		"icon-size": 15,
+		"on-click-window": "${SCRIPTS}/scripts/focus-window.sh {address} {button}"
 	    },
 	    "ignore-workspaces": ["11"]
 	}
-
-
 }
