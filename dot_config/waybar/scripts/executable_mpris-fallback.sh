@@ -10,9 +10,9 @@ FALLBACK_TEXT='[ 󰝛  No media playing ]'
 # If playerctl isn't installed, just show fallback (but don't error).
 command -v playerctl >/dev/null 2>&1 || { printf '%s\n' "$FALLBACK_TEXT"; exit 0; }
 
-# Hide fallback ONLY when some MPRIS player is actively Playing.
-# Otherwise, show fallback.
-if playerctl status 2>/dev/null | grep -qx "Playing"; then
+# Hide fallback when media is Playing OR Paused.
+# Show fallback only when there is no active MPRIS status.
+if playerctl status 2>/dev/null | grep -Eqx "Playing|Paused"; then
   printf '\n'
 else
   printf '%s\n' "$FALLBACK_TEXT"

@@ -14,7 +14,7 @@
   },
   "custom/mpris": {
     "exec": "~/.config/waybar/scripts/mpris-fallback.sh",
-    "interval": 1,
+    "interval": 1
   },
 
   "group/mpris": {
