@@ -1,18 +1,48 @@
-# Export PATH from .bashrc
+# Export PATH
 export PATH="$PATH:$HOME/.local/bin"
 export PATH="$PATH:$HOME/bin"
+
+# Input method
 export XMODIFIERS=@im=fcitx
 export INPUT_METHOD=fcitx
 export SDL_IM_MODULE=fcitx
 export GLFW_IM_MODULE=ibus
+
+# Default apps
 export EDITOR="nvim"
 export TERMINAL=foot
 export UV_PROJECT_ENVIRONMENT=".env_linux"
+
+# Qt
 export QT_QPA_PLATFORM=wayland
-export QT_QPA_PLATFORMTHEME=qt5ct
 export QT_QPA_PLATFORMTHEME=qt6ct
 
-# Auto-start Hyprland on tty1 login
-if [[ -z $DISPLAY ]] && [[ $(tty) == /dev/tty1 ]]; then
+# -----------------------------
+# SSH agent for KeePassXC
+# -----------------------------
+
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.sock"
+
+ssh-add -l >/dev/null 2>&1
+ssh_agent_status=$?
+
+# ssh-add exit codes:
+# 0 = agent works and has keys
+# 1 = agent works but has no keys
+# 2 = no working agent
+if [[ "$ssh_agent_status" -eq 2 ]]; then
+    rm -f "$SSH_AUTH_SOCK"
+    eval "$(ssh-agent -a "$SSH_AUTH_SOCK" -s)" >/dev/null
+fi
+
+# Export this environment to systemd/DBus-launched GUI apps
+systemctl --user import-environment SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
+dbus-update-activation-environment --systemd SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
+
+# -----------------------------
+# Auto-start Hyprland on tty1
+# -----------------------------
+
+if [[ -z "${DISPLAY:-}" ]] && [[ "$(tty)" == "/dev/tty1" ]]; then
     exec start-hyprland
 fi

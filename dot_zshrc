@@ -133,3 +133,5 @@ eval "$(zoxide init --cmd cd zsh)"
 export UV_PROJECT_ENVIRONMENT=".env_linux"
 export UID=$(id -u)
 export GID=$(id -g)
+
+
