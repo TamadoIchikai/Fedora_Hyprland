@@ -48,6 +48,7 @@ local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
 local colorPicker   = "~/.config/hypr/scripts/hyprPicker.sh"
 local displayPicker = "hyprmode"
+local appSwitcher = "hyprAppSwitcher.sh"
 
 -------------------
 ---- AUTOSTART ----
@@ -225,7 +226,7 @@ hl.device({
 
 hl.device({
     name        = "compx-2.4g-receiver-mouse",
-    sensitivity = 0.15,
+    sensitivity = 0.1,
 })
 
 ---------------------
@@ -247,10 +248,10 @@ hl.bind(mainMod .. " + V",          hl.dsp.exec_cmd(clipBoard))
 hl.bind(mainAlt .. " + P",          hl.dsp.exec_cmd(powermenu))
 hl.bind(mainMod .. " + P",          hl.dsp.exec_cmd(displayPicker))
 hl.bind(secondMod .. " + O",        hl.dsp.exec_cmd(calculator))
+hl.bind(secondMod .. " + TAB",        hl.dsp.exec_cmd(appSwitcher))
 hl.bind(mainMod .. " + CTRL + X",   hl.dsp.exec_cmd("chezmoi apply"))
 hl.bind(mainAlt .. " + X",          hl.dsp.exec_cmd("~/.config/waybar/scripts/restartWaybar.sh"))
 hl.bind(mainAlt .. " + C",          hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
-
 -- Window state
 hl.bind(mainMod .. " + C", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
@@ -271,10 +272,12 @@ hl.bind(mainAlt .. " + J", hl.dsp.window.move({ direction = "down" }))
 -- Groups
 hl.bind(mainMod .. " + N", hl.dsp.group.toggle())
 hl.bind(mainAlt .. " + N", hl.dsp.window.move({ out_of_group = true }))
-hl.bind(secondMod .. " + TAB",         hl.dsp.group.next())
-hl.bind(secondMod .. " + SHIFT + TAB", hl.dsp.group.prev())
+hl.bind(secondMod .. " + S",         hl.dsp.group.next())
+hl.bind(secondMod .. " + D", hl.dsp.group.prev())
 
 -- Workspace navigation
+-- Apps / windows
+hl.bind(mainMod .. " + Tab", hl.dsp.focus({ workspace = "previous" }))
 hl.bind(mainMod .. " + D", hl.dsp.focus({ workspace = "+1" }))
 hl.bind(mainMod .. " + S", hl.dsp.focus({ workspace = "-1" }))
 
@@ -467,4 +470,30 @@ hl.window_rule({
     name  = "vivaldi-bitwarden-popups",
     match = { class = "vivaldi-stable", title = "Bitwarden - Vivaldi" },
     float = true,
+})
+
+-- Generic KeePassXC window, but NOT the browser access dialog
+hl.window_rule({
+    name  = "Keepassxc",
+    match = {
+        class = "org.keepassxc.KeePassXC",
+        title = "negative:KeePassXC - Browser Access Request",
+    },
+    center = true,
+    size   = {1567, 929},
+    float  = true,
+})
+
+-- KeePassXC browser access request dialog
+hl.window_rule({
+    name  = "Keepassxc browser access request",
+    match = {
+        class = "org.keepassxc.KeePassXC",
+        title = "KeePassXC - Browser Access Request",
+    },
+    float = true,
+    move = {
+        "cursor_x-(window_w*0.5)",
+        "cursor_y-(window_h*0.5)",
+    },
 })
