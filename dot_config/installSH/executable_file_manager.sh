@@ -59,6 +59,12 @@ xdg-mime default code.desktop application/xml
 
 xdg-mime default thunar.desktop inode/directory
 
+xdg-settings set default-web-browser vivaldi-stable.desktop
+xdg-mime default vivaldi-stable.desktop x-scheme-handler/http
+xdg-mime default vivaldi-stable.desktop x-scheme-handler/https
+xdg-mime default vivaldi-stable.desktop text/html
+xdg-mime default vivaldi-stable.desktop application/xhtml+xml
+
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
 

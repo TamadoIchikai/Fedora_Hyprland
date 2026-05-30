@@ -9,6 +9,11 @@ sudo dnf copr enable -y luya/xournalpp
 sudo dnf install -y lua-lgi xournalpp keepassxc
 echo -e "${GREEN}-------> DONE${NC}"
 
+echo -e "${BLUE}-------> Install libre wolf as a secondary browser${NC}"
+sudo dnf config-manager addrepo --from-repofile=https://repo.librewolf.net/librewolf.repo
+sudo dnf install -y librewolf
+echo -e "${GREEN}-------> DONE${NC}"
+
 echo -e "${BLUE}-------> Installing flatpak apps (OBS)${NC}"
 sudo dnf install -y flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
