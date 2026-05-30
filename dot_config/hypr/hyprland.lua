@@ -41,7 +41,7 @@ hl.env("EXTERNAL_SCALE", "1")
 local terminal      = "foot"
 local fileManager   = "thunar -w"
 local menu          = "fuzzel-scale.sh"
-local browser       = "nohup vivaldi-stable >/dev/null 2>&1 &"
+local browser       = "vivaldi-stable"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
 local clipBoard     = "fuzzel-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
@@ -49,6 +49,8 @@ local calculator    = "qalc_floating.sh"
 local colorPicker   = "~/.config/hypr/scripts/hyprPicker.sh"
 local displayPicker = "hyprmode"
 local appSwitcher = "hyprAppSwitcher.sh"
+local passwordManager = "keepassxc"
+local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 
 -------------------
 ---- AUTOSTART ----
@@ -62,6 +64,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("swaybg -i ~/.config/screenshots/background.png -m fill")
     hl.exec_cmd("systemctl --user enable opentabletdriver.service --now")
     hl.exec_cmd("~/.config/waybar/scripts/move-on-unfocus.sh &")
+    hl.exec_cmd(passwordManager)
+    hl.exec_cmd(mediaPlayer)
 
     -- Converted from: exec-once = [workspace N silent] command.
     -- Dispatch exec_cmd with temporary window-rule effects for workspace placement.
@@ -496,4 +500,10 @@ hl.window_rule({
         "cursor_x-(window_w*0.5)",
         "cursor_y-(window_h*0.5)",
     },
+})
+
+hl.window_rule({
+    name = "mpc-qt-workspace",
+    match = { class = "io.github.mpc_qt.mpc-qt" },
+    workspace = "10 silent",
 })
