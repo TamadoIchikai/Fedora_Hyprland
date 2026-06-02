@@ -23,7 +23,8 @@
 	    "critical": 85
 	  },
     "on-click": "foot btop &",
-    "on-click-right": "foot gdu -d"
+    "on-click-right": "flatpak run io.missioncenter.MissionCenter >> /dev/null 2>&1 &",
+    "on-click-middle": "foot gdu -d"
   },
 
   "group/hardware": {

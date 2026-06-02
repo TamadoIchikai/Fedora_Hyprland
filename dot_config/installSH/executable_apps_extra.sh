@@ -19,5 +19,6 @@ sudo dnf install -y flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub com.obsproject.Studio
 flatpak install -y flathub io.github.mpc_qt.mpc-qt
+flatpak install -y flathub io.missioncenter.MissionCenter
 
 echo -e "${GREEN}-------> DONE${NC}"
