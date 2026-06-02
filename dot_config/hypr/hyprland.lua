@@ -42,6 +42,7 @@ local terminal      = "foot"
 local fileManager   = "thunar -w"
 local menu          = "fuzzel-scale.sh"
 local browser       = "vivaldi-stable"
+local browser_second= "librewolf --new-window &"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
 local clipBoard     = "fuzzel-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
@@ -49,7 +50,7 @@ local calculator    = "qalc_floating.sh"
 local colorPicker   = "~/.config/hypr/scripts/hyprPicker.sh"
 local displayPicker = "hyprmode"
 local appSwitcher = "hyprAppSwitcher.sh"
-local passwordManager = "keepassxc"
+local passwordManager = "keepassxc --minimized"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 
 -------------------
@@ -58,7 +59,7 @@ local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("waybar &")
-    hl.exec_cmd("fcitx5 &")
+    hl.exec_cmd("fcitx5 -d")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd("hyprsunset &")
     hl.exec_cmd("swaybg -i ~/.config/screenshots/background.png -m fill")
@@ -230,7 +231,7 @@ hl.device({
 
 hl.device({
     name        = "compx-2.4g-receiver-mouse",
-    sensitivity = 0.1,
+    sensitivity = 0,
 })
 
 ---------------------
@@ -242,10 +243,12 @@ local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
+hl.bind(mainMod .. " + space",      hl.dsp.exec_cmd("fcitx5-remote -t"))
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E",          hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + O",          hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + B",          hl.dsp.exec_cmd(browser))
+hl.bind(mainAlt .. " + B",          hl.dsp.exec_cmd(browser_second))
 hl.bind(mainMod .. " + G",          hl.dsp.exec_cmd(screenshot))
 hl.bind(mainAlt .. " + G",          hl.dsp.exec_cmd(colorPicker))
 hl.bind(mainMod .. " + V",          hl.dsp.exec_cmd(clipBoard))
@@ -376,6 +379,7 @@ hl.window_rule({
     match = { class = "Mailspring" },
     size  = {1884, 1026},
     float = true,
+    center= true
 })
 
 -- LocalSend
