@@ -50,19 +50,19 @@
     "escape": true
   },
   "custom/timer": {
-	  "exec": "~/.config/waybar/scripts/timer.sh",
+	  "exec": "~/.config/waybar/scripts/timer_multi_monitor.sh",
 	  "return-type": "json",
 	  "format": "{}",
-	  "on-click": "~/.config/waybar/scripts/timer.sh click",
-	  "on-click-right": "~/.config/waybar/scripts/timer.sh right",
-	  "on-click-middle": "~/.config/waybar/scripts/timer.sh middle",
-	  "on-scroll-up": "~/.config/waybar/scripts/timer.sh down",
-	  "on-scroll-down": "~/.config/waybar/scripts/timer.sh up",
+	  "on-click": "~/.config/waybar/scripts/timer_multi_monitor.sh click",
+	  "on-click-right": "~/.config/waybar/scripts/timer_multi_monitor.sh right",
+	  "on-click-middle": "~/.config/waybar/scripts/timer_multi_monitor.sh middle",
+	  "on-scroll-up": "~/.config/waybar/scripts/timer_multi_monitor.sh down",
+	  "on-scroll-down": "~/.config/waybar/scripts/timer_multi_monitor.sh up",
 	  "tooltip": true,
 	  "escape": true
   },
 
-  "sway/scratchpad": {
+  "hyprland/scratchpad": {
     "format": "{icon} {count}",
     "show-empty": false,
     "format-icons": ["", ""],
