@@ -73,7 +73,8 @@
   
   "tray": {
     "icon-size": 24,
-    "spacing": 10
+    "spacing": 10,
+    "show-passive-items": true
   },
   
   "clock": {

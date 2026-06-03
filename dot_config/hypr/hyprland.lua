@@ -49,8 +49,8 @@ local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
 local colorPicker   = "~/.config/hypr/scripts/hyprPicker.sh"
 local displayPicker = "hyprmode"
-local appSwitcher = "hyprAppSwitcher.sh"
-local passwordManager = "keepassxc --minimized"
+local appSwitcher   = "hyprAppSwitcher.sh"
+local passwordManager = "keepassxc"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 
 -------------------
@@ -58,28 +58,7 @@ local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 -------------------
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("waybar &")
-    hl.exec_cmd("fcitx5 -d")
-    hl.exec_cmd("wl-paste --watch cliphist store")
-    hl.exec_cmd("hyprsunset &")
-    hl.exec_cmd("swaybg -i ~/.config/screenshots/background.png -m fill")
-    hl.exec_cmd("systemctl --user enable opentabletdriver.service --now")
-    hl.exec_cmd("~/.config/waybar/scripts/move-on-unfocus.sh &")
-    hl.exec_cmd(passwordManager)
-    hl.exec_cmd(mediaPlayer)
-
-    -- Converted from: exec-once = [workspace N silent] command.
-    -- Dispatch exec_cmd with temporary window-rule effects for workspace placement.
-    hl.dispatch(hl.dsp.exec_cmd("pavucontrol",        { workspace = "11 silent" }))
-    hl.dispatch(hl.dsp.exec_cmd("blueman-manager",    { workspace = "11 silent" }))
-    hl.dispatch(hl.dsp.exec_cmd("LocalSend.AppImage", { workspace = "11 silent" }))
-    hl.dispatch(hl.dsp.exec_cmd(fileManager,           { workspace = "11 silent" }))
-    hl.dispatch(hl.dsp.exec_cmd("Obsidian.AppImage",  { workspace = "1 silent" }))
-    hl.dispatch(hl.dsp.exec_cmd(browser,               { workspace = "2 silent" }))
-
-    -- Dirty fix: after Hyprland finishes initial startup, reload once.
-    -- This fixes the cursor being stuck on eDP-1 until manual `hyprctl reload`.
-    hl.exec_cmd("sh -c 'sleep 3; hyprctl reload' &")
+    hl.exec_cmd("autostart.sh")
 end)
 
 -------------------------------
@@ -202,7 +181,7 @@ hl.config({
         kb_layout  = "us",
         kb_variant = "",
         kb_model   = "",
-        kb_options = "caps:swapescape",
+        kb_options = "",
         kb_rules   = "",
 
         follow_mouse       = 1,
