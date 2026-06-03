@@ -29,12 +29,12 @@ hypr_exec_ws() {
 
 fast_startup() {
     # First startup: start immediately after Hyprland starts
-    run_once "waybar" waybar
     run_once "fcitx5" fcitx5 -d
     run_once "wl-paste --watch cliphist store" wl-paste --watch cliphist store
     run_once "hyprsunset" hyprsunset
     run_once "swaybg" swaybg -i "$HOME/.config/screenshots/background.png" -m fill
     run_once "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
+    run_once "waybar" waybar
 }
 
 medium_startup() {
@@ -43,16 +43,16 @@ medium_startup() {
     hypr_exec_ws "11" "LocalSend.AppImage"
     hypr_exec_ws "11" "thunar -w"
 
-    # KeePassXC is delayed into the medium phase so Waybar tray has time to exist
-    run_once "keepassxc" keepassxc --minimized
 }
 
 complex_startup() {
+    run_once "keepassxc" keepassxc --minimized
     systemctl --user enable opentabletdriver.service --now >>"$BG_LOG" 2>&1 || true
 
     hypr_exec_ws "1" "Obsidian.AppImage"
     hypr_exec_ws "2" "vivaldi-stable"
     hypr_exec_ws "10" "flatpak run io.github.mpc_qt.mpc-qt"
+
 }
 
 # -------------------------
