@@ -47,7 +47,7 @@ local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -
 local clipBoard     = "fuzzel-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
-local colorPicker   = "~/.config/hypr/scripts/hyprPicker.sh"
+local colorPicker   = "$HOME/.config/hypr/scripts/hyprPicker.sh"
 local displayPicker = "hyprmode"
 local appSwitcher   = "hyprAppSwitcher.sh"
 local passwordManager = "keepassxc"
@@ -56,9 +56,8 @@ local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 -------------------
 ---- AUTOSTART ----
 -------------------
-
 hl.on("hyprland.start", function()
-    hl.exec_cmd("autostart.sh")
+	hl.exec_cmd("$HOME/.config/hypr/autostart.sh")
 end)
 
 -------------------------------
@@ -181,7 +180,7 @@ hl.config({
         kb_layout  = "us",
         kb_variant = "",
         kb_model   = "",
-        kb_options = "",
+        kb_options = "caps:swapescape",
         kb_rules   = "",
 
         follow_mouse       = 1,
@@ -221,6 +220,11 @@ local mainMod   = "SUPER"
 local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
+hl.bind(
+    "SHIFT + BackSpace",
+    hl.dsp.exec_cmd("wtype -P Delete -p Delete"),
+    { repeating = true }
+)
 -- Applications
 hl.bind(mainMod .. " + space",      hl.dsp.exec_cmd("fcitx5-remote -t"))
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
@@ -236,7 +240,7 @@ hl.bind(mainMod .. " + P",          hl.dsp.exec_cmd(displayPicker))
 hl.bind(secondMod .. " + O",        hl.dsp.exec_cmd(calculator))
 hl.bind(secondMod .. " + TAB",        hl.dsp.exec_cmd(appSwitcher))
 hl.bind(mainMod .. " + CTRL + X",   hl.dsp.exec_cmd("chezmoi apply"))
-hl.bind(mainAlt .. " + X",          hl.dsp.exec_cmd("~/.config/waybar/scripts/restartWaybar.sh"))
+hl.bind(mainAlt .. " + X",          hl.dsp.exec_cmd("$HOME/.config/waybar/scripts/restartWaybar.sh"))
 hl.bind(mainAlt .. " + C",          hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
 -- Window state
 hl.bind(mainMod .. " + C", hl.dsp.window.float({ action = "toggle" }))
