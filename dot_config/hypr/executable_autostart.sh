@@ -41,7 +41,7 @@ medium_startup() {
     hypr_exec_ws "11" "pavucontrol"
     hypr_exec_ws "11" "blueman-manager"
     hypr_exec_ws "11" "LocalSend.AppImage"
-    hypr_exec_ws "11" "thunar -w"
+    hypr_exec_ws "11" "thunar"
 
 }
 
