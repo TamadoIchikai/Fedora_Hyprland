@@ -48,7 +48,6 @@ run_step "Waybar & Networking" "waybar.sh"
 run_step "Media Tools (Images/Video)" "media.sh"
 run_step "Display Mode Switcher" "hyprmode/install.sh"
 run_step "Battery Threshold (TLP)" "tlp_change.sh"
-run_step "Cloudflare WARP" "cloudflare.sh"
 
 # --- 4. Extra Applications ---
 run_step "CLI Tools" "apps_CLI.sh"

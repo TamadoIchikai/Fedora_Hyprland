@@ -30,6 +30,13 @@
     "on-click": "$HOME/.config/waybar/scripts/workspace-toggle.sh localsend_app LocalSend.Appimage"
 },
 
+"custom/warp": {
+    "exec": "$HOME/.config/waybar/scripts/warp-waybar.sh",
+    "return-type": "json",
+    "interval": 2,
+    "on-click": "$HOME/.config/waybar/scripts/warp-waybar.sh toggle"
+},
+
 "group/connection": {
     "orientation": "horizontal",
     "modules": ["custom/localsend","bluetooth", "custom/warp", "network"]
