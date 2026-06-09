@@ -57,7 +57,7 @@ run_step "OpenTabletDriver" "apps_opentablet.sh"
 run_step "Sioyek PDF Viewer (AppImages)" "apps_sioyek.sh"
 run_step "LocalSend (AppImages)" "apps_localsend.sh"
 run_step "Obsidian (AppImages)" "apps_localsend.sh"
-run_step "Zotero (Tarball)" "apps_localsend.sh"
+run_step "Zotero (Tarball)" "apps_zotero.sh"
 run_step "Vivaldi (Native)" "apps_vivaldi.sh"
 run_step "Flatpak stuffs and Extras" "apps_extra.sh"
 
