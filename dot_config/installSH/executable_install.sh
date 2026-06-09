@@ -49,10 +49,6 @@ run_step "Waybar & Networking" "waybar.sh"
 
 # --- 3. Base Utilities ---
 run_step "Media Tools (Images/Video)" "media.sh"
-run_step "Display Mode Switcher" "hyprmode/install.sh"
-run_step "Battery Threshold (TLP)" "tlp_change.sh"
-
-# --- 4. Extra Applications ---
 run_step "CLI Tools" "apps_CLI.sh"
 run_step "VSCode" "apps_vscode.sh"
 run_step "Mailspring" "apps_mailspring.sh"
