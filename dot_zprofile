@@ -13,10 +13,6 @@ export EDITOR="nvim"
 export TERMINAL=foot
 export UV_PROJECT_ENVIRONMENT=".env_linux"
 
-# Qt
-export QT_QPA_PLATFORM=wayland
-export QT_QPA_PLATFORMTHEME=qt6ct
-
 # -----------------------------
 # SSH agent for KeePassXC
 # -----------------------------

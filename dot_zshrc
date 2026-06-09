@@ -109,6 +109,11 @@ alias lg='lazygit'
 alias df='duf'
 alias n='nnn'
 
+mem() {
+  ps -eo rss,comm |
+    awk '{arr[$2]+=$1} END {for (i in arr) {print arr[i]/1024 " MB\t" i}}' |
+    sort -n
+}
 # For "e" to chezmoi edit a file and apply change
 e() {
   chezmoi edit "$@" || return

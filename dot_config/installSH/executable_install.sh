@@ -59,7 +59,6 @@ run_step "LocalSend (AppImages)" "apps_localsend.sh"
 run_step "Obsidian (AppImages)" "apps_localsend.sh"
 run_step "Zotero (Tarball)" "apps_localsend.sh"
 run_step "Vivaldi (Native)" "apps_vivaldi.sh"
-run_step "Xournalpp Nightly (AppImages)" "apps_xournalpp.sh"
 run_step "Flatpak stuffs and Extras" "apps_extra.sh"
 
 echo -e "\n${GREEN}==========================================${NC}"
