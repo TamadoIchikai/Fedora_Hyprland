@@ -81,6 +81,6 @@ else
 fi
 
 echo "Installing Vivaldi using dnf..."
-sudo dnf install "$DEST_PATH"
+sudo dnf install -y "$DEST_PATH"
 
 echo "Vivaldi installation completed."
