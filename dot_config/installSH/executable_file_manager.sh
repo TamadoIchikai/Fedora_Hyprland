@@ -8,8 +8,8 @@ thunar thunar-archive-plugin thunar-volman \
 gvfs gvfs-fuse udisks2 gvfs-smb \
 tumbler \
 xarchiver file-roller unzip p7zip p7zip-plugins unrar \
-dconf gsettings-desktop-schemas \
-gnome-themes-extra papirus-icon-theme \
+dconf gsettings-desktop-schemas xdg-utils\
+papirus-icon-theme \
 shared-mime-info xdg-utils desktop-file-utils \
 evince-thumbnailer ffmpegthumbnailer \
 xdg-desktop-portal xdg-desktop-portal-gtk
