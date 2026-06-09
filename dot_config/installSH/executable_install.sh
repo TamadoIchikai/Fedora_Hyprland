@@ -24,10 +24,13 @@ run_step() {
     local script_path="$SCRIPT_DIR/$script_name"
 
     echo -e "\n${BLUE}------------> $desc ${NC}"
-    
+
     if [[ -f "$script_path" ]]; then
         chmod +x "$script_path"
-        "$script_path" || { echo -e "${YELLOW}✖ Failed at step: $desc${NC}"; exit 1; }
+        bash -x "$script_path" || {
+            echo -e "${YELLOW}✖ Failed at step: $desc${NC}"
+            exit 1
+        }
     else
         echo -e "${YELLOW}✖ Script not found: $script_name${NC}"
         exit 1
