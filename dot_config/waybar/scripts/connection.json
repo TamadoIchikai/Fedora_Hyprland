@@ -32,6 +32,6 @@
 
 "group/connection": {
     "orientation": "horizontal",
-    "modules": ["custom/localsend","bluetooth", "custom/warp", "network"]
+    "modules": ["custom/localsend","bluetooth","network"]
   }
 }

@@ -41,7 +41,7 @@
 		"update-active-window": true,
 		"format": "{icon}",
 		"icon-size": 15,
-		"on-click-window": "${SCRIPTS}/scripts/focus-window.sh {address} {button}"
+		"on-click-window": "${HOME}/.config/waybar/scripts/focus-window.sh {address} {button}"
 	    },
 	    "ignore-workspaces": ["11"]
 	}

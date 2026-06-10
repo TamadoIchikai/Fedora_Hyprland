@@ -1,10 +1,32 @@
 /* Override swaync’s default translucent backgrounds */
-.control-center, .notification {
-    background-color: @theme_bg_color;  /* pull from GTK theme */
-    opacity: 1.0;                       /* force opaque */
+.control-center,
+.notification {
+    background-color: #111111;
+    opacity: 1.0;
 }
 
-/* Make sure text follows GTK theme too */
-.control-center, .notification {
-    color: @theme_fg_color;
+/* Font color */
+.control-center,
+.notification {
+    color: #F7F7F7;
 }
+
+/* Icons */
+.control-center image,
+.notification image,
+.control-center .image,
+.notification .image,
+.control-center .notification-icon,
+.notification .notification-icon,
+.control-center .app-icon,
+.notification .app-icon {
+    color: #4F5258;
+}
+
+/* Rounded notification boxes inside swaync control center */
+.control-center .notification-row .notification-background,
+.control-center .notification,
+.control-center .notification-content {
+    border-radius: 20px;
+}
+

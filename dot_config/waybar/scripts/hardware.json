@@ -1,6 +1,6 @@
 {
   "cpu": {
-    "interval": 0.5,
+    "interval": 1,
     "format": "<tt><small>CPU</small></tt> {icon}",
     "format-icons": ["󰝦", "󰪞", "󰪟", "󰪠", "󰪡", "󰪢", "󰪣", "󰪤", "󰪥"],
     "states": {
