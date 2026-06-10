@@ -13,5 +13,7 @@ sudo dnf install -y "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-no
 sudo dnf makecache
 
 echo -e "${BLUE}>>> Installing nvidia driver...${NC}"
-sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda
+sudo dnf install -y akmod-nvidia-580xx xorg-x11-drv-nvidia-580xx xorg-x11-drv-nvidia-580xx-cuda
+sudo akmods --force
+sudo dracut --force
 echo -e "${GREEN}>>> Done!!${NC}"
