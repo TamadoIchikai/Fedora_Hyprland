@@ -9,7 +9,7 @@ gvfs gvfs-fuse udisks2 gvfs-smb \
 tumbler \
 xarchiver file-roller unzip p7zip p7zip-plugins unrar \
 dconf gsettings-desktop-schemas \
-papirus-icon-theme \
+papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \
 evince-thumbnailer ffmpegthumbnailer \
 xdg-desktop-portal xdg-desktop-portal-gtk
@@ -20,7 +20,7 @@ systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
 
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
 gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
 sleep 1
