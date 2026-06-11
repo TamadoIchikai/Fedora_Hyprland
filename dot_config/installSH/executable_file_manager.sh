@@ -12,6 +12,7 @@ dconf gsettings-desktop-schemas \
 papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \
 evince-thumbnailer ffmpegthumbnailer \
+polkit mate-polkit \
 xdg-desktop-portal xdg-desktop-portal-gtk
 
 echo -e "${BLUE}-------> Configuring GVfs services${NC}"

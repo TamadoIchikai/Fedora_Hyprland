@@ -5,7 +5,6 @@ set -euo pipefail
 #curl -fsS https://dl.brave.com/install.sh | sh
 
 echo -e "${BLUE}-------> Install xournal dev via luya copr${NC}"
-sudo dnf copr enable -y luya/xournalpp
 sudo dnf install -y lua-lgi xournalpp keepassxc
 echo -e "${GREEN}-------> DONE${NC}"
 
@@ -24,19 +23,42 @@ flatpak install -y flathub \
   io.missioncenter.MissionCenter
 
 echo -e "${BLUE}-------> Fix theme issues${NC}"
-sudo dnf install -y kvantum qt5ct qt6ct
+sudo dnf install -y \
+  libadwaita \
+  adwaita-icon-theme \
+  adwaita-cursor-theme \
+  adwaita-icon-theme-legacy \
+  adw-gtk3-theme \
+  kvantum qt5ct qt6ct
 
-flatpak install -y flathub \
-  org.gtk.Gtk3theme.adw-gtk3 \
-  org.gtk.Gtk3theme.adw-gtk3-dark \
-  org.kde.KStyle.Kvantum
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0 ~/.config/Kvantum
 
-mkdir -p ~/.config/Kvantum
+cat > ~/.config/gtk-3.0/settings.ini <<'EOF'
+[Settings]
+gtk-theme-name=adw-gtk3-dark
+gtk-application-prefer-dark-theme=1
+gtk-icon-theme-name=Papirus-Dark
+gtk-cursor-theme-name=Adwaita
+EOF
+
+cat > ~/.config/gtk-4.0/settings.ini <<'EOF'
+[Settings]
+gtk-application-prefer-dark-theme=1
+gtk-theme-name=Adwaita
+gtk-icon-theme-name=Papirus-Dark
+gtk-cursor-theme-name=Adwaita
+EOF
+echo -e "${GREEN}-------> DONE${NC}"
 
 cat > ~/.config/Kvantum/kvantum.kvconfig <<'EOF'
 [General]
 theme=KvGnomeDark
 EOF
+
+flatpak install -y flathub \
+  org.gtk.Gtk3theme.adw-gtk3 \
+  org.gtk.Gtk3theme.adw-gtk3-dark \
+  org.kde.KStyle.Kvantum
 
 flatpak override --user \
   --env=GTK_THEME=adw-gtk3-dark \
@@ -48,4 +70,5 @@ flatpak override --user \
   --filesystem=xdg-config/gtk-4.0:ro \
   --filesystem=xdg-data/icons:ro \
   --filesystem=~/.icons:ro
-echo -e "${GREEN}-------> DONE${NC}"
+
+

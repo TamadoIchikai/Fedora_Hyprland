@@ -94,6 +94,7 @@ fast_startup() {
     run_once_name "hyprsunset" hyprsunset
     run_once_pattern "wl-paste --watch cliphist store" wl-paste --watch cliphist store
     run_once_name "swaybg" swaybg -i "$HOME/.config/screenshots/background.png" -m fill
+    run_once_pattern "polkit-mate" /usr/libexec/polkit-mate-authentication-agent-1
 }
 
 medium_startup() {

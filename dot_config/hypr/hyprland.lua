@@ -426,12 +426,18 @@ hl.window_rule({
 
 -- Xournal++ bookmark menu
 hl.window_rule({
-    name  = "xournalpp-bookmark-menu-floating",
-    match = { class = "com.github.xournalpp.xournalpp", title = "com.github.xournalpp.xournalpp" },
+    name  = "xournalpp bookmark - new",
+    match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - New bookmark" },
     move  = {"cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)"},
     float = true,
 })
 
+hl.window_rule({
+    name  = "xournalpp bookmark - manager",
+    match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - Bookmarks Manager" },
+    move  = {"cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)"},
+    float = true,
+})
 -- Ignore maximize requests from floating windows.
 hl.window_rule({
     name           = "suppress-maximize-floating",
@@ -484,6 +490,20 @@ hl.window_rule({
 })
 
 hl.window_rule({
+    name = "Thunar rename",
+    match = {
+        class = "thunar",
+        title = [[^Rename ".*"$]],
+    },
+    float = true,
+    move = {
+        "cursor_x-(window_w*0.5)",
+        "cursor_y-(window_h*0.5)",
+    },
+})
+
+-- Bitwarden extension popup
+hl.window_rule({
     name  = "vivaldi-bitwarden-popups",
     match = { class = "vivaldi-stable", title = "Bitwarden - Vivaldi" },
     float = true,
@@ -520,3 +540,4 @@ hl.window_rule({
     match = { class = "io.github.mpc_qt.mpc-qt" },
     workspace = "10 silent",
 })
+
