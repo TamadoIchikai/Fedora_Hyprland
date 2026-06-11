@@ -1,25 +1,36 @@
 -- Converted from hyprland.conf to Hyprland 0.55 Lua config.
 -- Source config: /mnt/data/hyprland.conf
 -- API reference style: attached hyprland.lua example.
-
+---
 ------------------
 ---- MONITORS ----
 ------------------
 
+local laptop_output   = "eDP-1"
+local external_output = "HDMI-A-1"
+
+local laptop_mode     = "1920x1080@60"
+local external_mode   = "1920x1080@60"
+
+local laptop_pos      = "0x0"
+local external_pos    = "auto-right"
+
+local laptop_scale    = 1
+local external_scale  = 1
+
 hl.monitor({
-    output   = "eDP-1",
-    mode     = "1920x1080@60",
-    position = "0x0",
-    scale    = 1,
+    output   = laptop_output,
+    mode     = laptop_mode,
+    position = laptop_pos,
+    scale    = laptop_scale,
 })
 
 hl.monitor({
-    output   = "HDMI-A-1",
-    mode     = "1920x1080@60",
-    position = "auto-right",
-    scale    = 1,
+    output   = external_output,
+    mode     = external_mode,
+    position = external_pos,
+    scale    = external_scale,
 })
-
 -------------------------------
 ---- DISPLAY ENV VARIABLES ----
 -------------------------------
@@ -56,10 +67,25 @@ local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 -------------------
 ---- AUTOSTART ----
 -------------------
-hl.on("hyprland.start", function()
-	hl.exec_cmd("$HOME/.config/hypr/autostart.sh")
-end)
 
+local autostart_wrapper = "$HOME/.config/hypr/autostart-wrapper.sh"
+
+hl.on("hyprland.start", function()
+    local cmd = string.format([=[
+bash -lc '
+sleep 0.5
+
+if hyprctl monitors | grep -q "^Monitor %s "; then
+    hyprctl dispatch "hl.dsp.focus({ monitor = \"%s\" })"
+fi
+
+exec %s
+'
+]=], external_output, external_output, autostart_wrapper)
+
+    hl.exec_cmd(cmd)
+end)
+---
 -------------------------------
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------

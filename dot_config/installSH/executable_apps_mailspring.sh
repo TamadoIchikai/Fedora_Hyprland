@@ -34,9 +34,9 @@ if [ -f "$SYSTEM_DESKTOP" ]; then
   cp "$SYSTEM_DESKTOP" "$USER_DESKTOP"
   echo "➡️ Adding custom flags..."
   sed -i \
-  -e 's|^Exec=mailspring .*|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 %U|' \
-  -e 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11|' \
-  -e 's|^Exec=mailspring mailto:|Exec=mailspring --password-store=gnome-libsecret --ozone-platform=x11 mailto:|' \
+  -e 's|^Exec=mailspring .*|Exec=mailspring --password-store=gnome-libsecret %U|' \
+  -e 's|^Exec=mailspring$|Exec=mailspring --password-store=gnome-libsecret|' \
+  -e 's|^Exec=mailspring mailto:|Exec=mailspring --password-store=gnome-libsecret mailto:|' \
   "$USER_DESKTOP"
   echo "✅ Desktop file updated!"
 else
