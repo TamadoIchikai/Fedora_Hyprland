@@ -5,7 +5,3 @@
 	path = Debian-13_Sway
 	url = https://github.com/TamadoIchikai/Debian-13_Sway.git
 	branch = main
-[submodule "dot_config/xournal"]
-	path = dot_config/xournal
-	url = https://github.com/TamadoIchikai/xournalConfig.git
-	branch = main
