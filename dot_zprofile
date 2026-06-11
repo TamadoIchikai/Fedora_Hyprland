@@ -15,7 +15,8 @@ export UV_PROJECT_ENVIRONMENT=".env_linux"
 
 # Qt theme
 export QT_STYLE_OVERRIDE=kvantum
-
+# Gtk theme
+export ADW_DEBUG_COLOR_SCHEME=prefer-dark
 # -----------------------------
 # SSH agent for KeePassXC
 # -----------------------------
