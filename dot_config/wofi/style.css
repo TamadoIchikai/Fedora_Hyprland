@@ -1,0 +1,60 @@
+/* Global Font & Default Text Color */
+* {
+    font-family: 'JetBrainsMono', monospace;
+    font-size: 15px;
+    color: #8F8F8F; /* Fuzzel: text */
+}
+
+/* Main Window Background */
+window {
+    background-color: #353535; /* Fuzzel: background */
+}
+
+/* Internal Container */
+#inner-box {
+    background-color: #353535;
+}
+
+/* Search Bar (Input) */
+#input {
+    background-color: #353535;
+    color: #cdd6f4; /* Fuzzel: input */
+    border: 1px solid #7f849c; /* Optional: using your placeholder color for the border */
+    padding: 5px;
+}
+
+/* List Items */
+#entry {
+    padding: 2px 5px; 
+    
+    /* Force a strict, consistent line height */
+    min-height: 20px; 
+    max-height: 30px; 
+}
+
+/* Restrict Image Thumbnail Size */
+#entry image {
+    max-height: 26px; /* Keep slightly smaller than the #entry max-height */
+    margin-right: 8px; /* Adds space between the image and the text */
+}
+
+/* Selected List Item (Background) */
+#entry:selected {
+    background-color: #5D5D5D; /* Fuzzel: selection */
+    border-radius: 5px;        /* Optional: smooths out the selection box */
+}
+
+/* Selected List Item (Text Color Override) */
+#entry:selected * {
+    color: #ffffff;            /* Fuzzel: selection-text */
+}
+
+/* Highlighted Match Text (Global) */
+b {
+    color: #89b4fa; /* Fuzzel: match */
+}
+
+/* Highlighted Match Text (When Selected) */
+#entry:selected b {
+    color: #89b4fa; /* Fuzzel: selection-match */
+}

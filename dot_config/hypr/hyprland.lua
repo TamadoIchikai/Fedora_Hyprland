@@ -55,7 +55,7 @@ local menu          = "fuzzel-scale.sh"
 local browser       = "vivaldi-stable"
 local browser_second= "librewolf --new-window &"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
-local clipBoard     = "fuzzel-cliphist.sh"
+local clipBoard     = "wofi-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
 local colorPicker   = "$HOME/.config/hypr/scripts/hyprPicker.sh"
@@ -246,11 +246,6 @@ local mainMod   = "SUPER"
 local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
-hl.bind(
-    "SHIFT + BackSpace",
-    hl.dsp.exec_cmd("wtype -P Delete -p Delete"),
-    { repeating = true }
-)
 -- Applications
 hl.bind(mainMod .. " + space",      hl.dsp.exec_cmd("fcitx5-remote -t"))
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
@@ -435,7 +430,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "xournalpp bookmark - manager",
     match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - Bookmarks Manager" },
-    move  = {"cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)"},
+    size  = {477,326},
+    move  = {"cursor_x-(window_w*0.2)", "cursor_y-(window_h*0.5)"},
     float = true,
 })
 -- Ignore maximize requests from floating windows.
@@ -535,9 +531,33 @@ hl.window_rule({
     },
 })
 
+-- MPC-qt
 hl.window_rule({
     name = "mpc-qt-workspace",
     match = { class = "io.github.mpc_qt.mpc-qt" },
     workspace = "10 silent",
 })
 
+-- copyq menu
+hl.window_rule({
+    name = "CopyQ menu",
+    match = {
+        class = "com.github.hluk.copyq",
+        title = "CopyQ",
+    },
+    float = true,
+    move = {
+        "cursor_x-(window_w*0)",
+        "cursor_y-(window_h*0)",
+    },
+
+})
+
+-- peazip
+hl.window_rule({
+    name = "Peazip",
+    match = {
+        class = "peazip"
+    },
+    float = true
+})

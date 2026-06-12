@@ -1,0 +1,5 @@
+prompt=> 
+lines=15
+icon_theme=Papirus-Dark
+allow_images=true
+pre_display_exec=true
