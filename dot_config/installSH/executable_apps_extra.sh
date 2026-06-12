@@ -1,20 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#echo -e "${BLUE}-------> Installing brave browser${NC}"
-#curl -fsS https://dl.brave.com/install.sh | sh
-
-echo -e "${BLUE}-------> Install xournal dev via luya copr${NC}"
-sudo dnf install -y lua-lgi xournalpp keepassxc
-echo -e "${GREEN}-------> DONE${NC}"
-
-echo -e "${BLUE}-------> Install libre wolf as a secondary browser${NC}"
 sudo dnf config-manager addrepo --from-repofile=https://repo.librewolf.net/librewolf.repo
-sudo dnf install -y librewolf
-echo -e "${GREEN}-------> DONE${NC}"
+sudo dnf install -y lua-lgi xournalpp keepassxc librewolf flatpak
 
-echo -e "${BLUE}-------> Installing flatpak apps (OBS)${NC}"
-sudo dnf install -y flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 flatpak install -y flathub \
@@ -22,7 +11,6 @@ flatpak install -y flathub \
   io.github.mpc_qt.mpc-qt \
   io.missioncenter.MissionCenter
 
-echo -e "${BLUE}-------> Fix theme issues${NC}"
 sudo dnf install -y \
   libadwaita \
   adwaita-icon-theme \
@@ -48,7 +36,6 @@ gtk-theme-name=Adwaita
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 EOF
-echo -e "${GREEN}-------> DONE${NC}"
 
 cat > ~/.config/Kvantum/kvantum.kvconfig <<'EOF'
 [General]

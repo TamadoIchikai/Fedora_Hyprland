@@ -2,44 +2,61 @@
 set -euo pipefail
 
 FONT_DIR="$HOME/.local/share/fonts"
-TMP_DIR="$(mktemp -d)"
-
-echo -e "${BLUE}-------> Installing fonts and icons${NC}"
 
 # Ensure required packages exist
 if ! command -v wget &>/dev/null; then
-    echo -e "${YELLOW}Installing wget...${NC}"
     sudo dnf install -y wget
 fi
 
 if ! command -v unzip &>/dev/null; then
-    echo -e "${YELLOW}Installing unzip...${NC}"
     sudo dnf install -y unzip
 fi
 
 # Install Font Awesome and japanese and korean font (system-wide)
-echo -e "${BLUE}Installing Font Awesome and CJK fonts...${NC}"
-sudo dnf install -y fontawesome-fonts || echo -e "${YELLOW}Font Awesome already installed or unavailable.${NC}"
-sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts || echo -e "${YELLOW}Noto sans jp/cjk fonts already installed or unavailable.${NC}"
+sudo dnf install -y fontawesome-fonts
+sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts 
 
 # Create fonts directory if missing
 mkdir -p "$FONT_DIR"
 
-# Download Nerd Fonts safely
-echo -e "${BLUE}Downloading Nerd Fonts...${NC}"
-wget -q -O "$TMP_DIR/JetBrainsMono.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
-wget -q -O "$TMP_DIR/NerdFontsSymbolsOnly.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip"
+# --- CHECK FOR EXISTING NERD FONTS ---
+NEED_JETBRAINS=true
+NEED_SYMBOLS=true
 
-# Extract (overwrite quietly if already exists)
-echo -e "${BLUE}Extracting fonts...${NC}"
-unzip -o -qq "$TMP_DIR/JetBrainsMono.zip" -d "$FONT_DIR"
-unzip -o -qq "$TMP_DIR/NerdFontsSymbolsOnly.zip" -d "$FONT_DIR"
+# Safely check for matching font files in the directory without breaking the script if empty
+shopt -s nullglob
+jetbrains_files=("$FONT_DIR"/*JetBrainsMono*Nerd*.ttf)
+symbols_files=("$FONT_DIR"/*SymbolsNerdFont*.ttf)
+shopt -u nullglob
 
-# Clean up
-rm -rf "$TMP_DIR"
+if ((${#jetbrains_files[@]} > 0)); then
+    echo -e "JetBrainsMono Nerd Font already exists. Skipping."
+    NEED_JETBRAINS=false
+fi
 
-# Refresh font cache
-echo -e "${BLUE}Updating font cache...${NC}"
-fc-cache -fv > /dev/null
+if ((${#symbols_files[@]} > 0)); then
+    echo "Nerd Fonts Symbols Only already exists. Skipping."
+    NEED_SYMBOLS=false
+fi
 
-echo -e "${GREEN}-------> Fonts installed successfully!${NC}"
+# --- DOWNLOAD AND EXTRACT (ONLY IF NEEDED) ---
+if $NEED_JETBRAINS || $NEED_SYMBOLS; then
+    TMP_DIR="$(mktemp -d)"
+    # Ensure cleanup happens automatically upon script exit or error
+    trap 'rm -rf "$TMP_DIR"' EXIT 
+
+    if $NEED_JETBRAINS; then
+        wget -q -O "$TMP_DIR/JetBrainsMono.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
+        unzip -o -qq "$TMP_DIR/JetBrainsMono.zip" -d "$FONT_DIR"
+    fi
+
+    if $NEED_SYMBOLS; then
+        wget -q -O "$TMP_DIR/NerdFontsSymbolsOnly.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip"
+        unzip -o -qq "$TMP_DIR/NerdFontsSymbolsOnly.zip" -d "$FONT_DIR"
+    fi
+
+    # Refresh font cache since we added new fonts
+    fc-cache -fv > /dev/null
+else
+    echo "Nerd Fonts are installed."
+fi

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo -e "${BLUE}-------> Installing Thunar file manager and dependencies${NC}"
-
 sudo dnf install -y \
 thunar thunar-archive-plugin thunar-volman \
 gvfs gvfs-fuse udisks2 gvfs-smb \
@@ -15,7 +13,6 @@ evince-thumbnailer ffmpegthumbnailer \
 polkit mate-polkit \
 xdg-desktop-portal xdg-desktop-portal-gtk
 
-echo -e "${BLUE}-------> Configuring GVfs services${NC}"
 # Ensure the GVfs daemon is not masked (common issue in minimal installs)
 systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
 
@@ -25,8 +22,6 @@ gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
 gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
 gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'
 sleep 1
-
-echo -e "${BLUE}-------> Setting default applications${NC}"
 
 xdg-mime default swayimg.desktop image/jpeg
 xdg-mime default swayimg.desktop image/png
@@ -67,5 +62,3 @@ xdg-mime default vivaldi-stable.desktop application/xhtml+xml
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
-
-echo -e "${GREEN}-------> DONE${NC}"
