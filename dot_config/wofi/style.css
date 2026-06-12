@@ -8,6 +8,7 @@
 /* Main Window Background */
 window {
     background-color: #353535; /* Fuzzel: background */
+    border-radius: 10px;
 }
 
 /* Internal Container */
