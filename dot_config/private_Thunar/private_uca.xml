@@ -12,22 +12,33 @@
 	<directories/>
 </action>
 <action>
-	<icon></icon>
+	<icon>code-context</icon>
+	<name>Open Code here</name>
+	<submenu></submenu>
+	<unique-id>1781276348784933-1</unique-id>
+	<command>code . %d</command>
+	<description>open IDE at current directory</description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
+	<icon>application-x-iso9660-appimage</icon>
 	<name>Create Desktop Entry (AppImage)</name>
 	<submenu></submenu>
 	<unique-id>1773980612937256-2</unique-id>
-	<command>bash -lc &quot;$HOME/.local/bin/appimage-to-desktop.sh&quot;</command>
+	<command>bash -lc &quot;$HOME/.local/bin/AppImageManager.sh install --dir %n&quot;</command>
 	<description>Generate .desktop file and icon from AppImage</description>
 	<range>*</range>
 	<patterns>*.AppImage</patterns>
 	<other-files/>
 </action>
 <action>
-	<icon></icon>
+	<icon>emblem-remove</icon>
 	<name>Remove AppImage (from Desktop)</name>
 	<submenu></submenu>
 	<unique-id>1773981952572929-3</unique-id>
-	<command>bash -lc &quot;$HOME/.local/bin/remove-appimage.sh&quot;</command>
+	<command>bash -lc &quot;$HOME/.local/bin/AppImageManager.sh delete&quot;</command>
 	<description>Remove an installed AppImage + desktop entry + icon</description>
 	<range>*</range>
 	<patterns>*</patterns>
