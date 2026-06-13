@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BG_LOG="${BG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/hypr-autostart.log}"
-
+BG_LOG="${BG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/autostart.log}"
+AUDIO_OS_START="${HOME}/.local/share/sounds/OS_Startup.mp3"
+AUDIO_PLAYER="paplay --volume=65536"
 TIMER_FAST_TO_MEDIUM="${TIMER_FAST_TO_MEDIUM:-3}"
 TIMER_FAST_TO_COMPLEX="${TIMER_FAST_TO_COMPLEX:-5}"
 AUTO_CLOSE_AFTER="${AUTO_CLOSE_AFTER:-5}"
@@ -156,6 +157,18 @@ print_centered() {
 
 # Store the ASCII art and text into a SINGLE variable
 ASCII_ART_START=$(cat << "EOF"
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣠⣿⣆⠀⠀⠀⠀⠀⠀⠀⠈⣿⡆
+ ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠴⢒⣨⣥⣶⣿⣿⣿⣷⣤⣄⡀⠀⢀⣠⡾⠋⠀
+ ⠀⠀⠀⠀⠀⠀⣤⡾⠋⠁⠀⠈⠀⠉⠛⢿⣿⡿⠟⠉⢀⡠⠖⠋⠁⠀⠀⠀
+ ⠀⠀⠀⠀⠀⠸⣿⠀⠀⢀⣴⣆⠀⠀⠀⠈⣿⡏⠐⠈⠁⠀⠀⠀⠀⠀⠀⠀
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠸⠃⠀⠀⠀⠀⢙⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+>> SYSTEM INITIALIZATION SEQUENCE <<
+EOF
+)
+ASCII_ART_END=$(cat << "EOF"
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -183,23 +196,20 @@ ASCII_ART_START=$(cat << "EOF"
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                     >> SYSTEM INITIALIZATION SEQUENCE <<
+                              >> INITIALIZATION END <<
 EOF
 )
-ASCII_ART_END=$(cat << "EOF"
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣠⣿⣆⠀⠀⠀⠀⠀⠀⠀⠈⣿⡆
-⠀⠀⠀⢀⣠⠴⢒⣨⣥⣶⣿⣿⣿⣷⣤⣄⡀⠀⢀⣠⡾⠋⠀
-⠀⣤⡾⠋⠁⠀⠈⠀⠉⠛⢿⣿⡿⠟⠉⢀⡠⠖⠋⠁⠀⠀⠀
-⠸⣿⠀⠀⢀⣴⣆⠀⠀⠀⠈⣿⡏⠐⠈⠁⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠁⠀⠸⠃⠀⠀⠀⠀⢙⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
->> INITIALIZATION END <<
-EOF
-)
+
 print_centered "$ASCII_ART_START"
-sleep 0.5
+
+if [ -f "$AUDIO_OS_START" ]; then
+    log "Playing startup sound..."
+    $AUDIO_PLAYER "$AUDIO_OS_START" >/dev/null 2>&1 &
+else
+    log "warning: Startup audio file not found at $AUDIO_OS_START"
+fi
+
+sleep 1
 echo "Log file: $BG_LOG"
 echo
 

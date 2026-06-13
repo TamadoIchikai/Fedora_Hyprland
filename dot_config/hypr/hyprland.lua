@@ -515,19 +515,18 @@ hl.window_rule({
     float = true,
     center = true
 })
--- Generic KeePassXC window, but NOT the browser access dialog
+-- KeePassXC 
 hl.window_rule({
     name  = "Keepassxc",
     match = {
         class = "org.keepassxc.KeePassXC",
-        title = "negative:KeePassXC - Browser Access Request",
+        title = "negative:KeePassXC - Browser Access Request|Generate Password",
     },
     center = true,
     size   = {1567, 929},
     float  = true,
 })
 
--- KeePassXC browser access request dialog
 hl.window_rule({
     name  = "Keepassxc browser access request",
     match = {
@@ -538,7 +537,17 @@ hl.window_rule({
     move = {
         "cursor_x-(window_w*0.5)",
         "cursor_y-(window_h*0.5)",
+    }
+})
+
+hl.window_rule({
+    name  = "Keepassxc generate password",
+    match = {
+        class = "org.keepassxc.KeePassXC",
+        title = "Generate Password",
     },
+    float = true,
+    center = true
 })
 
 -- MPC-qt
