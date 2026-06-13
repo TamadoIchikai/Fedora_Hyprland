@@ -27,16 +27,6 @@ window {
 /* List Items */
 #entry {
     padding: 2px 5px; 
-    
-    /* Force a strict, consistent line height */
-    min-height: 20px; 
-    max-height: 30px; 
-}
-
-/* Restrict Image Thumbnail Size */
-#entry image {
-    max-height: 26px; /* Keep slightly smaller than the #entry max-height */
-    margin-right: 8px; /* Adds space between the image and the text */
 }
 
 /* Selected List Item (Background) */
@@ -59,3 +49,4 @@ b {
 #entry:selected b {
     color: #89b4fa; /* Fuzzel: selection-match */
 }
+

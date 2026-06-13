@@ -1,5 +1,6 @@
 prompt=> 
-lines=15
+height=60%
+width=30%
 icon_theme=Papirus-Dark
 allow_images=true
 pre_display_exec=true

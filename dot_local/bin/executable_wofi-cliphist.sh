@@ -103,10 +103,17 @@ match(\$0, /^([0-9]+)\s(\[\[\s)?binary.*(jpg|jpeg|png|bmp)/, grp) {
 1
 EOF
 
-choice=$(gawk <<< "$cliphist_list" "$prog" | wofi -I --dmenu --cache-file=/dev/null -Dimage_size=100 -Dynamic_lines=true)
+# DIRTY FIX: Prepend a dummy text item so Wofi measures a text row first.
+# We use a background job with wtype to automatically press the Down arrow 
+# shortly after Wofi spawns, skipping the dummy item.
+(sleep 0.2 && wtype -k Down) &
+choice=$( (echo "[ Clipboard History ]"; gawk <<< "$cliphist_list" "$prog") | wofi -I --dmenu --cache-file=/dev/null -Dimage_size=200 -Dynamic_lines=true)
 
-# stop execution if nothing selected in wofi menu
+# Stop execution if nothing selected in wofi menu
 [ -z "$choice" ] && exit 1
+
+# DIRTY FIX: Exit silently without copying or pasting if the dummy item is selected.
+[ "$choice" = "[ Clipboard History ]" ] && exit 0
 
 if [ "${choice::4}" = "img:" ]; then
     # It's an image: Wofi outputs "img:/path/to/1234.png"
