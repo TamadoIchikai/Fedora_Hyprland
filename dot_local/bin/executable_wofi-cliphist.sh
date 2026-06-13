@@ -104,10 +104,19 @@ match(\$0, /^([0-9]+)\s(\[\[\s)?binary.*(jpg|jpeg|png|bmp)/, grp) {
 EOF
 
 # DIRTY FIX: Prepend a dummy text item so Wofi measures a text row first.
-# We use a background job with wtype to automatically press the Down arrow 
-# shortly after Wofi spawns, skipping the dummy item.
-(sleep 0.2 && wtype -k Down) &
+# We use a smart background job that waits for Hyprland to focus Wofi before pressing Down.
+(
+    for _ in {1..30}; do
+        if pgrep -x wofi >/dev/null; then
+            sleep 0.2 # Tiny buffer to ensure Wofi's input engine is ready
+            wtype -k Down
+            break
+        fi
+        sleep 0.05
+    done
+) &
 choice=$( (echo "[ Clipboard History ]"; gawk <<< "$cliphist_list" "$prog") | wofi -I --dmenu --cache-file=/dev/null -Dimage_size=200 -Dynamic_lines=true)
+
 
 # Stop execution if nothing selected in wofi menu
 [ -z "$choice" ] && exit 1
