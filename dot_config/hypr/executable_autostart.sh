@@ -122,7 +122,6 @@ complex_startup() {
     hypr_exec_ws "10" "flatpak run io.github.mpc_qt.mpc-qt"
 }
 
-clear
 print_centered() {
     local art="$1"
     # Get terminal dimensions, fallback to 80x24 if tput fails
@@ -136,7 +135,7 @@ print_centered() {
     while IFS= read -r line; do
         # Count characters (handles the braille unicode chars correctly)
         (( ${#line} > max_width )) && max_width=${#line}
-        (( art_lines++ ))
+        (( ++art_lines )) # Changed to pre-increment to prevent set -e termination
     done <<< "$art"
 
     # Calculate padding
@@ -199,6 +198,7 @@ ASCII_ART_END=$(cat << "EOF"
 EOF
 )
 print_centered "$ASCII_ART_START"
+sleep 0.5
 echo "Log file: $BG_LOG"
 echo
 
