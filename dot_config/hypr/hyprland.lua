@@ -505,6 +505,16 @@ hl.window_rule({
     float = true,
 })
 
+-- vivaldi popup
+hl.window_rule({
+    name = "Vivaldi open file popup",
+    match = {
+        class = "vivaldi-stable",
+        title = "Open File",
+    },
+    float = true,
+    center = true
+})
 -- Generic KeePassXC window, but NOT the browser access dialog
 hl.window_rule({
     name  = "Keepassxc",
