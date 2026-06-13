@@ -107,6 +107,7 @@ medium_startup() {
     hypr_exec_ws "11" "LocalSend.AppImage"
     hypr_exec_ws "11" "thunar"
     run_once_pattern "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
+    run_once_pattern "deviceMonitor.sh" "$HOME/local/bin/deviceMonitor.sh"
 }
 
 complex_startup() {
