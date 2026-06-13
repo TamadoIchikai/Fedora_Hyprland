@@ -571,3 +571,22 @@ hl.window_rule({
     },
     float = true
 })
+
+-- vscode stuffs
+hl.window_rule({
+    name = "VSCode - Open folder",
+    match = {
+        class = "code",
+        title = "Open Folder"
+    },
+    float = true
+})
+
+hl.window_rule({
+    name = "VSCode - Open file",
+    match = {
+        class = "code",
+        title = "Open File"
+    },
+    float = true
+})
