@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BG_LOG="${BG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/autostart.log}"
-AUDIO_OS_START="${HOME}/.local/share/sounds/OS_Startup.mp3"
+AUDIO_OS_START="$HOME/.local/share/sounds/OS_Startup.mp3"
 AUDIO_PLAYER="paplay --volume=65536"
 TIMER_FAST_TO_MEDIUM="${TIMER_FAST_TO_MEDIUM:-3}"
 TIMER_FAST_TO_COMPLEX="${TIMER_FAST_TO_COMPLEX:-5}"
@@ -108,8 +108,8 @@ medium_startup() {
     hypr_exec_ws "11" "blueman-manager"
     hypr_exec_ws "11" "LocalSend.AppImage"
     hypr_exec_ws "11" "thunar"
-    run_once_pattern "move-on-unfocus.sh" "${HOME}/.config/waybar/scripts/move-on-unfocus.sh"
-    run_once_pattern "deviceMonitor.sh" "${HOME}/.local/bin/deviceMonitor.sh"
+    run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
+    run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
 }
 
 complex_startup() {

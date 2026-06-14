@@ -95,8 +95,9 @@ run_step "VSCode" "apps_vscode.sh"
 run_step "Mailspring" "apps_mailspring.sh"
 run_step "OpenTabletDriver" "apps_opentablet.sh"
 run_step "AppImages such as Obsidian, Sioyek and LocalSend" "apps_AppImages.sh --install all"
-run_step "Zotero (Tarball)" "apps_zotero.sh"
-run_step "Vivaldi (Native)" "apps_vivaldi.sh"
+run_step "Vivaldi" "apps_vivaldi.sh"
+run_step "Anki" "apps_Anki.sh"
+run_step "Zotero" "apps_zotero.sh"
 run_step "Extra packages and unified dark theme" "apps_extra.sh"
 
 TOTAL_TASKS=${#TASK_SCRIPTS[@]}
