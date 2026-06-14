@@ -95,7 +95,7 @@ fast_startup() {
     run_once_name "hyprsunset" hyprsunset
     run_once_pattern "wl-paste --type text" wl-paste --type text --watch cliphist store
     run_once_pattern "wl-paste --type image" wl-paste --type image --watch cliphist store
-    run_once_name "swaybg" swaybg -i "$HOME/.config/screenshots/background.png" -m fill
+    run_once_name "swaybg" swaybg -i "${HOME}/.config/screenshots/background.png" -m fill
     run_once_pattern "polkit-mate" /usr/libexec/polkit-mate-authentication-agent-1
 }
 
@@ -107,8 +107,8 @@ medium_startup() {
     hypr_exec_ws "11" "blueman-manager"
     hypr_exec_ws "11" "LocalSend.AppImage"
     hypr_exec_ws "11" "thunar"
-    run_once_pattern "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
-    run_once_pattern "deviceMonitor.sh" "$HOME/local/bin/deviceMonitor.sh"
+    run_once_pattern "move-on-unfocus.sh" "${HOME}/.config/waybar/scripts/move-on-unfocus.sh"
+    run_once_pattern "deviceMonitor.sh" "${HOME}/.local/bin/deviceMonitor.sh"
 }
 
 complex_startup() {

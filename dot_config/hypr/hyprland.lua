@@ -68,7 +68,7 @@ local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 ---- AUTOSTART ----
 -------------------
 
-local autostart_wrapper = "$HOME/.config/hypr/autostart-wrapper.sh"
+local autostart_wrapper = "$HOME/.local/bin/autostart-wrapper.sh"
 
 hl.on("hyprland.start", function()
     local cmd = string.format([=[
