@@ -30,7 +30,7 @@ shift
 
 # ---- DELETE HELPER FUNCTION ----
 select_app() {
-  mapfile -t APPS < <(find "$APP_DIR" -maxdepth 1 -type f -iname "*.AppImage" -printf "%f\n" | sort)
+  mapfile -t APPS < <(find -L "$APP_DIR" -maxdepth 1 -type f -iname "*.AppImage" -printf "%f\n" | sort)
 
   if ((${#APPS[@]} == 0)); then
     echo "No AppImages found in $APP_DIR" >&2
@@ -38,6 +38,7 @@ select_app() {
   fi
 
   if $HAS_ZENITY; then
+    # GTK warnings are explicitly NOT silenced here
     zenity --list \
       --title="Select AppImage to remove" \
       --column="AppImage" \
@@ -89,13 +90,16 @@ case "$MODE" in
       exit 1
     fi
 
-    APP_NAME="$(basename -- "$APPIMAGE_PATH")"
-    APP_NAME="${APP_NAME%.*}"
+    APP_NAME_ORIG="$(basename -- "$APPIMAGE_PATH")"
+    APP_NAME_ORIG="${APP_NAME_ORIG%.*}"
+    
+    # Enforce lowercase for file saving
+    APP_NAME_LOWER="${APP_NAME_ORIG,,}"
 
-    APPIMAGE_DEST="$APP_DIR/$APP_NAME.AppImage"
-    DESKTOP_FILE="$DESKTOP_DIR/$APP_NAME.desktop"
+    APPIMAGE_DEST="$APP_DIR/$APP_NAME_LOWER.AppImage"
+    DESKTOP_FILE="$DESKTOP_DIR/$APP_NAME_LOWER.desktop"
 
-    echo "Processing: $APP_NAME"
+    echo "Processing: $APP_NAME_ORIG (Saving as $APP_NAME_LOWER)"
 
     # Copy & Permissions
     cp -f -- "$APPIMAGE_PATH" "$APPIMAGE_DEST"
@@ -126,7 +130,7 @@ case "$MODE" in
 
         if [[ -n "${ICON_PATH:-}" && -f "$ICON_PATH" ]]; then
           EXT="${ICON_PATH##*.}"
-          ICON_DEST="$ICON_DIR/$APP_NAME.$EXT"
+          ICON_DEST="$ICON_DIR/$APP_NAME_LOWER.$EXT"
           cp -f -- "$ICON_PATH" "$ICON_DEST"
           echo "Icon extracted: $ICON_DEST"
         fi
@@ -136,7 +140,7 @@ case "$MODE" in
     } || true
 
     if [[ -z "$ICON_DEST" ]]; then
-      ICON_DEST="$ICON_DIR/$APP_NAME.png"
+      ICON_DEST="$ICON_DIR/$APP_NAME_LOWER.png"
       if [[ -f /usr/share/pixmaps/gnome-application-x-executable.png ]]; then
         cp -f -- /usr/share/pixmaps/gnome-application-x-executable.png "$ICON_DEST" || true
         echo "No icon found in AppImage; using fallback: $ICON_DEST"
@@ -149,7 +153,7 @@ case "$MODE" in
     cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
-Name=$APP_NAME
+Name=$APP_NAME_ORIG
 Exec="$APPIMAGE_DEST"
 TryExec=$APPIMAGE_DEST
 Icon=$ICON_DEST
@@ -164,14 +168,14 @@ EOF
       update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
     fi
 
-    MSG="$APP_NAME installed successfully"
+    MSG="$APP_NAME_ORIG installed successfully"
     echo "$MSG"
     echo "AppImage: $APPIMAGE_DEST"
     echo "Desktop file: $DESKTOP_FILE"
     echo "Icon: $ICON_DEST"
 
     if $HAS_NOTIFY; then
-      notify-send "AppImage Installed" "$APP_NAME is ready in your launcher" || true
+      notify-send "AppImage Installed" "$APP_NAME_ORIG is ready in your launcher" || true
     fi
     ;;
 
@@ -189,70 +193,88 @@ EOF
     fi
 
     BASENAME="$(basename -- "$FILE")"
-    APP_NAME="$BASENAME"
-    APP_NAME="${APP_NAME%.AppImage}"
-    APP_NAME="${APP_NAME%.desktop}"
+    APP_NAME_RAW="$BASENAME"
+    APP_NAME_RAW="${APP_NAME_RAW%.AppImage}"
+    APP_NAME_RAW="${APP_NAME_RAW%.appimage}"
+    APP_NAME_RAW="${APP_NAME_RAW%.desktop}"
 
-    APPIMAGE_PATH="$APP_DIR/$APP_NAME.AppImage"
-    DESKTOP_FILE="$DESKTOP_DIR/$APP_NAME.desktop"
+    # Determine both exact and lowercase variants to ensure thorough cleanup
+    APP_NAME_EXACT="$APP_NAME_RAW"
+    APP_NAME_LOWER="${APP_NAME_RAW,,}"
+
+    TARGET_NAMES=("$APP_NAME_EXACT")
+    if [[ "$APP_NAME_EXACT" != "$APP_NAME_LOWER" ]]; then
+      TARGET_NAMES+=("$APP_NAME_LOWER")
+    fi
 
     REMOVED=false
-    DESKTOP_ERROR=false
 
-    # Attempt to remove AppImage
-    if [[ -f "$APPIMAGE_PATH" ]]; then
-      if rm -- "$APPIMAGE_PATH"; then
-        echo "Removed AppImage: $APPIMAGE_PATH"
-        REMOVED=true
-      else
-        echo "Warning: Failed to remove AppImage: $APPIMAGE_PATH" >&2
-      fi
-    fi
+    for N in "${TARGET_NAMES[@]}"; do
+      APPIMAGE_PATH="$APP_DIR/$N.AppImage"
+      DESKTOP_FILE="$DESKTOP_DIR/$N.desktop"
 
-    # Attempt to remove Desktop file (Throws Error if fails)
-    if [[ -f "$DESKTOP_FILE" ]]; then
-      if rm -- "$DESKTOP_FILE"; then
-        echo "Removed desktop file: $DESKTOP_FILE"
-        REMOVED=true
-      else
-        echo "Error: Failed to remove desktop file: $DESKTOP_FILE" >&2
-        DESKTOP_ERROR=true
+      # 1. Attempt to remove Desktop file FIRST
+      if [[ -f "$DESKTOP_FILE" || -L "$DESKTOP_FILE" ]]; then
+        if rm -- "$DESKTOP_FILE"; then
+          echo "Removed desktop file: $DESKTOP_FILE"
+          REMOVED=true
+        else
+          MSG="Failed to remove .desktop file: $DESKTOP_FILE"
+          echo "Error: $MSG" >&2
+          if $HAS_NOTIFY; then
+            notify-send --urgency=critical "AppImage Removal Error" "$MSG" || true
+          fi
+          exit 1
+        fi
       fi
-    fi
 
-    # Attempt to remove Icons
-    shopt -s nullglob
-    for icon in "$ICON_DIR/$APP_NAME".*; do
-      [[ -f "$icon" ]] || continue
-      if rm -- "$icon"; then
-        echo "Removed icon: $icon"
-        REMOVED=true
-      else
-        echo "Warning: Failed to remove icon: $icon" >&2
+      # 2. Attempt to remove AppImage SECOND (Only executes if Desktop removal succeeded or didn't exist)
+      if [[ -f "$APPIMAGE_PATH" || -L "$APPIMAGE_PATH" ]]; then
+        if rm -- "$APPIMAGE_PATH"; then
+          echo "Removed AppImage: $APPIMAGE_PATH"
+          REMOVED=true
+        else
+          MSG="Failed to remove AppImage binary: $APPIMAGE_PATH"
+          echo "Error: $MSG" >&2
+          if $HAS_NOTIFY; then
+            notify-send --urgency=critical "AppImage Removal Error" "$MSG" || true
+          fi
+          exit 1
+        fi
       fi
+
+      # 3. Attempt to remove Icons LAST (Only executes if previous steps succeeded)
+      shopt -s nullglob
+      for icon in "$ICON_DIR/$N".*; do
+        [[ -f "$icon" || -L "$icon" ]] || continue
+        if rm -- "$icon"; then
+          echo "Removed icon: $icon"
+          REMOVED=true
+        else
+          MSG="Failed to remove icon file: $icon"
+          echo "Error: $MSG" >&2
+          if $HAS_NOTIFY; then
+            notify-send --urgency=critical "AppImage Removal Error" "$MSG" || true
+          fi
+          exit 1
+        fi
+      done
+      shopt -u nullglob
     done
-    shopt -u nullglob
 
     if command -v update-desktop-database >/dev/null 2>&1; then
       update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
     fi
 
-    # Final Status Output
-    if $DESKTOP_ERROR; then
-      MSG="$APP_NAME removal incomplete (Failed to remove .desktop file)"
-      echo "$MSG" >&2
-      if $HAS_NOTIFY; then
-        notify-send --urgency=critical "AppImage Removal Error" "$MSG" || true
-      fi
-      exit 1
-    elif $REMOVED; then
-      MSG="$APP_NAME removed successfully"
+    # Final Success Output
+    if $REMOVED; then
+      MSG="$APP_NAME_RAW removed successfully"
       echo "$MSG"
       if $HAS_NOTIFY; then
         notify-send "AppImage Removed" "$MSG" || true
       fi
     else
-      MSG="Nothing found to remove for $APP_NAME"
+      MSG="Nothing found to remove for $APP_NAME_RAW"
       echo "$MSG"
       if $HAS_NOTIFY; then
         notify-send "AppImage Removal" "$MSG" || true
