@@ -9,7 +9,7 @@ GEOM_H="0.60"
 BG_LOG="${XDG_CACHE_HOME:-$HOME/.cache}/hypr-autostart.log"
 
 TIMER_FAST_TO_MEDIUM=3
-TIMER_FAST_TO_COMPLEX=5
+TIMER_FAST_TO_COMPLEX=6
 AUTO_CLOSE_AFTER=5
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

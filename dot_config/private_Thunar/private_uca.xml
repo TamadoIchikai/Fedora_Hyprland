@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
 <action>
+	<icon>cryptfolder-open-light</icon>
+	<name>Open Directory as Admin</name>
+	<submenu></submenu>
+	<unique-id>1781446936749398-1</unique-id>
+	<command>thunar admin://%f</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
 	<icon>utilities-terminal</icon>
 	<name>Open Terminal Here</name>
 	<submenu></submenu>
@@ -16,7 +27,7 @@
 	<name>Open Code here</name>
 	<submenu></submenu>
 	<unique-id>1781276348784933-1</unique-id>
-	<command>code . %d</command>
+	<command>code -n %f</command>
 	<description>open IDE at current directory</description>
 	<range>*</range>
 	<patterns>*</patterns>
