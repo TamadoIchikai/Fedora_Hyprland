@@ -16,6 +16,42 @@ xdg-desktop-portal xdg-desktop-portal-gtk
 # Ensure the GVfs daemon is not masked (common issue in minimal installs)
 systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
 
+# Define directories and files
+XFCE_CONFIG_DIR="$HOME/.config/xfce4"
+HELPERS_DIR="$HOME/.local/share/xfce4/helpers"
+HELPERS_RC="$XFCE_CONFIG_DIR/helpers.rc"
+DESKTOP_FILE="$HELPERS_DIR/foot.desktop"
+
+echo "Creating XFCE config directory..."
+mkdir -p "$XFCE_CONFIG_DIR"
+
+echo "Generating helpers.rc configuration..."
+cat << 'EOF' > "$HELPERS_RC"
+TerminalEmulator=foot
+TerminalEmulatorDismissed=true
+EOF
+
+echo "Creating XFCE helpers directory..."
+mkdir -p "$HELPERS_DIR"
+
+echo "Generating foot.desktop helper file..."
+cat << 'EOF' > "$DESKTOP_FILE"
+[Desktop Entry]
+Version=1.0
+Icon=foot
+Type=X-XFCE-Helper
+Name=Foot
+StartupNotify=false
+X-XFCE-Binaries=foot;
+X-XFCE-Category=TerminalEmulator
+X-XFCE-Commands=foot;
+X-XFCE-CommandsWithParameter=foot -e "%s";
+EOF
+
+echo "Creating xterm symlink to foot (you may be prompted for your password)..."
+# Using -sf to force overwrite if it already exists
+sudo ln -sf $(which foot) /usr/local/bin/xterm
+
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
@@ -55,10 +91,10 @@ xdg-mime default code.desktop application/xml
 
 xdg-mime default thunar.desktop inode/directory
 
-xdg-mime default vivaldi-stable.desktop x-scheme-handler/http
-xdg-mime default vivaldi-stable.desktop x-scheme-handler/https
-xdg-mime default vivaldi-stable.desktop text/html
-xdg-mime default vivaldi-stable.desktop application/xhtml+xml
+xdg-mime default zen.desktop x-scheme-handler/http
+xdg-mime default zen.desktop x-scheme-handler/https
+xdg-mime default zen.desktop text/html
+xdg-mime default zen.desktop application/xhtml+xml
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime

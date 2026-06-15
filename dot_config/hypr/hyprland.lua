@@ -52,7 +52,7 @@ hl.env("EXTERNAL_SCALE", "1")
 local terminal      = "foot"
 local fileManager   = "thunar -w"
 local menu          = "fuzzel-scale.sh"
-local browser       = "vivaldi-stable"
+local browser       = "zen"
 local browser_second= "librewolf --new-window &"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
 local clipBoard     = "wofi-cliphist.sh"
@@ -235,7 +235,7 @@ hl.device({
 
 hl.device({
     name        = "compx-2.4g-receiver-mouse",
-    sensitivity = 0,
+    sensitivity = -0.1,
 })
 
 ---------------------
@@ -247,7 +247,6 @@ local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
-hl.bind(mainMod .. " + space",      hl.dsp.exec_cmd("fcitx5-remote -t"))
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E",          hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + O",          hl.dsp.exec_cmd(menu))
