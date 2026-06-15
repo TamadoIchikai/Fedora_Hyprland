@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sudo dnf config-manager addrepo --from-repofile=https://repo.librewolf.net/librewolf.repo
-sudo dnf install -y lua-lgi xournalpp keepassxc librewolf flatpak
+sudo dnf install -y lua-lgi xournalpp keepassxc flatpak
 
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 

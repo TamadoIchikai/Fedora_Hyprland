@@ -10,6 +10,7 @@ APPS=(
     "localsend/localsend|linux-x86-64\.AppImage$|LocalSend|$HOME/Downloads/Systems/LocalSend"
     "obsidianmd/obsidian-releases|AppImage$|Obsidian|$HOME/Downloads/Studies/Obsidian"
     "ahrm/sioyek|sioyek-release-linux\.zip$|Sioyek|$HOME/Downloads/Studies/Sioyek"
+    "imputnet/helium-linux|x86_64\.AppImage$|Helium|$HOME/Downloads/Systems/Helium"
 )
 
 # Define Desktop configurations strictly matching the APPS array indices above.
@@ -23,6 +24,9 @@ DESKTOP_FILES=(
     
     # 2: Sioyek
     "PDF viewer designed for research papers|%F|Office;Utility;Application;|pdf;viewer;|application/pdf;"
+    
+    # 3: Helium
+    "Private, fast, and honest web browser|%u|Network;WebBrowser;|browser;helium;web;privacy;|text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;"
 )
 
 # Track if we need to refresh the desktop database at the end

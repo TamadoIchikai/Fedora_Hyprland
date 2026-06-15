@@ -53,7 +53,7 @@ local terminal      = "foot"
 local fileManager   = "thunar -w"
 local menu          = "fuzzel-scale.sh"
 local browser       = "zen"
-local browser_second= "librewolf --new-window &"
+local browser_second= "Helium.AppImage"
 local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
 local clipBoard     = "wofi-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
