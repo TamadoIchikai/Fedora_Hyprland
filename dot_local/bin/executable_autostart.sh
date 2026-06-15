@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BG_LOG="${BG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/autostart.log}"
-AUDIO_OS_START="$HOME/.local/share/sounds/OS_Startup.mp3"
+AUDIO_OS_START="${HOME}/.local/share/sounds/OS_Startup.mp3"
 AUDIO_PLAYER="paplay --volume=65536"
 TIMER_FAST_TO_MEDIUM="${TIMER_FAST_TO_MEDIUM:-3}"
 TIMER_FAST_TO_COMPLEX="${TIMER_FAST_TO_COMPLEX:-5}"
@@ -120,7 +120,7 @@ complex_startup() {
     start_user_service "opentabletdriver.service"
 
     hypr_exec_ws "1" "Obsidian.AppImage"
-    hypr_exec_ws "2" "vivaldi-stable"
+    hypr_exec_ws "2" "zen"
     hypr_exec_ws "3" "mailspring --background --password-store=gnome-libsecret"
     hypr_exec_ws "10" "flatpak run io.github.mpc_qt.mpc-qt"
 }
