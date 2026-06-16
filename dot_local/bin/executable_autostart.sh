@@ -119,7 +119,7 @@ complex_startup() {
 
     hypr_exec_ws "1" "Obsidian.AppImage"
     hypr_exec_ws "2" "zen"
-    hypr_exec_ws "3" "mailspring --background --password-store=gnome-libsecret"
+    hypr_exec_ws "9" "mailspring --password-store=gnome-libsecret"
     hypr_exec_ws "10" "flatpak run io.github.mpc_qt.mpc-qt"
 
     # 2. Handle Waybar detection ONLY for KeePassXC

@@ -598,3 +598,14 @@ hl.window_rule({
     },
     float = true
 })
+
+-- Seahorse (keyring manager GUI)
+hl.window_rule({
+    name = "Seahorse GUI",
+    match = {
+        class = "org.gnome.seahorse.Application",
+        title = "Passwords and Keys"
+    },
+    float = true,
+    center = true
+})
