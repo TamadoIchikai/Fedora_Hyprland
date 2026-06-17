@@ -63,14 +63,16 @@ local displayPicker = "hyprmode"
 local appSwitcher   = "hyprAppSwitcher.sh"
 local passwordManager = "keepassxc"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
+local emailClient = [[sh -c "if hyprctl clients | grep -iq betterbird; then hyprctl dispatch 'hl.dsp.focus({ window = \"class:.*[Bb]etterbird.*\" })'; else flatpak run eu.betterbird.Betterbird -mail; fi"]]
 
--------------------
+
 ---- AUTOSTART ----
 -------------------
 
 local autostart_wrapper = "$HOME/.local/bin/autostart-wrapper.sh"
-
 hl.on("hyprland.start", function()
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    hl.exec_cmd("systemctl --user start hyprland-session.target")
     local cmd = string.format([=[
 bash -lc '
 sleep 0.5
@@ -128,7 +130,7 @@ hl.config({
         },
 
         blur = {
-            enabled  = true,
+            enabled  = false,
             size     = 3,
             passes   = 1,
             vibrancy = 0.1696,
@@ -136,7 +138,7 @@ hl.config({
     },
 
     animations = {
-        enabled = false,
+        enabled = true,
     },
 })
 
@@ -149,6 +151,7 @@ hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1}
 hl.curve("linear",         { type = "bezier", points = { {0, 0},      {1, 1}      } })
 hl.curve("almostLinear",   { type = "bezier", points = { {0.5, 0.5},  {0.75, 1.0} } })
 hl.curve("quick",          { type = "bezier", points = { {0.2, 0.8},  {0.2, 1}    } })
+hl.curve("ultraSlow",      { type = "bezier", points = { {0.5, 0.5},  {0.5, 0.5}  } })
 
 -- Original config had animations:enabled = false. These definitions are preserved
 -- so they are ready if you later switch animations.enabled back to true.
@@ -249,6 +252,7 @@ local mainAlt   = mainMod .. " + " .. secondMod
 -- Applications
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E",          hl.dsp.exec_cmd(fileManager))
+hl.bind(mainAlt .. " + E",          hl.dsp.exec_cmd(emailClient))
 hl.bind(mainMod .. " + O",          hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + B",          hl.dsp.exec_cmd(browser))
 hl.bind(mainAlt .. " + B",          hl.dsp.exec_cmd(browser_second))
@@ -373,7 +377,7 @@ hl.window_rule({
     match = { class = "zenity", title = "Devices" },
     size  = {500, 400},
     move  = {1360, 640},
-    float = true,
+    float = true
 })
 
 -- Mailspring
@@ -391,7 +395,7 @@ hl.window_rule({
     match = { class = "localsend_app", title = "LocalSend" },
     size  = {558, 578},
     move  = {1340, 462},
-    float = true,
+    float = true
 })
 
 hl.window_rule({
@@ -399,7 +403,7 @@ hl.window_rule({
     match = { class = "localsend_app", title = "Open File" },
     size  = {731, 578},
     move  = {1200, 462},
-    float = true,
+    float = true
 })
 
 -- Zenity choose directory
@@ -415,7 +419,7 @@ hl.window_rule({
 hl.window_rule({
     name  = "swayimg-floating",
     match = { class = "swayimg" },
-    float = true,
+    float = true
 })
 
 -- Xournal++ bookmark menu
@@ -423,7 +427,7 @@ hl.window_rule({
     name  = "xournalpp bookmark - new",
     match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - New bookmark" },
     move  = {"cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)"},
-    float = true,
+    float = true
 })
 
 hl.window_rule({
@@ -431,7 +435,7 @@ hl.window_rule({
     match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - Bookmarks Manager" },
     size  = {477,326},
     move  = {"cursor_x-(window_w*0.2)", "cursor_y-(window_h*0.5)"},
-    float = true,
+    float = true
 })
 -- Ignore maximize requests from floating windows.
 hl.window_rule({
@@ -609,3 +613,11 @@ hl.window_rule({
     float = true,
     center = true
 })
+
+-- BetterBird
+hl.window_rule({
+    name = "BetterBird",
+    match = { class = "eu.betterbird.Betterbird" },
+    workspace = "9 silent",
+})
+

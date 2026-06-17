@@ -8,7 +8,8 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 flatpak install -y flathub \
   com.obsproject.Studio \
   io.github.mpc_qt.mpc-qt \
-  io.missioncenter.MissionCenter
+  io.missioncenter.MissionCenter \
+  eu.betterbird.Betterbird
 
 sudo dnf install -y \
   libadwaita \
@@ -55,6 +56,11 @@ flatpak override --user \
   --filesystem=xdg-config/gtk-3.0:ro \
   --filesystem=xdg-config/gtk-4.0:ro \
   --filesystem=xdg-data/icons:ro \
-  --filesystem=~/.icons:ro
+  --filesystem=~/.icons:ro \
 
-
+flatpak override --user \
+  --filesystem=/mnt/sda2/BetterBird/ \
+  --filesystem=~/Downloads/tmp/ \
+  --env=GTK_USE_PORTAL=1 \
+  eu.betterbird.Betterbird 
+ 
