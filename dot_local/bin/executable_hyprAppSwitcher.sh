@@ -37,11 +37,11 @@ jq -r \
     # Exclude workspace 11
     | map(select(.workspace.id != 11))
 
-    # Exclude apps from current workspace,
-    # except the currently focused window
+    # 1. Exclude the currently focused window completely
+    # 2. Exclude other background apps on the current workspace
     | map(select(
-        (.workspace.id != $current_ws_id)
-        or (.address == $current_addr)
+        .address != $current_addr
+        and .workspace.id != $current_ws_id
     ))
 
     # One item per app class
@@ -58,22 +58,16 @@ jq -r \
         .workspace.id,
         .class,
         .title,
-        .address,
-        if .address == $current_addr then "CURRENT" else "" end
+        .address
     ]
     | @tsv
-' <<< "$clients_json" | while IFS=$'\t' read -r ws_id class title addr marker; do
+' <<< "$clients_json" | while IFS=$'\t' read -r ws_id class title addr; do
     title="${title//$'\t'/ }"
     title="${title//$'\n'/ }"
 
-    if [[ "$marker" == "CURRENT" ]]; then
-        label="$(printf '%-4s %s  %s' "$ws_id" "$class" "$title")"
-    else
-        label="$(printf '%-4s %s  %s' "$ws_id" "$class" "$title")"
-    fi
+    label="$(printf '%-4s %s  %s' "$ws_id" "$class" "$title")"
 
     # Simple Fuzzel dmenu icon hint.
-    # No .desktop parsing, no icon cache, no fallback list.
     printf '%s\0icon\x1f%s\n' "$label" "$class" >> "$menu_file"
     printf '%s\n' "$addr" >> "$addr_file"
 done
