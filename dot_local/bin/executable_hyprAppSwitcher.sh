@@ -67,8 +67,29 @@ jq -r \
 
     label="$(printf '%-4s %s  %s' "$ws_id" "$class" "$title")"
 
-    # Simple Fuzzel dmenu icon hint.
-    printf '%s\0icon\x1f%s\n' "$label" "$class" >> "$menu_file"
+    # --- ICON OVERRIDE DICTIONARY ---
+    # Default to using the window class as the icon name
+    icon_hint="$class"
+    
+    # Override specific mismatched classes
+    # Ensure you use lowercase for the match string
+    case "${class,,}" in
+        *zen*)
+            # Fuzzel accepts absolute file paths. 
+            # If this path doesn't match your system exactly, update it to point to your Zen icon.
+            icon_hint="/opt/zen/browser/chrome/icons/default/default128.png"
+            
+            # Alternatively, if your system theme has a named icon for Zen, you can just use its name:
+            # icon_hint="zen-browser"
+            ;;
+        *code-oss*)
+            icon_hint="visual-studio-code" # Example of how to add more apps later
+            ;;
+    esac
+    # ---------------------------------
+
+    # Pass the corrected icon_hint to Fuzzel
+    printf '%s\0icon\x1f%s\n' "$label" "$icon_hint" >> "$menu_file"
     printf '%s\n' "$addr" >> "$addr_file"
 done
 
