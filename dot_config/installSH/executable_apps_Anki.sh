@@ -62,6 +62,10 @@ fi
 echo "📦 Extracting to $INSTALL_DIR..."
 tar --zstd -xf "$TMP_DOWNLOAD_PATH" -C "$INSTALL_DIR" --strip-components=1
 
+# 4.5 Fix Python version requirement in pyproject.toml
+echo "🔧 Patching pyproject.toml requires-python to >=3.10..."
+sed -i 's/>=3.9/>=3.10/g' "$INSTALL_DIR/pyproject.toml"
+
 # 5. Patch Install & Uninstall Scripts for Local User installation
 echo "🔧 Patching Anki scripts to use ~/.local instead of /usr/local..."
 sed -i "s|PREFIX=/usr/local|PREFIX=$HOME/.local|g" "$INSTALL_DIR/install.sh" "$INSTALL_DIR/uninstall.sh"
