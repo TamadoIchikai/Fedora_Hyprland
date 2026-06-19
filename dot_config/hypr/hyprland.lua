@@ -59,7 +59,8 @@ local clipBoard     = "wofi-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
 local colorPicker   = "$HOME/.config/hypr/scripts/hyprPicker.sh"
-local displayPicker = "hyprmode"
+local displayPicker = "fuzzel-DisplayMode.sh"
+local displayPicker_HELP = "fuzzel-DisplayMode.sh rescure"
 local appSwitcher   = "hyprAppSwitcher.sh"
 local passwordManager = "keepassxc"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
@@ -261,6 +262,7 @@ hl.bind(mainAlt .. " + G",          hl.dsp.exec_cmd(colorPicker))
 hl.bind(mainMod .. " + V",          hl.dsp.exec_cmd(clipBoard))
 hl.bind(mainAlt .. " + P",          hl.dsp.exec_cmd(powermenu))
 hl.bind(mainMod .. " + P",          hl.dsp.exec_cmd(displayPicker))
+hl.bind(mainAlt .. "+ CTRL + P",   hl.dsp.exec_cmd("hyprctl reload"))
 hl.bind(secondMod .. " + O",        hl.dsp.exec_cmd(calculator))
 hl.bind(secondMod .. " + TAB",        hl.dsp.exec_cmd(appSwitcher))
 hl.bind(mainMod .. " + CTRL + X",   hl.dsp.exec_cmd("chezmoi apply"))
