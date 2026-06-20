@@ -1,22 +1,21 @@
--- Converted from hyprland.conf to Hyprland 0.55 Lua config.
--- Source config: /mnt/data/hyprland.conf
--- API reference style: attached hyprland.lua example.
----
 ------------------
 ---- MONITORS ----
 ------------------
 
-local laptop_output   = "eDP-1"
-local external_output = "HDMI-A-1"
+local laptop_output       = "eDP-1"
+local external_output     = "HDMI-A-1"
 
-local laptop_mode     = "1920x1080@60"
-local external_mode   = "1920x1080@60"
+local laptop_mode         = "1920x1080@60.1"
+local external_mode       = "1920x1080@60.0"
 
-local laptop_pos      = "0x0"
-local external_pos    = "auto-right"
+local laptop_pos          = "0x0"
+local external_pos_extend = "1920x0" 
+local external_pos_mirror = "0x0"    
 
-local laptop_scale    = 1
-local external_scale  = 1
+local laptop_scale        = 1
+local external_scale      = 1
+
+local dualMonitorMode     = "external" --laptop/external/extend/mirror
 
 hl.monitor({
     output   = laptop_output,
@@ -28,22 +27,25 @@ hl.monitor({
 hl.monitor({
     output   = external_output,
     mode     = external_mode,
-    position = external_pos,
+    position = external_pos_extend,
     scale    = external_scale,
 })
+
 -------------------------------
 ---- DISPLAY ENV VARIABLES ----
 -------------------------------
 
-hl.env("LAPTOP_OUTPUT", "eDP-1")
-hl.env("EXTERNAL_OUTPUT", "HDMI-A-1")
-hl.env("LAPTOP_MODE", "1920x1080@60.1")
-hl.env("EXTERNAL_MODE", "1920x1080@60.0")
-hl.env("LAPTOP_POS", "0x0")
-hl.env("EXTERNAL_POS_EXTEND", "1920x0")
-hl.env("EXTERNAL_POS_MIRROR", "0x0")
-hl.env("LAPTOP_SCALE", "1")
-hl.env("EXTERNAL_SCALE", "1")
+hl.env("LAPTOP_OUTPUT", laptop_output)
+hl.env("EXTERNAL_OUTPUT", external_output)
+hl.env("LAPTOP_MODE", laptop_mode)
+hl.env("EXTERNAL_MODE", external_mode)
+hl.env("LAPTOP_POS", laptop_pos)
+hl.env("EXTERNAL_POS_EXTEND", external_pos_extend)
+hl.env("EXTERNAL_POS_MIRROR", external_pos_mirror)
+
+-- hl.env requires strings, so we cast the number values using tostring()
+hl.env("LAPTOP_SCALE", tostring(laptop_scale))
+hl.env("EXTERNAL_SCALE", tostring(external_scale))
 
 ---------------------
 ---- MY PROGRAMS ----
@@ -59,14 +61,13 @@ local clipBoard     = "wofi-cliphist.sh"
 local powermenu     = "fuzzel-powermenu.sh"
 local calculator    = "qalc_floating.sh"
 local colorPicker   = "$HOME/.config/hypr/scripts/hyprPicker.sh"
-local displayPicker = "fuzzel-DisplayMode.sh"
-local displayPicker_HELP = "fuzzel-DisplayMode.sh rescure"
+local displayPicker = "fuzzel-DisplayMode.sh --fuzzel"
 local appSwitcher   = "hyprAppSwitcher.sh"
 local passwordManager = "keepassxc"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 local emailClient = [[sh -c "if hyprctl clients | grep -iq betterbird; then hyprctl dispatch 'hl.dsp.focus({ window = \"class:.*[Bb]etterbird.*\" })'; else flatpak run eu.betterbird.Betterbird -mail; fi"]]
 
-
+-------------------
 ---- AUTOSTART ----
 -------------------
 
@@ -74,17 +75,38 @@ local autostart_wrapper = "$HOME/.local/bin/autostart-wrapper.sh"
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("systemctl --user start hyprland-session.target")
+    hl.exec_cmd("systemctl --user start hyprlandMonitor_Watcher.service")
+    
     local cmd = string.format([=[
 bash -lc '
-sleep 0.5
+# 1. Give the Wayland session 1 second to settle
+sleep 1
 
-if hyprctl monitors | grep -q "^Monitor %s "; then
-    hyprctl dispatch "hl.dsp.focus({ monitor = \"%s\" })"
+DISPLAY_SCRIPT="$HOME/.local/bin/fuzzel-DisplayMode.sh"
+
+# 2. Check if the display script exists and is executable
+if [[ -x "$DISPLAY_SCRIPT" ]]; then
+
+    # 3. Check if external monitor is physically connected
+    external_connected=$(hyprctl monitors all -j 2>/dev/null | jq -r ".[] | select(.name == \"%s\") | .name")
+
+    if [[ -n "$external_connected" ]]; then
+        # 4. If connected, execute the display script with the requested mode
+        "$DISPLAY_SCRIPT" --mode "%s" >/dev/null 2>&1
+        
+        # Give the DRM subsystem 1 second to light up the pixels before loading apps
+        sleep 1
+    fi
 fi
 
+# 5. Execute original autostart wrapper replacing the current bash process
 exec %s
 '
-]=], external_output, external_output, autostart_wrapper)
+]=], 
+    external_output,      -- 1: jq select physically connected
+    dualMonitorMode,      -- 2: --mode argument
+    autostart_wrapper     -- 3: exec autostart wrapper
+    )
 
     hl.exec_cmd(cmd)
 end)

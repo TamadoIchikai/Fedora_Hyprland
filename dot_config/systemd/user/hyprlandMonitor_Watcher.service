@@ -1,0 +1,16 @@
+[Unit]
+Description=Hyprland Monitor Hotplug Watchdog
+Documentation=https://wiki.hyprland.org/IPC/
+# Wait for our custom Hyprland target to be active
+BindsTo=hyprland-session.target
+After=hyprland-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/hyprlandMonitor_Watcher.sh
+# If the script crashes, systemd will automatically restart it after 2 seconds
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=hyprland-session.target
