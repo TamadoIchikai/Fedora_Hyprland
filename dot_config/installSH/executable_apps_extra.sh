@@ -9,7 +9,9 @@ flatpak install -y flathub \
   com.obsproject.Studio \
   io.github.mpc_qt.mpc-qt \
   io.missioncenter.MissionCenter \
-  eu.betterbird.Betterbird
+  eu.betterbird.Betterbird \
+  app.zen_browser.zen \
+  com.github.tchx84.Flatseal
 
 sudo dnf install -y \
   libadwaita \
@@ -63,4 +65,8 @@ flatpak override --user \
   --filesystem=~/Downloads/tmp/ \
   --env=GTK_USE_PORTAL=1 \
   eu.betterbird.Betterbird 
- 
+
+flatpak override --user \
+  --filesystem=/mnt/sda2/ \
+  --filesystem=~/Downloads/tmp/ \
+  app.zen_browser.zen 

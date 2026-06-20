@@ -10,10 +10,11 @@ INPUT_INSTALL="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/instal
 
 # ---- OUTPUT TEST BOUNDARIES ----
 # The script will ONLY search for the target folders inside these directories.
-#INIT_OUTPUT_PROFILE="$HOME/.var/app/app.zen_browser.zen/.zen"
-#INIT_OUTPUT_INSTALL="/var/lib/flatpak/app/app.zen_browser.zen/x86_64"
-INIT_OUTPUT_PROFILE="$HOME/.config/${OUTPUT_BROWSER}"
-INIT_OUTPUT_INSTALL="/opt/zen"
+INIT_OUTPUT_PROFILE="$HOME/.var/app/app.zen_browser.zen/.zen"
+INIT_OUTPUT_INSTALL="/var/lib/flatpak/app/app.zen_browser.zen/x86_64"
+#INIT_OUTPUT_PROFILE="$HOME/.config/${OUTPUT_BROWSER}"
+#INIT_OUTPUT_INSTALL="/opt/zen"
+
 # =====================================================================
 # 1. VERIFY INPUT FOLDERS
 # =====================================================================
