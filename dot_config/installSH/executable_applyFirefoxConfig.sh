@@ -6,24 +6,27 @@ INPUT_BROWSER="AA_Zen"
 OUTPUT_BROWSER="zen"
 # ---- INPUT VARIABLES ----
 INPUT_PROFILE="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/profile folder"
+INPUT_PROFILE_FOLDER="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/Default_Linux/uz741yoe.Default (release)"
 INPUT_INSTALL="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/installation folder"
 
 # ---- OUTPUT TEST BOUNDARIES ----
 # The script will ONLY search for the target folders inside these directories.
-INIT_OUTPUT_PROFILE="$HOME/.var/app/app.zen_browser.zen/.zen"
-INIT_OUTPUT_INSTALL="/var/lib/flatpak/app/app.zen_browser.zen/x86_64"
-#INIT_OUTPUT_PROFILE="$HOME/.config/${OUTPUT_BROWSER}"
-#INIT_OUTPUT_INSTALL="/opt/zen"
+INIT_OUTPUT_PROFILE="$HOME/.config/${OUTPUT_BROWSER}"
+INIT_OUTPUT_INSTALL="/opt/zen"
 
 # =====================================================================
 # 1. VERIFY INPUT FOLDERS
 # =====================================================================
 echo "INPUT_PROFILE: $INPUT_PROFILE"
+echo "INPUT_PROFILE_FOLDER: $INPUT_PROFILE_FOLDER"
 echo "INPUT_INSTALL: $INPUT_INSTALL"
 echo ""
 
 if [[ ! -d "$INPUT_PROFILE" ]]; then
     echo "⚠️  WARNING: INPUT_PROFILE directory does not exist!"
+fi
+if [[ ! -d "$INPUT_PROFILE_FOLDER" ]]; then
+    echo "⚠️  WARNING: INPUT_PROFILE_FOLDER directory does not exist!"
 fi
 if [[ ! -d "$INPUT_INSTALL" ]]; then
     echo "⚠️  WARNING: INPUT_INSTALL directory does not exist!"
@@ -36,49 +39,81 @@ if [[ ! "$confirm_inputs" =~ ^[Yy]$ ]]; then
 fi
 
 # =====================================================================
-# 2. SEARCH AND COPY PROFILE (RESTRICTED TO INIT_OUTPUT_PROFILE)
+# 2. FULL PROFILE FOLDER COPY (NEW)
 # =====================================================================
-echo ""
-echo "🔍 Searching for actual Profile inside $INIT_OUTPUT_PROFILE..."
+SKIP_PROFILE_FILES=false
 
-OUTPUT_PROFILE=""
-if [[ -d "$INIT_OUTPUT_PROFILE" ]]; then
-    # Look ONLY in the specified test directory for the profile ending in .Default (release)
-    OUTPUT_PROFILE=$(find "$INIT_OUTPUT_PROFILE" -type d -name "*.Default (release)" 2>/dev/null | head -n 1)
+if [[ -d "$INPUT_PROFILE_FOLDER" ]]; then
+    echo ""
+    read -p "INPUT_PROFILE_FOLDER detected, do you want to apply profile folder to .config/${OUTPUT_BROWSER}? [y/N]: " confirm_full_prof
+    
+    if [[ "$confirm_full_prof" =~ ^[Yy]$ ]]; then
+        echo "🚀 Copying entire profile folder..."
+        
+        # Ensure the destination parent directory exists
+        mkdir -p "$INIT_OUTPUT_PROFILE"
+        
+        # Copy the whole folder (including the folder name itself)
+        cp -a "$INPUT_PROFILE_FOLDER" "$INIT_OUTPUT_PROFILE/"
+        
+        echo "✅ Successfully copied $(basename "$INPUT_PROFILE_FOLDER") to $INIT_OUTPUT_PROFILE/"
+        
+        # Flag to skip the next section
+        SKIP_PROFILE_FILES=true
+    else
+        echo "⏭️  Skipping full folder copy. Falling back to individual file sync."
+    fi
 fi
 
-if [[ -n "$OUTPUT_PROFILE" ]]; then
-    echo "✅ Found OUTPUT_PROFILE: $OUTPUT_PROFILE"
-    read -p "Copy profile configs to this directory? [y/N]: " confirm_prof
-    
-    if [[ "$confirm_prof" =~ ^[Yy]$ ]]; then
-        files_to_copy=(
-            "places.sqlite" 
-            "search.json.mozlz4" 
-            "sessionCheckpoints.json" 
-            "storage.sqlite" 
-            "zen-sessions.jsonlz4" 
-            "user.js"
-	    "zen-keyboard-shortcuts.json"
-        )
+# =====================================================================
+# 3. SEARCH AND COPY INDIVIDUAL PROFILE FILES
+# =====================================================================
+if [[ "$SKIP_PROFILE_FILES" == false ]]; then
+    echo ""
+    echo "🔍 Searching for actual Profile inside $INIT_OUTPUT_PROFILE..."
+
+    OUTPUT_PROFILE=""
+    if [[ -d "$INIT_OUTPUT_PROFILE" ]]; then
+        # Look ONLY in the specified test directory for the profile ending in .Default (release)
+        OUTPUT_PROFILE=$(find "$INIT_OUTPUT_PROFILE" -type d -name "*.Default (release)" 2>/dev/null | head -n 1)
+    fi
+
+    if [[ -n "$OUTPUT_PROFILE" ]]; then
+        echo "✅ Found OUTPUT_PROFILE: $OUTPUT_PROFILE"
+        read -p "Copy profile configs to this directory? [y/N]: " confirm_prof
         
-        for f in "${files_to_copy[@]}"; do
-            if [[ -f "$INPUT_PROFILE/$f" ]]; then
-                cp "$INPUT_PROFILE/$f" "$OUTPUT_PROFILE/"
-                echo "  -> Copied $f"
-            else
-                echo "  -> ⚠️ Skipped $f (Not found in INPUT_PROFILE)"
-            fi
-        done
+        if [[ "$confirm_prof" =~ ^[Yy]$ ]]; then
+            files_to_copy=(
+                "places.sqlite" 
+                "search.json.mozlz4" 
+                "sessionCheckpoints.json" 
+                "storage.sqlite" 
+                "zen-sessions.jsonlz4" 
+                "user.js"
+                "zen-keyboard-shortcuts.json"
+            )
+            
+            for f in "${files_to_copy[@]}"; do
+                if [[ -f "$INPUT_PROFILE/$f" ]]; then
+                    cp "$INPUT_PROFILE/$f" "$OUTPUT_PROFILE/"
+                    echo "  -> Copied $f"
+                else
+                    echo "  -> ⚠️ Skipped $f (Not found in INPUT_PROFILE)"
+                fi
+            done
+        else
+            echo "⏭️  Skipping OUTPUT_PROFILE copy."
+        fi
     else
-        echo "⏭️  Skipping OUTPUT_PROFILE copy."
+        echo "❌ OUTPUT_PROFILE (*.Default (release)) not found in $INIT_OUTPUT_PROFILE. Skipping."
     fi
 else
-    echo "❌ OUTPUT_PROFILE (*.Default (release)) not found in $INIT_OUTPUT_PROFILE. Skipping."
+    echo ""
+    echo "⏭️  Skipping individual profile files search (Full profile folder was already applied)."
 fi
 
 # =====================================================================
-# 3. SEARCH AND COPY INSTALL (RESTRICTED TO INIT_OUTPUT_INSTALL)
+# 4. SEARCH AND COPY INSTALL (RESTRICTED TO INIT_OUTPUT_INSTALL)
 # =====================================================================
 echo ""
 echo "🔍 Searching for actual Install Dir inside $INIT_OUTPUT_INSTALL..."
