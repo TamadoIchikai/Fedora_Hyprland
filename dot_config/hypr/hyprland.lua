@@ -273,6 +273,8 @@ local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
+hl.bind("SHIFT + backspace",        hl.dsp.exec_cmd("wtype -k 'delete'"))
+
 hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E",          hl.dsp.exec_cmd(fileManager))
 hl.bind(mainAlt .. " + E",          hl.dsp.exec_cmd(emailClient))
