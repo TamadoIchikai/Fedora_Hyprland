@@ -261,7 +261,7 @@ hl.device({
 
 hl.device({
     name        = "compx-2.4g-receiver-mouse",
-    sensitivity = -0.1,
+    sensitivity = -0.15,
 })
 
 ---------------------
