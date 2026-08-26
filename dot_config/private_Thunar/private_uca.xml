@@ -24,10 +24,10 @@
 </action>
 <action>
 	<icon>code-context</icon>
-	<name>Open Code here</name>
+	<name>Open IDE here</name>
 	<submenu></submenu>
 	<unique-id>1781276348784933-1</unique-id>
-	<command>code -n %f</command>
+	<command>zed -n %f</command>
 	<description>open IDE at current directory</description>
 	<range>*</range>
 	<patterns>*</patterns>
