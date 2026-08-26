@@ -46,7 +46,7 @@ trap cleanup EXIT
 # ---- CORE FUNCTIONS ----
 
 print_usage() {
-    echo "Usage: ./apps_AppImages.sh [OPTIONS]"
+    echo "Usage: ./app_AppImage.sh [OPTIONS]"
     echo ""
     echo "Options:"
     echo "  --help                           Show this help message"
@@ -56,31 +56,136 @@ print_usage() {
     echo "  --install --explicit <list>      Install specific comma-separated indices (e.g., \"0, 2\")"
     echo "  --install --explicit-range <rng> Install a range of indices (e.g., \"0, 2\" or \"1, BOT\")"
     echo "  --delete <index>                 Delete the AppImage folder and unregister it from the system"
-    echo "  --update <index|all>             Re-download and replace an existing AppImage"
+    echo "  --update <index|all>             Update one AppImage, or all installed AppImages"
+}
+
+get_github_release_info() {
+    local repo="$1"
+    local pattern="$2"
+    local page=1
+    local response
+    local result
+
+    # The /releases/latest endpoint is not enough here:
+    # GitHub can make the newest release mobile-only (e.g. .apk),
+    # while the newest release containing an AppImage is an older one.
+    while :; do
+        if command -v curl >/dev/null 2>&1; then
+            response=$(curl -fsSL \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${repo}/releases?per_page=100&page=${page}") || return 1
+        else
+            response=$(wget -qO- \
+                --header="Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${repo}/releases?per_page=100&page=${page}") || return 1
+        fi
+
+        # Find the first release (GitHub returns releases newest first)
+        # that contains an asset matching the requested pattern.
+        result=$(jq -r --arg pat "$pattern" '
+            .[]
+            | select(.draft == false and .prerelease == false)
+            | . as $release
+            | $release.assets[]
+            | select(.name | test($pat; "i"))
+            | select(.name | test("arm64"; "i") | not)
+            | [$release.tag_name, .name, .browser_download_url]
+            | @tsv
+        ' <<< "$response" | head -n 1)
+
+        if [[ -n "$result" ]]; then
+            echo "$result"
+            return 0
+        fi
+
+        # No more releases to search.
+        local count
+        count=$(jq 'length' <<< "$response")
+        if [[ "$count" -lt 100 ]]; then
+            break
+        fi
+
+        ((page++))
+    done
+
+    echo "❌ Error: Could not find any release asset matching '$pattern' in $repo" >&2
+    return 1
 }
 
 get_github_url() {
     local repo="$1"
     local pattern="$2"
-    local url
+    local info
 
-    if command -v curl >/dev/null 2>&1; then
-        url=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | \
-              jq -r --arg pat "$pattern" '.assets[] | select(.name | test($pat; "i")) | .browser_download_url' | \
-              grep -v "arm64" | head -n 1)
-    else
-        url=$(wget -qO- "https://api.github.com/repos/${repo}/releases/latest" | \
-              jq -r --arg pat "$pattern" '.assets[] | select(.name | test($pat; "i")) | .browser_download_url' | \
-              grep -v "arm64" | head -n 1)
-    fi
-
-    if [[ -z "$url" || "$url" == "null" ]]; then
-        echo "❌ Error: Could not find asset matching '$pattern' in $repo" >&2
-        return 1
-    fi
-    
-    echo "$url"
+    info=$(get_github_release_info "$repo" "$pattern") || return 1
+    cut -f3 <<< "$info"
 }
+
+get_github_version() {
+    local repo="$1"
+    local pattern="$2"
+    local info
+
+    info=$(get_github_release_info "$repo" "$pattern") || return 1
+    cut -f1 <<< "$info"
+}
+
+normalize_version() {
+    local version="$1"
+
+    # Remove common prefixes such as v and version.
+    version="${version#v}"
+    version="${version#V}"
+    version="${version#version-}"
+    version="${version#Version-}"
+    version="${version#version_}"
+    version="${version#Version_}"
+
+    # Keep only the version-looking part when possible.
+    if [[ "$version" =~ ([0-9]+([.][0-9]+)+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        echo "$version"
+    fi
+}
+
+get_local_appimage_version() {
+    local appimage_path="$1"
+    local filename
+    local version=""
+
+    filename="$(basename "$appimage_path")"
+
+    # First try the filename. This is reliable for apps such as
+    # Obsidian where the AppImage name contains the release version.
+    if [[ "$filename" =~ ([0-9]+([.][0-9]+)+) ]]; then
+        version="${BASH_REMATCH[1]}"
+    fi
+
+    # If the filename has no version, ask AppImage itself.
+    if [[ -z "$version" ]]; then
+        version=$("$appimage_path" --appimage-version 2>/dev/null | head -n 1 || true)
+        version="$(normalize_version "$version")"
+    fi
+
+    [[ -n "$version" ]] && echo "$version"
+}
+
+version_is_newer() {
+    local current
+    local latest
+
+    current="$(normalize_version "$1")"
+    latest="$(normalize_version "$2")"
+
+    [[ -n "$latest" ]] || return 1
+    [[ -z "$current" ]] && return 0
+
+    # sort -V handles normal dotted versions such as 1.10.0 > 1.9.12.
+    [[ "$(printf '%s\n' "$current" "$latest" | sort -V | tail -n 1)" == "$latest" \
+        && "$current" != "$latest" ]]
+}
+
 
 download_file() {
     local url="$1"
@@ -278,61 +383,114 @@ update_app() {
     fi
 
     IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
-    
+
     echo ""
     echo "========================================"
     echo "Updating [$i] $APP_NAME..."
     echo "========================================"
-    
+
     # 1. Verify Local Installation Exists
     if [[ ! -d "$INSTALL_DIR" ]]; then
         echo "⚠️ Skipping $APP_NAME: Not installed (Directory $INSTALL_DIR not found)"
         return 0
     fi
-    
+
     local old_appimage
-    old_appimage=$(find "$INSTALL_DIR" -maxdepth 1 -type f -name "*.AppImage" | head -n 1)
+    old_appimage=$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname "*.AppImage" | head -n 1)
     if [[ -z "$old_appimage" ]]; then
         echo "⚠️ Skipping $APP_NAME: No existing .AppImage found in $INSTALL_DIR"
         return 0
     fi
 
-    # 2. Fetch Latest URL
-    DOWNLOAD_URL=$(get_github_url "$REPO" "$PATTERN" || true)
-    if [[ -z "$DOWNLOAD_URL" ]]; then
-        echo "⚠️ Skipping $APP_NAME: Download URL unavailable."
+    # 2. Get the newest GitHub release that actually contains
+    #    a matching AppImage. This automatically skips releases
+    #    that only contain mobile APKs or other assets.
+    local release_info
+    release_info=$(get_github_release_info "$REPO" "$PATTERN" || true)
+    if [[ -z "$release_info" ]]; then
+        echo "⚠️ Skipping $APP_NAME: No AppImage release available."
         return 1
     fi
+
+    local latest_version latest_filename DOWNLOAD_URL
+    latest_version="$(cut -f1 <<< "$release_info")"
+    latest_filename="$(cut -f2 <<< "$release_info")"
+    DOWNLOAD_URL="$(cut -f3 <<< "$release_info")"
+
+    # 3. Detect installed and GitHub versions.
+    local current_version
+    current_version="$(get_local_appimage_version "$old_appimage" || true)"
+
+    echo "📦 Installed: ${current_version:-unknown}"
+    echo "🌐 Latest:    ${latest_version:-unknown}"
     echo "🔗 Found URL: $DOWNLOAD_URL"
 
-    # 3. Download to /tmp
-    FILENAME=$(basename "$DOWNLOAD_URL")
+    # If we can determine both versions, avoid an unnecessary download.
+    if [[ -n "$current_version" && -n "$latest_version" ]]; then
+        if [[ "$(normalize_version "$current_version")" == "$(normalize_version "$latest_version")" ]]; then
+            echo "✅ $APP_NAME is already up to date."
+            return 0
+        fi
+
+        if ! version_is_newer "$current_version" "$latest_version"; then
+            echo "ℹ️ Installed version is newer than the GitHub AppImage release."
+            echo "   Skipping update."
+            return 0
+        fi
+
+        echo "⬆️ Update available: $current_version → $latest_version"
+    else
+        echo "⚠️ Could not reliably compare versions; downloading the latest AppImage."
+    fi
+
+    # 4. Download to /tmp
+    local FILENAME TMP_DOWNLOAD_PATH
+    FILENAME="$latest_filename"
     TMP_DOWNLOAD_PATH="$TMP_DIR/$FILENAME"
     download_file "$DOWNLOAD_URL" "$TMP_DOWNLOAD_PATH"
 
-    # 4. Remove old AppImage and extract new one
+    # 5. Remove old AppImage(s) and extract new one.
     echo "🗑️ Removing old AppImage file(s)..."
-    find "$INSTALL_DIR" -maxdepth 1 -type f -name "*.AppImage" -exec rm -f {} +
-    
+    find "$INSTALL_DIR" -maxdepth 1 -type f -iname "*.AppImage" -exec rm -f {} +
+
     extract_archive "$TMP_DOWNLOAD_PATH" "$INSTALL_DIR"
 
-    # 5. Bind binary & update Symlinks (in case filename/version changed)
-    APPIMAGE_PATH=$(find "$INSTALL_DIR" -type f -name "*.AppImage" | head -n 1)
+    # 6. Find the new AppImage.
+    local APPIMAGE_PATH
+    APPIMAGE_PATH=$(find "$INSTALL_DIR" -type f -iname "*.AppImage" | head -n 1)
     if [[ -z "$APPIMAGE_PATH" ]]; then
         echo "❌ Error: No AppImage found after extraction in $INSTALL_DIR"
         return 1
     fi
-    
+
     echo "🚀 Making new AppImage executable..."
     chmod +x "$APPIMAGE_PATH"
-    
+
+    # 7. Bind binary & update symlink.
+    local BINARY_DIR APPIMAGE_BIN
     BINARY_DIR="$HOME/.local/bin"
+    mkdir -p "$BINARY_DIR"
     APPIMAGE_BIN="$BINARY_DIR/${APP_NAME}.AppImage"
     echo "🔗 Updating symlink to $APPIMAGE_BIN"
     ln -sf "$APPIMAGE_PATH" "$APPIMAGE_BIN"
-    
-    echo "✅ Update complete for $APP_NAME!"
+
+    # 8. Refresh icon as well, since an application update can change it.
+    local APP_NAME_LOWER ICON_DEST
+    APP_NAME_LOWER="${APP_NAME,,}"
+    echo "🖼️  Updating application icon..."
+    ICON_DEST=$(extract_icon "$APPIMAGE_PATH" "$APP_NAME_LOWER")
+
+    # Keep the existing desktop entry in sync with the new icon.
+    local DESKTOP_FILE
+    DESKTOP_FILE="$HOME/.local/share/applications/${APP_NAME_LOWER}.desktop"
+    if [[ -f "$DESKTOP_FILE" && -n "$ICON_DEST" ]]; then
+        sed -i "s|^Icon=.*|Icon=$ICON_DEST|" "$DESKTOP_FILE"
+        NEEDS_DESKTOP_REFRESH=true
+    fi
+
+    echo "✅ Update complete for $APP_NAME: ${current_version:-unknown} → ${latest_version:-unknown}"
 }
+
 
 delete_app() {
     local i="$1"
@@ -431,7 +589,12 @@ while [[ $# -gt 0 ]]; do
             shift
             if [[ $# -eq 0 ]]; then echo "❌ Missing arguments for --update"; exit 1; fi
             if [[ "$1" == "all" ]]; then
-                for i in "${!APPS[@]}"; do update_app "$i" || true; done
+                echo "🔄 Updating all AppImages..."
+                for i in "${!APPS[@]}"; do
+                    update_app "$i" || true
+                done
+                echo ""
+                echo "✅ Finished processing all AppImages."
             else
                 update_app "$1" || true
             fi
