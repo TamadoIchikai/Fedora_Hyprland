@@ -92,7 +92,6 @@ fast_startup() {
 
     run_once_name "waybar" waybar
     run_once_name "fcitx5" fcitx5 -d
-    run_once_name "hyprsunset" hyprsunset
     run_once_pattern "wl-paste --type text" wl-paste --type text --watch cliphist store
     run_once_pattern "wl-paste --type image" wl-paste --type image --watch cliphist store
     run_once_name "cliphist wipe" cliphist wipe
@@ -120,7 +119,6 @@ complex_startup() {
     hypr_exec_ws "1" "Obsidian.AppImage"
     hypr_exec_ws "2" "zen"
     hypr_exec_ws "9" "flatpak run eu.betterbird.Betterbird -mail"
-    hypr_exec_ws "10" "flatpak run io.github.mpc_qt.mpc-qt"
 
     # 2. Handle Waybar detection ONLY for KeePassXC
     local tray_attempts=0

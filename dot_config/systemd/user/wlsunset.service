@@ -1,0 +1,12 @@
+[Unit]
+Description=Wayland night light
+StartLimitIntervalSec=60
+StartLimitBurst=4
+
+[Service]
+ExecStart=/usr/bin/wlsunset -l 13.8 -L 100.5 -T 6000 -t 4000 -d 3600
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

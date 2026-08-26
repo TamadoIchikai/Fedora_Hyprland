@@ -13,15 +13,15 @@ case "$SELECTION" in
 		systemctl hibernate
 		;;
 	*"Log out")
-		hyprshutdown -t 'Restarting...' --post-cmd 'hyprctl dispatch exit'
+		hyprctl dispatch exit
 		;;
 	*"Reboot")
-		hyprshutdown -t 'Restarting...' --post-cmd 'systemctl reboot'
+		systemctl reboot
 		;;
 	*"Reboot to UEFI")
-		hyprshutdown -t 'Restarting...' --post-cmd 'systemctl reboot --firmware-setup'
+		systemctl reboot --firmware-setup
 		;;
 	*"Shutdown")
-		hyprshutdown -t 'Shutting down...' --post-cmd 'systemctl poweroff'
+		systemctl poweroff
 		;;
 esac
