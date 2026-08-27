@@ -418,7 +418,7 @@ hl.window_rule({
 -- LocalSend
 hl.window_rule({
     name  = "localsend-main-floating",
-    match = { class = "localsend_app", title = "LocalSend" },
+    match = { class = "org.localsend.localsend_app", title = "LocalSend" },
     size  = {558, 578},
     move  = {1340, 462},
     float = true

@@ -27,7 +27,7 @@
 "custom/localsend": {
     "format":"{icon}",
     "format-icons": "",
-    "on-click": "$HOME/.config/waybar/scripts/workspace-toggle.sh localsend_app LocalSend.Appimage"
+    "on-click": "$HOME/.config/waybar/scripts/workspace-toggle.sh org.localsend.localsend_app LocalSend.Appimage"
 },
 
 "group/connection": {

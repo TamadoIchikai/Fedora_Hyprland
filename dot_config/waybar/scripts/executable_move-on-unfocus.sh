@@ -11,8 +11,7 @@ readonly GRACE_PERIOD_SEC=0.5
 readonly APPS=(
   "org.pulseaudio.pavucontrol"
   "blueman-manager"
-  "localsend"
-  "localsend_app"
+  "org.localsend.localsend_app"
 )
 
 declare -A last_interaction_time
