@@ -94,9 +94,9 @@ run_step "CLI Tools" "apps_CLI.sh"
 run_step "Zed editors" "apps_zed.sh"
 run_step "OpenTabletDriver" "apps_opentablet.sh"
 run_step "AppImages such as Obsidian, Sioyek and LocalSend" "apps_AppImages.sh --install all"
-run_step "Anki" "apps_Anki.sh"
 run_step "Zotero" "apps_zotero.sh"
 run_step "Extra packages and unified dark theme" "apps_extra.sh"
+run_step "Cloudflare WARP" "cloudflare.sh"
 run_step "Zen browser" "apps_zen.sh --install"
 
 TOTAL_TASKS=${#TASK_SCRIPTS[@]}
@@ -115,7 +115,7 @@ elif [[ "$EXEC_MODE" == "list-check" ]]; then
   for (( i=0; i<TOTAL_TASKS; i++ )); do
     display_idx=$((i + 1))
     script_path="$SCRIPT_DIR/${TASK_SCRIPTS[$i]}"
-    
+
     if [[ -f "$script_path" ]]; then
       if [[ -x "$script_path" ]]; then
         status="${GREEN}Found & Executable${NC}"
@@ -125,7 +125,7 @@ elif [[ "$EXEC_MODE" == "list-check" ]]; then
     else
       status="${RED_ON_WHITE}NOT FOUND${NC}"
     fi
-    
+
     echo -e "  [${display_idx}/${TOTAL_TASKS}]: ${TASK_DESCS[$i]} -> $status"
   done
   exit 0
@@ -162,7 +162,7 @@ elif [[ "$EXEC_MODE" == "range" ]]; then
   end_val="${arr[1]}"
 
   start_idx=$((start_num - 1))
-  
+
   # Handle "BOT" (bottom) keyword
   if [[ "${end_val^^}" == "BOT" ]]; then
     end_idx=$((TOTAL_TASKS - 1))
@@ -245,4 +245,3 @@ echo -e ""
 echo -e "${CYAN}Finnaly, create resticprofile schedule: ${NC}"
 echo -e ""
 echo -e "${CYAN}-> resticprofile -c /mnt/sda2/Resticprofiles/profiles.yaml -n default schedule --all${NC}"
-
