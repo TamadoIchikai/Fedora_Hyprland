@@ -5,7 +5,7 @@ sudo dnf install -y \
 thunar thunar-archive-plugin thunar-volman \
 gvfs gvfs-fuse udisks2 gvfs-smb gvfs-mtp \
 tumbler \
-xarchiver file-roller unzip p7zip p7zip-plugins unrar \
+peazip-qt6 unzip unrar 7zip \
 dconf gsettings-desktop-schemas \
 papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \

@@ -1,5 +1,203 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
+<!-- PeaZip submenu -->
+
+<!-- ==================== EXTRACT ==================== -->
+
+<action>
+	<icon>peazip</icon>
+	<name>Open archive</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-1</unique-id>
+	<command>peazip -ext2browse %F</command>
+	<description>Open and browse archive in PeaZip</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
+	<other-files/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Extract...</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-2</unique-id>
+	<command>peazip -ext2main %F</command>
+	<description>Open PeaZip extraction interface</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
+	<other-files/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Extract here</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-3</unique-id>
+	<command>peazip -ext2here %F</command>
+	<description>Extract archive(s) here</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
+	<other-files/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Extract here (smart)</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-4</unique-id>
+	<command>peazip -ext2folder %F</command>
+	<description>Extract here using PeaZip's folder policy</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
+	<other-files/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Extract here (new folder)</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-5</unique-id>
+	<command>peazip -ext2newfolder %F</command>
+	<description>Always extract into a new folder</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
+	<other-files/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Test archive</name>
+	<submenu>PeaZip → Extract</submenu>
+	<unique-id>peazip-7</unique-id>
+	<command>peazip -ext2test %F</command>
+	<description>Test archive integrity</description>
+	<range>*</range>
+	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.pea;*.wim</patterns>
+	<other-files/>
+</action>
+
+
+<!-- ==================== ADD TO ARCHIVE ==================== -->
+
+<!-- Single file/directory: configurable archive creation -->
+<action>
+	<icon>peazip</icon>
+	<name>Add to archive...</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-8</unique-id>
+	<command>peazip -add2archive %F</command>
+	<description>Open PeaZip archive creation interface</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<other-files/>
+	<directories/>
+</action>
+
+
+<!-- Single directory: direct formats -->
+<action>
+	<icon>peazip</icon>
+	<name>Add to 7Z</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-9-dir</unique-id>
+	<command>peazip -add27z %F</command>
+	<description>Create a 7Z archive</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add to ZIP</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-10-dir</unique-id>
+	<command>peazip -add2zip %F</command>
+	<description>Create a ZIP archive</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add to PEA</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-11-dir</unique-id>
+	<command>peazip -add2pea %F</command>
+	<description>Create a PEA archive</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add encrypted PEA</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-12-dir</unique-id>
+	<command>peazip -add2crypt %F</command>
+	<description>Create an encrypted PEA archive</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+
+
+<!-- 2+ selected items: direct formats -->
+<action>
+	<icon>peazip</icon>
+	<name>Add to 7Z</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-9-multi</unique-id>
+	<command>peazip -add27z %F</command>
+	<description>Create a 7Z archive from selected items</description>
+	<range>2-</range>
+	<patterns>*</patterns>
+	<other-files/>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add to ZIP</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-10-multi</unique-id>
+	<command>peazip -add2zip %F</command>
+	<description>Create a ZIP archive from selected items</description>
+	<range>2-</range>
+	<patterns>*</patterns>
+	<other-files/>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add to PEA</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-11-multi</unique-id>
+	<command>peazip -add2pea %F</command>
+	<description>Create a PEA archive from selected items</description>
+	<range>2-</range>
+	<patterns>*</patterns>
+	<other-files/>
+	<directories/>
+</action>
+
+<action>
+	<icon>peazip</icon>
+	<name>Add encrypted PEA</name>
+	<submenu>PeaZip → Add to archive</submenu>
+	<unique-id>peazip-12-multi</unique-id>
+	<command>peazip -add2crypt %F</command>
+	<description>Create an encrypted PEA archive from selected items</description>
+	<range>2-</range>
+	<patterns>*</patterns>
+	<other-files/>
+	<directories/>
+</action>
+
+<!-- PeaZip submenu -->
 <action>
 	<icon>cryptfolder-open-light</icon>
 	<name>Open Directory as Admin</name>
@@ -55,4 +253,5 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
+
 </actions>
