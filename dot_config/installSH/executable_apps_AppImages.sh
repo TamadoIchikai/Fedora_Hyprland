@@ -8,7 +8,6 @@ TMP_DIR="$(mktemp -d /tmp/appimage_installer.XXXXXX)"
 # Define our apps: "GitHubRepo | AssetRegexPattern | AppName | ExplicitInstallPath"
 APPS=(
     "localsend/localsend|linux-x86-64\.AppImage$|LocalSend|$HOME/Downloads/Systems/LocalSend"
-    "obsidianmd/obsidian-releases|AppImage$|Obsidian|$HOME/Downloads/Studies/Obsidian"
     "ahrm/sioyek|sioyek-release-linux\.zip$|Sioyek|$HOME/Downloads/Studies/Sioyek"
     "imputnet/helium-linux|x86_64\.AppImage$|Helium|$HOME/Downloads/Systems/Helium"
 )
@@ -18,9 +17,6 @@ APPS=(
 DESKTOP_FILES=(
     # 0: LocalSend
     "Share files to nearby devices|%u|Network;Utility;|share;files;network;transfer;|"
-    
-    # 1: Obsidian
-    "Markdown-based knowledge base|%u|Office;Utility;|markdown;notes;knowledge;|"
     
     # 2: Sioyek
     "PDF viewer designed for research papers|%F|Office;Utility;Application;|pdf;viewer;|application/pdf;"

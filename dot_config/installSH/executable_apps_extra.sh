@@ -7,10 +7,11 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 
 flatpak install -y flathub \
   com.obsproject.Studio \
-  io.github.mpc_qt.mpc-qt \
   io.missioncenter.MissionCenter \
   eu.betterbird.Betterbird \
-  com.github.tchx84.Flatseal
+  com.github.tchx84.Flatseal \
+  md.obsidian.Obsidian \
+  net.ankiweb.Anki
 
 sudo dnf install -y \
   libadwaita \
@@ -64,3 +65,8 @@ flatpak override --user \
   --filesystem=~/Downloads/tmp/ \
   --env=GTK_USE_PORTAL=1 \
   eu.betterbird.Betterbird 
+
+flatpak override --user \
+    --unshare=network \
+    --filesystem="${RESTIC_SOURCE_BASE}/Obsidian" \
+    md.obsidian.Obsidian
