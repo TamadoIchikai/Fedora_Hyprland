@@ -649,3 +649,9 @@ hl.window_rule({
     size = {1906,1033}
 })
 
+-- Obsidian
+hl.window_rule({
+    name = "obsidian-workspace",
+    match = { class = "md.obsidian.Obsidian" },
+    workspace = "1 silent",
+})

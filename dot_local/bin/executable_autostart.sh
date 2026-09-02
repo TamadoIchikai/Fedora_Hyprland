@@ -68,6 +68,21 @@ hypr_exec_ws() {
     shift
     local cmd="$*"
 
+    # Workspace is embedded into a Hyprland Lua expression. Only accept a
+    # plain number (or a "N silent" pair) so hostile input can't break out of
+    # the [[ ]] string literal and inject dispatch commands.
+    if ! [[ "$workspace" =~ ^[0-9]+(\ silent)?$ ]]; then
+        log "warning: refusing unsafe workspace value: $workspace"
+        return 0
+    fi
+
+    # The command is also embedded in a [[ ]] Lua string; reject the closing
+    # delimiter so neither field can inject extra Hyprland expressions.
+    if [[ "$cmd" == *"]]"* ]]; then
+        log "warning: refusing command containing ]] : $cmd"
+        return 0
+    fi
+
     log "start on workspace $workspace: $cmd"
 
     hyprctl dispatch "hl.dsp.exec_cmd([[$cmd]], { workspace = [[$workspace silent]] })" \
@@ -116,11 +131,10 @@ complex_startup() {
     # 1. Start all other applications immediately (Unblocked)
     start_user_service "opentabletdriver.service"
 
-    hypr_exec_ws "1" "flatpak run md.obsidian.Obsidian"
+    run_once_pattern "md.obsidian.Obsidian" flatpak run md.obsidian.Obsidian
     hypr_exec_ws "2" "zen"
     run_once_pattern "betterbird" flatpak run eu.betterbird.Betterbird -mail
 
-    # 2. Handle Waybar detection ONLY for KeePassXC
     local tray_attempts=0
     log "checking for active waybar instance before launching keepassxc..."
     while ! pgrep -u "$USER" -x "waybar" >/dev/null 2>&1; do
@@ -133,7 +147,7 @@ complex_startup() {
     done
 
     # Buffer window to let waybar's tray module bind to DBus completely
-    sleep 0.5 
+    sleep 0.5
     run_once_name "keepassxc" keepassxc --minimized
 }
 
@@ -179,7 +193,7 @@ ASCII_ART_START=$(cat << "EOF"
 ⠀        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠂⠀⠘⠑⠻⡿⠷⠷⣿⠶⠒⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢤⠁⠀⠀⠀⠐⠄⠀⠀⠠⠤⠀⡀⠠⡿⢧⣴⠇⠀
 ⠀        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢀⠀⠀⠀⠅⠀⠀⠀⠀⠠⠒⠀⢀⠈⠘⠀⣰⠃⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀         ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢄⠁⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠁⠀⠀⠀⠀⠀
-⠀        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀            ⠀⠀⠀⠀⠀⠀         
+⠀        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀            ⠀⠀⠀⠀⠀⠀
                     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀            >> SYSTEM INITIALIZATION SEQUENCE <<
 EOF
 )
@@ -234,7 +248,7 @@ if [ -f "$AUDIO_OS_START" ]; then
 fi
 
 # Calculate exactly how much vertical space the START art and padding consumed
-term_lines=$(tput lines 2>/dev/null || echo 40) 
+term_lines=$(tput lines 2>/dev/null || echo 40)
 art_lines=$(echo "$ASCII_ART_START" | wc -l)
 total_art_height=$(( START_ART_PADDING_TOP + art_lines + START_ART_PADDING_BOTTOM ))
 
@@ -283,9 +297,9 @@ done
 # 3. TRANSITION TO END ART
 # =========================================================
 # Reset terminal scrolling region to normal
-printf "\033[r" 
+printf "\033[r"
 # Clear the screen completely
-clear 
+clear
 
 # Print top padding for END art
 for ((p=0; p<END_ART_PADDING_TOP; p++)); do echo ""; done
@@ -298,7 +312,7 @@ for ((p=0; p<END_ART_PADDING_BOTTOM; p++)); do echo ""; done
 for ((i = AUTO_CLOSE_AFTER; i >= 1; i--)); do
     sleep 1
     elapsed=$((elapsed + 1))
-    
+
     printf "\rAutoclose in %ds   " "$i"
     printf '[%02ds] %s\n' "$elapsed" "closing popup in ${i}s" >> "$BG_LOG"
 done
