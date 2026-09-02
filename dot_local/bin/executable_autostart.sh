@@ -116,9 +116,9 @@ complex_startup() {
     # 1. Start all other applications immediately (Unblocked)
     start_user_service "opentabletdriver.service"
 
-    hypr_exec_ws "1" "Obsidian.AppImage"
+    hypr_exec_ws "1" "flatpak run md.obsidian.Obsidian"
     hypr_exec_ws "2" "zen"
-    hypr_exec_ws "9" "flatpak run eu.betterbird.Betterbird -mail"
+    run_once_pattern "betterbird" flatpak run eu.betterbird.Betterbird -mail
 
     # 2. Handle Waybar detection ONLY for KeePassXC
     local tray_attempts=0

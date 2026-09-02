@@ -644,6 +644,8 @@ hl.window_rule({
 hl.window_rule({
     name = "BetterBird",
     match = { class = "eu.betterbird.Betterbird" },
-    workspace = "9 silent",
+    float = true,
+    center = true,
+    size = {1906,1033}
 })
 
