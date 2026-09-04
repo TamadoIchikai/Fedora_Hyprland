@@ -66,6 +66,7 @@ local appSwitcher   = "hyprAppSwitcher.sh"
 local passwordManager = "keepassxc"
 local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
 local emailClient = [[sh -c "if hyprctl clients | grep -iq betterbird; then hyprctl dispatch 'hl.dsp.focus({ window = \"class:.*[Bb]etterbird.*\" })'; else flatpak run eu.betterbird.Betterbird -mail; fi"]]
+local keyboardManager = "$HOME/.local/bin/fcitx5_changeKeyboard.sh"
 
 -------------------
 ---- AUTOSTART ----
@@ -286,6 +287,7 @@ hl.bind(mainAlt .. " + G",          hl.dsp.exec_cmd(colorPicker))
 hl.bind(mainMod .. " + V",          hl.dsp.exec_cmd(clipBoard))
 hl.bind(mainAlt .. " + P",          hl.dsp.exec_cmd(powermenu))
 hl.bind(mainMod .. " + P",          hl.dsp.exec_cmd(displayPicker))
+hl.bind(mainMod .. " + SPACE",          hl.dsp.exec_cmd(keyboardManager))
 hl.bind(mainAlt .. "+ CTRL + P",   hl.dsp.exec_cmd("hyprctl reload"))
 hl.bind(secondMod .. " + O",        hl.dsp.exec_cmd(calculator))
 hl.bind(secondMod .. " + TAB",        hl.dsp.exec_cmd(appSwitcher))
