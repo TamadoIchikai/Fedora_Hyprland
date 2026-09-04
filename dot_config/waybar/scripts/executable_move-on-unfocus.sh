@@ -6,7 +6,10 @@ set -euo pipefail
 
 readonly TARGET_WORKSPACE=11
 readonly CHECK_INTERVAL=0.5
-readonly GRACE_PERIOD_SEC=0.5
+readonly GRACE_PERIOD_MS=500
+
+# Hyprland window addresses are hex, optionally with 0x prefix.
+readonly ADDRESS_RE='^(0x)?[0-9a-fA-F]+$'
 
 readonly APPS=(
   "org.pulseaudio.pavucontrol"
@@ -14,26 +17,33 @@ readonly APPS=(
   "org.localsend.localsend_app"
 )
 
+need_cmd() {
+  command -v "$1" &>/dev/null || { echo "Required command not found: $1" >&2; exit 1; }
+}
+
+validate_address() {
+  [[ "$1" =~ $ADDRESS_RE ]]
+}
+
+declare -A monitored_apps
+for app in "${APPS[@]}"; do
+  monitored_apps["$app"]=1
+done
+
 declare -A last_interaction_time
 
 get_timestamp_ms() {
   date +%s%3N
 }
 
-sec_to_ms() {
-  awk "BEGIN {print int($1 * 1000)}"
-}
-
 is_app_monitored() {
-  local class="$1"
-  for app in "${APPS[@]}"; do
-    [[ "$class" == "$app" ]] && return 0
-  done
-  return 1
+  [[ -n "${monitored_apps["$1"]+x}" ]]
 }
 
 move_window_silent() {
   local address="$1"
+
+  validate_address "$address" || return 0
 
   hyprctl dispatch \
     "hl.dsp.window.move({ workspace = ${TARGET_WORKSPACE}, window = 'address:${address}', follow = false })" \
@@ -41,18 +51,18 @@ move_window_silent() {
 }
 
 main() {
-  local grace_period_ms
-  grace_period_ms=$(sec_to_ms "$GRACE_PERIOD_SEC")
+  need_cmd hyprctl
+  need_cmd jq
 
   echo "Window mover started (workspace ${TARGET_WORKSPACE})"
   echo "Monitoring: ${APPS[*]}"
-  echo "Grace period: ${GRACE_PERIOD_SEC}s"
+  echo "Grace period: 0.5s"
 
   while true; do
     now=$(get_timestamp_ms)
 
-    active_data=$(hyprctl activewindow -j 2>/dev/null || true)
-    focused_class=$(echo "$active_data" | jq -r '.class // empty')
+    # activewindow is the only reliable source for focus; clients for candidates.
+    focused_class=$(hyprctl activewindow -j 2>/dev/null | jq -r '.class // empty')
     current_ws=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty')
 
     if [[ -n "$focused_class" ]] && is_app_monitored "$focused_class"; then
@@ -64,10 +74,9 @@ main() {
       continue
     fi
 
-    hyprctl clients -j 2>/dev/null | jq -r '.[] |
-      select(.workspace.id != '"$TARGET_WORKSPACE"') |
-      "\(.class)|\(.address)|\(.workspace.id)"
-    ' | while IFS='|' read -r class address workspace; do
+    hyprctl clients -j 2>/dev/null | jq -r --argjson target "$TARGET_WORKSPACE" '
+      .[] | select(.workspace.id != $target) | "\(.class)|\(.address)"
+    ' | while IFS='|' read -r class address; do
       [[ -z "$class" ]] && continue
       [[ -z "$address" ]] && continue
 
@@ -79,7 +88,7 @@ main() {
       last_seen=${last_interaction_time["$class"]:-0}
       time_since_interaction=$((now - last_seen))
 
-      if (( time_since_interaction < grace_period_ms )); then
+      if (( time_since_interaction < GRACE_PERIOD_MS )); then
         continue
       fi
 
@@ -93,11 +102,6 @@ main() {
   done
 }
 
-cleanup() {
-  echo -e "\nShutting down..."
-  exit 0
-}
-
-trap cleanup SIGINT SIGTERM
+trap 'printf "\nShutting down...\n"; exit 0' SIGINT SIGTERM
 
 main

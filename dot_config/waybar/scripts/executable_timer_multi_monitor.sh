@@ -90,12 +90,20 @@ ICON_POMO_DONE=""
 ICON_POMO_BREAK=""
 
 # State / IPC
-# STATE_FILE is shared by every Waybar instance, so all monitors show the same timer.
-# Each Waybar instance gets its own FIFO so controller actions can wake every monitor.
-STATE_FILE="/dev/shm/waybar_timer.json"
-UPDATE_DIR="/tmp/waybar_timer.watchers"
+# The runtime dir is user-private (0600), shared only across this user's own
+# Waybar instances, keeping the state file, lock, and FIFOs out of the
+# world-writable /dev/shm and /tmp roots where other local users could tamper.
+RUN_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}/waybar_timer"
+STATE_FILE="$RUN_DIR/state.json"
+UPDATE_DIR="$RUN_DIR/watchers"
 PIPE_FILE=""
-LOCK_FILE="/tmp/waybar_timer.lock"
+LOCK_FILE="$RUN_DIR/lock"
+
+ensure_entrypoint() {
+  mkdir -p "$RUN_DIR" 2>/dev/null || true
+  chmod 700 "$RUN_DIR" 2>/dev/null || true
+}
+ensure_entrypoint
 
 # -------------------- SOUND --------------------
 play_sound() {
@@ -126,22 +134,27 @@ init_state() {
   printf '%s\n' "DISABLED|0|0|0|$NOW|0|0|0|1|1|5|1|0" >"$STATE_FILE" 2>/dev/null || true
 }
 
+parsestate() {
+  IFS='|' read -r STATE SEC_SET START_TIME PAUSE_REM LAST_ACT PRESET_IDX MODE P_STAGE P_CURRENT P_TOTAL P_WORK_LEN P_BREAK_LEN P_EDIT_FOCUS <<<"$1"
+}
+
 read_state() {
   if [ ! -f "$STATE_FILE" ]; then
     init_state
   fi
 
+  # Redirection via < avoids spawning a cat subprocess on every call;
+  # read_state also runs as the hot path of the 1s daemon tick.
   local raw
-  raw="$(cat "$STATE_FILE" 2>/dev/null || true)"
+  IFS= read -r raw <"$STATE_FILE" 2>/dev/null
+  parsestate "$raw"
 
-  IFS='|' read -r STATE SEC_SET START_TIME PAUSE_REM LAST_ACT PRESET_IDX MODE P_STAGE P_CURRENT P_TOTAL P_WORK_LEN P_BREAK_LEN P_EDIT_FOCUS <<<"$raw"
-
-  # If anything essential is missing, re-init
+  # If anything essential is missing, re-init and re-read.
   if [ -z "${STATE:-}" ] || [ -z "${SEC_SET:-}" ] || [ -z "${LAST_ACT:-}" ] || [ -z "${P_EDIT_FOCUS:-}" ]; then
     log "state corrupt -> reinit: $raw"
     init_state
-    raw="$(cat "$STATE_FILE" 2>/dev/null || true)"
-    IFS='|' read -r STATE SEC_SET START_TIME PAUSE_REM LAST_ACT PRESET_IDX MODE P_STAGE P_CURRENT P_TOTAL P_WORK_LEN P_BREAK_LEN P_EDIT_FOCUS <<<"$raw"
+    IFS= read -r raw <"$STATE_FILE" 2>/dev/null
+    parsestate "$raw"
   fi
 
   # Defensive defaults (avoid unbound / non-numeric surprises)
@@ -160,9 +173,12 @@ read_state() {
 }
 
 write_state() {
-  # Atomic write to avoid corruption
-  local tmp="${STATE_FILE}.$$"
+  # Atomic write to avoid corruption. mktemp under the private RUN_DIR gives a
+  # non-predictable name and 0600 perms, safe against symlink/prediction races.
+  local tmp
+  tmp="$(mktemp "$RUN_DIR/state.XXXXXX" 2>/dev/null)" || return 0
   printf '%s\n' "$1|$2|$3|$4|$5|$6|$7|$8|$9|${10}|${11}|${12}|${13}" >"$tmp" 2>/dev/null || true
+  chmod 600 "$tmp" 2>/dev/null || true
   mv -f "$tmp" "$STATE_FILE" 2>/dev/null || true
 }
 
@@ -178,6 +194,35 @@ format_time() {
   else
     printf "%02d:%02d" "$MM" "$SS"
   fi
+}
+
+# Advance the pomodoro to the next stage and write the resulting state.
+# Shared by handle_expired_timer and skip. Returns 0 if a transition was
+# written, 1 if the whole pomodoro completed (so callers can stop).
+advance_pomodoro() {
+  if [ "$P_STAGE" = "0" ]; then
+    # Work finished -> break.
+    if [ "$POMO_AUTO_BREAK" = true ]; then
+      WS "POMO_MSG" "$((P_BREAK_LEN * 60))" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "1" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
+    else
+      WS "PAUSED" "$((P_BREAK_LEN * 60))" "0" "$((P_BREAK_LEN * 60))" "$NOW" "$PRESET_IDX" "1" "1" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
+    fi
+    return 0
+  fi
+
+  # Break finished -> work (or all sessions complete).
+  local new_current=$((P_CURRENT + 1))
+  if [ "$new_current" -gt "$P_TOTAL" ]; then
+    WS "DONE" "0" "0" "0" "$NOW" "0" "1" "0" "$P_TOTAL" "$P_TOTAL" "0" "0" "0"
+    return 1
+  fi
+
+  if [ "$POMO_AUTO_WORK" = true ]; then
+    WS "POMO_MSG" "$((P_WORK_LEN * 60))" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "0" "$new_current" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
+  else
+    WS "PAUSED" "$((P_WORK_LEN * 60))" "0" "$((P_WORK_LEN * 60))" "$NOW" "$PRESET_IDX" "1" "0" "$new_current" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
+  fi
+  return 0
 }
 
 handle_expired_timer() {
@@ -213,29 +258,14 @@ handle_expired_timer() {
     if [ "$P_STAGE" = "0" ]; then
       play_sound "$SOUND_BREAK_START"
       notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i tea "Pomodoro" "Work Session $P_CURRENT/$P_TOTAL Finished! Time for a Break."
-      NEW_STAGE=1
-      NEW_SET=$((P_BREAK_LEN * 60))
-      if [ "$POMO_AUTO_BREAK" = true ]; then
-        WS "POMO_MSG" "$NEW_SET" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-      else
-        WS "PAUSED" "$NEW_SET" "0" "$NEW_SET" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-      fi
+      advance_pomodoro
     else
-      NEW_CURRENT=$((P_CURRENT + 1))
-      if [ "$NEW_CURRENT" -gt "$P_TOTAL" ]; then
-        play_sound "$SOUND_COMPLETE"
-        notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i trophy "Pomodoro" "All Sessions Completed!"
-        WS "DONE" "0" "0" "0" "$NOW" "0" "1" "0" "$P_TOTAL" "$P_TOTAL" "0" "0" "0"
-      else
+      if advance_pomodoro; then
         play_sound "$SOUND_WORK_START"
         notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Pomodoro" "Break Finished! Back to work."
-        NEW_STAGE=0
-        NEW_SET=$((P_WORK_LEN * 60))
-        if [ "$POMO_AUTO_WORK" = true ]; then
-          WS "POMO_MSG" "$NEW_SET" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$NEW_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-        else
-          WS "PAUSED" "$NEW_SET" "0" "$NEW_SET" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$NEW_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-        fi
+      else
+        play_sound "$SOUND_COMPLETE"
+        notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i trophy "Pomodoro" "All Sessions Completed!"
       fi
     fi
   fi
@@ -321,29 +351,14 @@ if [ -n "${1:-}" ]; then
       if [ "$P_STAGE" = "0" ]; then
         play_sound "$SOUND_BREAK_START"
         notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i tea "Pomodoro" "Work Session Skipped! Starting Break."
-        NEW_STAGE=1
-        NEW_SET=$((P_BREAK_LEN * 60))
-        if [ "$POMO_AUTO_BREAK" = true ]; then
-          WS "POMO_MSG" "$NEW_SET" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-        else
-          WS "PAUSED" "$NEW_SET" "0" "$NEW_SET" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$P_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-        fi
+        advance_pomodoro
       else
-        NEW_CURRENT=$((P_CURRENT + 1))
-        if [ "$NEW_CURRENT" -gt "$P_TOTAL" ]; then
+        if advance_pomodoro; then
+          play_sound "$SOUND_WORK_START"
+          notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Pomodoro" "Break Skipped! Starting Work Session $((P_CURRENT + 1))/$P_TOTAL."
+        else
           play_sound "$SOUND_COMPLETE"
           notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i trophy "Pomodoro" "All Sessions Completed!"
-          WS "DONE" "0" "0" "0" "$NOW" "0" "1" "0" "$P_TOTAL" "$P_TOTAL" "0" "0" "0"
-        else
-          play_sound "$SOUND_WORK_START"
-          notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Pomodoro" "Break Skipped! Starting Work Session $NEW_CURRENT/$P_TOTAL."
-          NEW_STAGE=0
-          NEW_SET=$((P_WORK_LEN * 60))
-          if [ "$POMO_AUTO_WORK" = true ]; then
-            WS "POMO_MSG" "$NEW_SET" "$NOW" "0" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$NEW_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-          else
-            WS "PAUSED" "$NEW_SET" "0" "$NEW_SET" "$NOW" "$PRESET_IDX" "1" "$NEW_STAGE" "$NEW_CURRENT" "$P_TOTAL" "$P_WORK_LEN" "$P_BREAK_LEN" "$P_EDIT_FOCUS"
-          fi
         fi
       fi
       trigger_update
