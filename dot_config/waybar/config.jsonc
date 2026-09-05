@@ -22,6 +22,7 @@
 	"group/mpris"
     ],
     "modules-center": [
+	"hyprland/submap",
         "hyprland/workspaces"
     ],
     "modules-right": [
@@ -44,5 +45,10 @@
 		"on-click-window": "${HOME}/.config/waybar/scripts/focus-window.sh {address} {button}"
 	    },
 	    "ignore-workspaces": ["11"]
-	}
+	},
+	"hyprland/submap": {
+	    "format": "{}",
+	    "tooltip": false
+	}   
+
 }

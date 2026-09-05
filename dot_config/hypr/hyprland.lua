@@ -311,6 +311,23 @@ hl.bind(mainAlt .. " + L", hl.dsp.window.move({ direction = "right" }))
 hl.bind(mainAlt .. " + K", hl.dsp.window.move({ direction = "up" }))
 hl.bind(mainAlt .. " + J", hl.dsp.window.move({ direction = "down" }))
 
+-- Switch to a submap called `resize`.
+hl.bind(mainMod .. "+ R", hl.dsp.submap("resize"))
+
+-- Start a submap called "resize".
+hl.define_submap("resize", function()
+
+    -- Set repeating binds for resizing the active window.
+    hl.bind("l", hl.dsp.window.resize({ x = 40, y = 0, relative = true}), { repeating = true })
+    hl.bind("h", hl.dsp.window.resize({ x = -40, y = 0, relative = true}), { repeating = true })
+    hl.bind("j", hl.dsp.window.resize({ x = 0, y = 40, relative = true}), { repeating = true })
+    hl.bind("k", hl.dsp.window.resize({ x = 0, y = -40, relative = true}), { repeating = true })
+
+    -- Use `reset` to go back to the global submap
+    hl.bind("escape", hl.dsp.submap("reset"))
+
+end)
+
 -- Groups
 hl.bind(mainMod .. " + N", hl.dsp.group.toggle())
 hl.bind(mainAlt .. " + N", hl.dsp.window.move({ out_of_group = true }))
