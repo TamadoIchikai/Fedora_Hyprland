@@ -64,6 +64,9 @@ POMO_ENABLED=true
 POMO_AUTO_BREAK=true
 POMO_AUTO_WORK=true
 
+# --- NOTIFICATION ICONS ---
+NOTIFY_ICON_DIR="${HOME}/.config/waybar/scripts/icons"
+
 # --- SOUND EFFECTS ---
 SOUND_TIMER_DONE="${HOME}/.config/waybar/sounds/seasion_done.wav"
 SOUND_WORK_START="${HOME}/.config/waybar/sounds/work_on.wav"
@@ -252,20 +255,20 @@ handle_expired_timer() {
 
   if [ "$MODE" = "0" ]; then
     play_sound "$SOUND_TIMER_DONE"
-    notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Timer" "Timer Finished!"
+    notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i "${NOTIFY_ICON_DIR}/pomo_Timer.png" "Timer" "Timer Finished!"
     WS "DONE" "$SEC_SET" "0" "0" "$NOW" "0" "0" "0" "0" "0" "0" "0" "0"
   else
     if [ "$P_STAGE" = "0" ]; then
       play_sound "$SOUND_BREAK_START"
-      notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i tea "Pomodoro" "Work Session $P_CURRENT/$P_TOTAL Finished! Time for a Break."
+      notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i "${NOTIFY_ICON_DIR}/pomo_workDoneOnce.png" "Pomodoro" "Work Session $P_CURRENT/$P_TOTAL Finished! Time for a Break."
       advance_pomodoro
     else
       if advance_pomodoro; then
         play_sound "$SOUND_WORK_START"
-        notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Pomodoro" "Break Finished! Back to work."
+        notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i "${NOTIFY_ICON_DIR}/pomo_workBegin.png" "Pomodoro" "Break Finished! Back to work."
       else
         play_sound "$SOUND_COMPLETE"
-        notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i trophy "Pomodoro" "All Sessions Completed!"
+        notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i "${NOTIFY_ICON_DIR}/pomo_workDoneAll.png" "Pomodoro" "All Sessions Completed!"
       fi
     fi
   fi
@@ -350,15 +353,15 @@ if [ -n "${1:-}" ]; then
     if [ "$MODE" = "1" ] && { [ "$STATE" = "RUNNING" ] || [ "$STATE" = "PAUSED" ]; }; then
       if [ "$P_STAGE" = "0" ]; then
         play_sound "$SOUND_BREAK_START"
-        notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i tea "Pomodoro" "Work Session Skipped! Starting Break."
+        notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i "${NOTIFY_ICON_DIR}/pomo_workSkipped.png" "Pomodoro" "Work Session Skipped! Starting Break."
         advance_pomodoro
       else
         if advance_pomodoro; then
           play_sound "$SOUND_WORK_START"
-          notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i clock "Pomodoro" "Break Skipped! Starting Work Session $((P_CURRENT + 1))/$P_TOTAL."
+          notify -u normal -t $NOTIFY_EXPIRED_TIME_MEDIUM -i "${NOTIFY_ICON_DIR}/pomo_workBegin.png" "Pomodoro" "Break Skipped! Starting Work Session $((P_CURRENT + 1))/$P_TOTAL."
         else
           play_sound "$SOUND_COMPLETE"
-          notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i trophy "Pomodoro" "All Sessions Completed!"
+        notify -u normal -t $NOTIFY_EXPIRED_TIME_LONG -i "${NOTIFY_ICON_DIR}/pomo_workDoneAll.png" "Pomodoro" "All Sessions Completed!"
         fi
       fi
       trigger_update
