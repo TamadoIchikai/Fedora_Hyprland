@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
-<!-- PeaZip submenu -->
-
-<!-- ==================== EXTRACT ==================== -->
-
 <action>
 	<icon>peazip</icon>
 	<name>Open archive</name>
@@ -15,7 +11,6 @@
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
 	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Extract...</name>
@@ -27,7 +22,6 @@
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
 	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Extract here</name>
@@ -39,19 +33,17 @@
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
 	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Extract here (smart)</name>
 	<submenu>PeaZip → Extract</submenu>
 	<unique-id>peazip-4</unique-id>
 	<command>env QT_STYLE_OVERRIDE=kvantum peazip -ext2folder %F</command>
-	<description>Extract here using PeaZip's folder policy</description>
+	<description>Extract here using PeaZip&apos;s folder policy</description>
 	<range>*</range>
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
 	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Extract here (new folder)</name>
@@ -63,7 +55,6 @@
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.gz;*.bz2;*.xz;*.zst;*.pea;*.wim;*.iso</patterns>
 	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Test archive</name>
@@ -75,11 +66,6 @@
 	<patterns>*.7z;*.zip;*.zipx;*.rar;*.tar;*.pea;*.wim</patterns>
 	<other-files/>
 </action>
-
-
-<!-- ==================== ADD TO ARCHIVE ==================== -->
-
-<!-- Single file/directory: configurable archive creation -->
 <action>
 	<icon>peazip</icon>
 	<name>Add to archive...</name>
@@ -89,12 +75,9 @@
 	<description>Open PeaZip archive creation interface</description>
 	<range>1</range>
 	<patterns>*</patterns>
-	<other-files/>
 	<directories/>
+	<other-files/>
 </action>
-
-
-<!-- Single directory: direct formats -->
 <action>
 	<icon>peazip</icon>
 	<name>Add to 7Z</name>
@@ -106,7 +89,6 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add to ZIP</name>
@@ -118,7 +100,6 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add to PEA</name>
@@ -130,7 +111,6 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add encrypted PEA</name>
@@ -142,9 +122,6 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
-
-
-<!-- 2+ selected items: direct formats -->
 <action>
 	<icon>peazip</icon>
 	<name>Add to 7Z</name>
@@ -154,10 +131,9 @@
 	<description>Create a 7Z archive from selected items</description>
 	<range>2-</range>
 	<patterns>*</patterns>
-	<other-files/>
 	<directories/>
+	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add to ZIP</name>
@@ -167,10 +143,9 @@
 	<description>Create a ZIP archive from selected items</description>
 	<range>2-</range>
 	<patterns>*</patterns>
-	<other-files/>
 	<directories/>
+	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add to PEA</name>
@@ -180,10 +155,9 @@
 	<description>Create a PEA archive from selected items</description>
 	<range>2-</range>
 	<patterns>*</patterns>
-	<other-files/>
 	<directories/>
+	<other-files/>
 </action>
-
 <action>
 	<icon>peazip</icon>
 	<name>Add encrypted PEA</name>
@@ -192,11 +166,10 @@
 	<command>env QT_STYLE_OVERRIDE=kvantum peazip -add2crypt %F</command>
 	<description>Create an encrypted PEA archive from selected items</description>
 	<range>2-</range>
-	<other-files/>
+	<patterns>*</patterns>
 	<directories/>
+	<other-files/>
 </action>
-
-<!-- PeaZip submenu -->
 <action>
 	<icon>cryptfolder-open-light</icon>
 	<name>Open Directory as Admin</name>
@@ -231,6 +204,17 @@
 	<directories/>
 </action>
 <action>
+	<icon>document-scan</icon>
+	<name>Scan with gdu</name>
+	<submenu></submenu>
+	<unique-id>1788965762832313-1</unique-id>
+	<command>foot -- gdu %f</command>
+	<description>Storage consumption scan using gdu</description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
 	<icon>application-x-iso9660-appimage</icon>
 	<name>Create Desktop Entry (AppImage)</name>
 	<submenu></submenu>
@@ -252,6 +236,4 @@
 	<patterns>*</patterns>
 	<directories/>
 </action>
-
 </actions>
-
