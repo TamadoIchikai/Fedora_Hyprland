@@ -523,20 +523,20 @@ hl.window_rule({
 -- Thunar popups
 hl.window_rule({
     name  = "thunar-confirm-replace-floating",
-    match = { class = "thunar", title = "Confirm to replace files" },
+    match = { class = "Thunar", title = "Confirm to replace files" },
     float = true,
 })
 
 hl.window_rule({
     name  = "thunar-file-operation-progress-floating",
-    match = { class = "thunar", title = "File Operation Progress" },
+    match = { class = "Thunar", title = "File Operation Progress" },
     float = true,
 })
 
 hl.window_rule({
     name = "Thunar rename",
     match = {
-        class = "thunar",
+        class = "Thunar",
         title = [[^Rename ".*"$]],
     },
     float = true,
