@@ -28,7 +28,7 @@ paste_to_app() {
     local app_id="${1:-}"
 
     case "$app_id" in
-        foot|kitty|alacritty|wezterm|org.wezfurlong.wezterm|ghostty|com.mitchellh.ghostty)
+        foot|kitty|alacritty|wezterm|org.wezfurlong.wezterm|ghostty|com.mitchellh.ghostty|zed|dev.zed.zed)
             # Ctrl+Shift+V, then release Shift/Ctrl
             wtype -M ctrl -M shift -P v -p v -m shift -m ctrl
             ;;
