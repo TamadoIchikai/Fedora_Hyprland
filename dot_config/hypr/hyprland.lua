@@ -52,7 +52,7 @@ hl.env("EXTERNAL_SCALE", tostring(external_scale))
 ---------------------
 
 local terminal      = "foot"
-local fileManager   = "thunar -w"
+local fileManager   = "dolphin --new-window"
 local menu          = "fuzzel-scale.sh"
 local browser       = "zen"
 local browser_second= "Helium.AppImage"
