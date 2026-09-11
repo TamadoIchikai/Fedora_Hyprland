@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Service
+MimeType=application/x-executable;
+Actions=install;remove;
+X-KDE-Submenu=AppImage
+
+[Desktop Action install]
+Name=Create Desktop Entry (AppImage)
+Icon=application-x-iso9660-appimage
+Exec=/bin/bash -c "$HOME/.local/bin/AppImageManager.sh install --dir \"$1\"" -- %f
+
+[Desktop Action remove]
+Name=Remove AppImage (from Desktop)
+Icon=emblem-remove
+Exec=/bin/bash -c "$HOME/.local/bin/AppImageManager.sh delete"

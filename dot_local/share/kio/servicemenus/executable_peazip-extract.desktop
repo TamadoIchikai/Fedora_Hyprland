@@ -1,0 +1,30 @@
+[Desktop Entry]
+Type=Service
+MimeType=application/x-7z-compressed;application/zip;application/x-rar;application/x-tar;application/gzip;application/x-bzip2;application/x-xz;application/zstd;application/x-iso9660-image;
+Actions=01_test;02_browse;03_extract;04_smart;05_newfolder;
+X-KDE-Submenu=PeaZip → Extract
+
+[Desktop Action 01_test]
+Name=Test archive
+Icon=peazip
+Exec=env peazip -ext2test %F
+
+[Desktop Action 02_browse]
+Name=Extract...
+Icon=peazip
+Exec=env peazip -ext2main %F
+
+[Desktop Action 03_extract]
+Name=Extract here
+Icon=peazip
+Exec=env peazip -ext2here %F
+
+[Desktop Action 04_smart]
+Name=Extract here (smart)
+Icon=peazip
+Exec=env peazip -ext2folder %F
+
+[Desktop Action 05_newfolder]
+Name=Extract here (new folder)
+Icon=peazip
+Exec=env peazip -ext2newfolder %F

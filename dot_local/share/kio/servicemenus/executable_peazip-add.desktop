@@ -1,0 +1,35 @@
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;application/octet-stream;
+Actions=01_Archive;02_7z;03_zip;04_gz;05_xz;06_tar;
+X-KDE-Submenu=PeaZip → Add to archive
+
+[Desktop Action 01_Archive]
+Name=Add to Archive...
+Icon=peazip
+Exec=env peazip -add2archive %F
+
+[Desktop Action 02_7z]
+Name=Add to 7Z
+Icon=peazip
+Exec=env peazip -add27z %F
+
+[Desktop Action 03_zip]
+Name=Add to ZIP
+Icon=peazip
+Exec=env peazip -add2zip %F
+
+[Desktop Action 04_gz]
+Name=Add to GZIP
+Icon=peazip
+Exec=env peazip -add2gzip %F
+
+[Desktop Action 05_xz]
+Name=Add to XZ
+Icon=peazip
+Exec=env peazip -add2xz %F
+
+[Desktop Action 06_tar]
+Name=Add to TAR
+Icon=peazip
+Exec=env peazip -add2tar %F

@@ -2,16 +2,15 @@
 set -euo pipefail
 
 sudo dnf install -y \
-thunar thunar-archive-plugin thunar-volman \
+dolphin redhat-menus kf6-kded \
 gvfs gvfs-fuse udisks2 gvfs-smb gvfs-mtp \
-tumbler \
 peazip-qt6 unzip unrar 7zip \
 dconf gsettings-desktop-schemas \
 papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \
-evince-thumbnailer ffmpegthumbnailer \
+kdegraphics-thumbnailers \
 polkit mate-polkit \
-xdg-desktop-portal xdg-desktop-portal-gtk
+xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-kde
 
 # Ensure the GVfs daemon is not masked (common issue in minimal installs)
 systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
@@ -72,8 +71,8 @@ xdg-mime default vlc.desktop video/ogg
 xdg-mime default vlc.desktop video/webm
 xdg-mime default vlc.desktop video/mp4
 
-xdg-mime default vlc.desktop audio/mpeg        
-xdg-mime default vlc.desktop audio/mp4         
+xdg-mime default vlc.desktop audio/mpeg
+xdg-mime default vlc.desktop audio/mp4
 xdg-mime default vlc.desktop audio/ogg
 
 xdg-mime default dev.zed.Zed.desktop text/plain
@@ -98,3 +97,5 @@ xdg-mime default zen.desktop application/xhtml+xml
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
+
+kbuildsycoca6 --noincremental
