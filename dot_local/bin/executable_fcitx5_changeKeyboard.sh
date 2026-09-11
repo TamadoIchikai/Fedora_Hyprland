@@ -2,7 +2,7 @@
 set -euo pipefail
 
 LAYOUTS=(keyboard-us unikey mozc)
-declare -A LAYOUT_LABEL=([keyboard-us]="US keyboard" [unikey]="VN keyboard" [mozc]="JP keyboard")
+declare -A LAYOUT_LABEL=([keyboard-us]="keyboard" [unikey]="keyboard" [mozc]="keyboard")
 ICON_BASE="/usr/share/icons/Papirus-Dark/24x24/panel"
 declare -A LAYOUT_ICON=([keyboard-us]="$ICON_BASE/indicator-keyboard-En.svg" [unikey]="$ICON_BASE/indicator-keyboard-Vi.svg" [mozc]="$ICON_BASE/indicator-keyboard-Ja.svg")
 STATE="$HOME/.cache/fcitx5_keyboard_state"
