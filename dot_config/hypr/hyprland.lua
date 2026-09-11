@@ -9,8 +9,8 @@ local laptop_mode         = "1920x1080@60.1"
 local external_mode       = "1920x1080@60.0"
 
 local laptop_pos          = "0x0"
-local external_pos_extend = "1920x0" 
-local external_pos_mirror = "0x0"    
+local external_pos_extend = "1920x0"
+local external_pos_mirror = "0x0"
 
 local laptop_scale        = 1
 local external_scale      = 1
@@ -51,22 +51,23 @@ hl.env("EXTERNAL_SCALE", tostring(external_scale))
 ---- MY PROGRAMS ----
 ---------------------
 
-local terminal      = "foot"
-local fileManager   = "dolphin --new-window"
-local menu          = "fuzzel-scale.sh"
-local browser       = "zen"
-local browser_second= "Helium.AppImage"
-local screenshot    = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
-local clipBoard     = "wofi-cliphist.sh"
-local powermenu     = "fuzzel-powermenu.sh"
-local calculator    = "qalc_floating.sh"
-local colorPicker   = "$HOME/.config/hypr/scripts/hyprPicker.sh"
-local displayPicker = "fuzzel-DisplayMode.sh --fuzzel"
-local appSwitcher   = "hyprAppSwitcher.sh"
-local passwordManager = "keepassxc"
-local mediaPlayer = "flatpak run io.github.mpc_qt.mpc-qt"
-local emailClient = [[sh -c "if hyprctl clients | grep -iq betterbird; then hyprctl dispatch 'hl.dsp.focus({ window = \"class:.*[Bb]etterbird.*\" })'; else flatpak run eu.betterbird.Betterbird -mail; fi"]]
-local keyboardManager = "$HOME/.local/bin/fcitx5_changeKeyboard.sh"
+local terminal          = "foot"
+local fileManager       = "dolphin --new-window"
+local menu              = "fuzzel-scale.sh"
+local browser           = "zen"
+local browser_second    = "Helium.AppImage"
+local screenshot        = [[grim -g "$(slurp)" -| GTK_THEME=Adwaita:dark swappy -f -]]
+local clipBoard         = "wofi-cliphist.sh"
+local powermenu         = "fuzzel-powermenu.sh"
+local calculator        = "qalc_floating.sh"
+local colorPicker       = "$HOME/.config/hypr/scripts/hyprPicker.sh"
+local displayPicker     = "fuzzel-DisplayMode.sh --fuzzel"
+local appSwitcher       = "hyprAppSwitcher.sh"
+local passwordManager   = "keepassxc"
+local mediaPlayer       = "flatpak run io.github.mpc_qt.mpc-qt"
+local emailClient       =
+[[sh -c "if hyprctl clients | grep -iq betterbird; then hyprctl dispatch 'hl.dsp.focus({ window = \"class:.*[Bb]etterbird.*\" })'; else flatpak run eu.betterbird.Betterbird -mail; fi"]]
+local keyboardManager   = "$HOME/.local/bin/fcitx5_changeKeyboard.sh"
 
 -------------------
 ---- AUTOSTART ----
@@ -77,7 +78,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("systemctl --user start hyprland-session.target")
     hl.exec_cmd("systemctl --user start hyprlandMonitor_Watcher.service")
-    
+
     local cmd = string.format([=[
 bash -lc '
 # 1. Give the Wayland session 1 second to settle
@@ -94,7 +95,7 @@ if [[ -x "$DISPLAY_SCRIPT" ]]; then
     if [[ -n "$external_connected" ]]; then
         # 4. If connected, execute the display script with the requested mode
         "$DISPLAY_SCRIPT" --mode "%s" >/dev/null 2>&1
-        
+
         # Give the DRM subsystem 1 second to light up the pixels before loading apps
         sleep 1
     fi
@@ -103,10 +104,10 @@ fi
 # 5. Execute original autostart wrapper replacing the current bash process
 exec %s
 '
-]=], 
-    external_output,      -- 1: jq select physically connected
-    dualMonitorMode,      -- 2: --mode argument
-    autostart_wrapper     -- 3: exec autostart wrapper
+]=],
+        external_output, -- 1: jq select physically connected
+        dualMonitorMode, -- 2: --mode argument
+        autostart_wrapper -- 3: exec autostart wrapper
     )
 
     hl.exec_cmd(cmd)
@@ -125,12 +126,12 @@ hl.env("HYPRCURSOR_SIZE", "24")
 
 hl.config({
     general = {
-        gaps_in  = 2,
-        gaps_out = 5,
+        gaps_in          = 2,
+        gaps_out         = 5,
 
-        border_size = 2,
+        border_size      = 2,
 
-        col = {
+        col              = {
             active_border   = "rgba(9198A1aa)",
             inactive_border = "rgba(2B2B2Baa)",
         },
@@ -141,19 +142,19 @@ hl.config({
     },
 
     decoration = {
-        rounding = 5,
+        rounding         = 5,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
 
-        shadow = {
+        shadow           = {
             enabled      = true,
             range        = 4,
             render_power = 3,
             color        = 0xee1a1a1a,
         },
 
-        blur = {
+        blur             = {
             enabled  = false,
             size     = 3,
             passes   = 1,
@@ -170,28 +171,28 @@ hl.config({
 ---- ANIMATIONS ----
 --------------------
 
-hl.curve("easeOutQuint",   { type = "bezier", points = { {0.23, 1},   {0.32, 1}   } })
-hl.curve("easeInOutCubic", { type = "bezier", points = { {0.65, 0.05}, {0.36, 1}   } })
-hl.curve("linear",         { type = "bezier", points = { {0, 0},      {1, 1}      } })
-hl.curve("almostLinear",   { type = "bezier", points = { {0.5, 0.5},  {0.75, 1.0} } })
-hl.curve("quick",          { type = "bezier", points = { {0.2, 0.8},  {0.2, 1}    } })
-hl.curve("ultraSlow",      { type = "bezier", points = { {0.5, 0.5},  {0.5, 0.5}  } })
+hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
+hl.curve("easeInOutCubic", { type = "bezier", points = { { 0.65, 0.05 }, { 0.36, 1 } } })
+hl.curve("linear", { type = "bezier", points = { { 0, 0 }, { 1, 1 } } })
+hl.curve("almostLinear", { type = "bezier", points = { { 0.5, 0.5 }, { 0.75, 1.0 } } })
+hl.curve("quick", { type = "bezier", points = { { 0.2, 0.8 }, { 0.2, 1 } } })
+hl.curve("ultraSlow", { type = "bezier", points = { { 0.5, 0.5 }, { 0.5, 0.5 } } })
 
 -- Original config had animations:enabled = false. These definitions are preserved
 -- so they are ready if you later switch animations.enabled back to true.
-hl.animation({ leaf = "global",        enabled = true,  speed = 1.5,  bezier = "default" })
-hl.animation({ leaf = "border",        enabled = true,  speed = 1.5,  bezier = "easeOutQuint" })
-hl.animation({ leaf = "windows",       enabled = true,  speed = 1.5,  bezier = "easeOutQuint" })
-hl.animation({ leaf = "windowsIn",     enabled = true,  speed = 1.2,  bezier = "easeOutQuint",   style = "popin 100%" })
-hl.animation({ leaf = "windowsOut",    enabled = true,  speed = 1.2,  bezier = "linear",         style = "popin 100%" })
-hl.animation({ leaf = "fade",          enabled = true,  speed = 1.4,  bezier = "easeInOutCubic" })
-hl.animation({ leaf = "fadeIn",        enabled = true,  speed = 1.2,  bezier = "easeOutQuint" })
-hl.animation({ leaf = "fadeOut",       enabled = true,  speed = 1.0,  bezier = "easeInOutCubic" })
-hl.animation({ leaf = "layers",        enabled = true,  speed = 0.05, bezier = "linear" })
-hl.animation({ leaf = "layersIn",      enabled = true,  speed = 0.05, bezier = "linear" })
-hl.animation({ leaf = "layersOut",     enabled = true,  speed = 0.05, bezier = "linear" })
-hl.animation({ leaf = "workspaces",    enabled = false })
-hl.animation({ leaf = "workspacesIn",  enabled = false })
+hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
+hl.animation({ leaf = "border", enabled = true, speed = 1.5, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windows", enabled = true, speed = 1.5, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.2, bezier = "easeOutQuint", style = "popin 100%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.2, bezier = "linear", style = "popin 100%" })
+hl.animation({ leaf = "fade", enabled = true, speed = 1.4, bezier = "easeInOutCubic" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.2, bezier = "easeOutQuint" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.0, bezier = "easeInOutCubic" })
+hl.animation({ leaf = "layers", enabled = true, speed = 0.05, bezier = "linear" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 0.05, bezier = "linear" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 0.05, bezier = "linear" })
+hl.animation({ leaf = "workspaces", enabled = false })
+hl.animation({ leaf = "workspacesIn", enabled = false })
 hl.animation({ leaf = "workspacesOut", enabled = false })
 
 ---------------
@@ -230,17 +231,17 @@ hl.config({
 
 hl.config({
     input = {
-        kb_layout  = "us",
-        kb_variant = "",
-        kb_model   = "",
-        kb_options = "caps:swapescape",
-        kb_rules   = "",
+        kb_layout          = "us",
+        kb_variant         = "",
+        kb_model           = "",
+        kb_options         = "caps:swapescape",
+        kb_rules           = "",
 
         follow_mouse       = 1,
         numlock_by_default = true,
         accel_profile      = "flat",
 
-        touchpad = {
+        touchpad           = {
             natural_scroll = true,
             scroll_factor  = 0.2,
         },
@@ -274,26 +275,26 @@ local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
-hl.bind("SHIFT + backspace",        hl.dsp.exec_cmd("wtype -k 'delete'"))
+hl.bind("SHIFT + backspace", hl.dsp.exec_cmd("wtype -k 'delete'"))
 
-hl.bind(mainMod .. " + Z",          hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + E",          hl.dsp.exec_cmd(fileManager))
-hl.bind(mainAlt .. " + E",          hl.dsp.exec_cmd(emailClient))
-hl.bind(mainMod .. " + O",          hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + B",          hl.dsp.exec_cmd(browser))
-hl.bind(mainAlt .. " + B",          hl.dsp.exec_cmd(browser_second))
-hl.bind(mainMod .. " + G",          hl.dsp.exec_cmd(screenshot))
-hl.bind(mainAlt .. " + G",          hl.dsp.exec_cmd(colorPicker))
-hl.bind(mainMod .. " + V",          hl.dsp.exec_cmd(clipBoard))
-hl.bind(mainAlt .. " + P",          hl.dsp.exec_cmd(powermenu))
-hl.bind(mainMod .. " + P",          hl.dsp.exec_cmd(displayPicker))
-hl.bind(mainMod .. " + SPACE",          hl.dsp.exec_cmd(keyboardManager))
-hl.bind(mainAlt .. "+ CTRL + P",   hl.dsp.exec_cmd("hyprctl reload"))
-hl.bind(secondMod .. " + O",        hl.dsp.exec_cmd(calculator))
-hl.bind(secondMod .. " + TAB",        hl.dsp.exec_cmd(appSwitcher))
-hl.bind(mainMod .. " + CTRL + X",   hl.dsp.exec_cmd("chezmoi apply"))
-hl.bind(mainAlt .. " + X",          hl.dsp.exec_cmd("$HOME/.config/waybar/scripts/restartWaybar.sh"))
-hl.bind(mainAlt .. " + C",          hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
+hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd(terminal))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+hl.bind(mainAlt .. " + E", hl.dsp.exec_cmd(emailClient))
+hl.bind(mainMod .. " + O", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
+hl.bind(mainAlt .. " + B", hl.dsp.exec_cmd(browser_second))
+hl.bind(mainMod .. " + G", hl.dsp.exec_cmd(screenshot))
+hl.bind(mainAlt .. " + G", hl.dsp.exec_cmd(colorPicker))
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(clipBoard))
+hl.bind(mainAlt .. " + P", hl.dsp.exec_cmd(powermenu))
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(displayPicker))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(keyboardManager))
+hl.bind(mainAlt .. "+ CTRL + P", hl.dsp.exec_cmd("hyprctl reload"))
+hl.bind(secondMod .. " + O", hl.dsp.exec_cmd(calculator))
+hl.bind(secondMod .. " + TAB", hl.dsp.exec_cmd(appSwitcher))
+hl.bind(mainMod .. " + CTRL + X", hl.dsp.exec_cmd("chezmoi apply"))
+hl.bind(mainAlt .. " + X", hl.dsp.exec_cmd("$HOME/.config/waybar/scripts/restartWaybar.sh"))
+hl.bind(mainAlt .. " + C", hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
 -- Window state
 hl.bind(mainMod .. " + C", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
@@ -316,22 +317,20 @@ hl.bind(mainMod .. "+ R", hl.dsp.submap("resize"))
 
 -- Start a submap called "resize".
 hl.define_submap("resize", function()
-
     -- Set repeating binds for resizing the active window.
-    hl.bind("l", hl.dsp.window.resize({ x = 40, y = 0, relative = true}), { repeating = true })
-    hl.bind("h", hl.dsp.window.resize({ x = -40, y = 0, relative = true}), { repeating = true })
-    hl.bind("j", hl.dsp.window.resize({ x = 0, y = 40, relative = true}), { repeating = true })
-    hl.bind("k", hl.dsp.window.resize({ x = 0, y = -40, relative = true}), { repeating = true })
+    hl.bind("l", hl.dsp.window.resize({ x = 40, y = 0, relative = true }), { repeating = true })
+    hl.bind("h", hl.dsp.window.resize({ x = -40, y = 0, relative = true }), { repeating = true })
+    hl.bind("j", hl.dsp.window.resize({ x = 0, y = 40, relative = true }), { repeating = true })
+    hl.bind("k", hl.dsp.window.resize({ x = 0, y = -40, relative = true }), { repeating = true })
 
     -- Use `reset` to go back to the global submap
     hl.bind("escape", hl.dsp.submap("reset"))
-
 end)
 
 -- Groups
 hl.bind(mainMod .. " + N", hl.dsp.group.toggle())
 hl.bind(mainAlt .. " + N", hl.dsp.window.move({ out_of_group = true }))
-hl.bind(secondMod .. " + S",         hl.dsp.group.next())
+hl.bind(secondMod .. " + S", hl.dsp.group.next())
 hl.bind(secondMod .. " + D", hl.dsp.group.prev())
 
 -- Workspace navigation
@@ -342,8 +341,8 @@ hl.bind(mainMod .. " + S", hl.dsp.focus({ workspace = "-1" }))
 
 for i = 1, 10 do
     local key = i % 10
-    hl.bind(secondMod .. " + " .. key,             hl.dsp.focus({ workspace = i }))
-    hl.bind(secondMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }))
+    hl.bind(secondMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
+    hl.bind(secondMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
     hl.bind(secondMod .. " + CTRL + SHIFT + " .. key, hl.dsp.window.move({ workspace = i, follow = false }))
 end
 
@@ -357,26 +356,30 @@ hl.bind(mainAlt .. " + S", hl.dsp.window.move({ workspace = "-1" }))
 
 -- Scroll through existing workspaces
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e-1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e+1" }))
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 hl.bind(mainMod .. " + mouse:274", hl.dsp.window.close())
 
 -- Laptop multimedia keys for volume and LCD brightness
-hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"),       { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume",  hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),       { locked = true, repeating = true })
-hl.bind("XF86AudioMute",         hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",      hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),    { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl s 10%+"),                            { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl s 10%-"),                            { locked = true, repeating = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+    { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl s 10%+"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl s 10%-"), { locked = true, repeating = true })
 
 -- Requires playerctl
-hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
@@ -386,8 +389,8 @@ hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = tr
 hl.window_rule({
     name  = "pavucontrol-floating",
     match = { class = "org.pulseaudio.pavucontrol" },
-    size  = {650, 400},
-    move  = {1200, 640},
+    size  = { 650, 400 },
+    move  = { 1200, 640 },
     float = true,
 })
 
@@ -395,8 +398,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "blueman-manager-floating",
     match = { class = "blueman-manager" },
-    size  = {529, 345},
-    move  = {1368, 694},
+    size  = { 529, 345 },
+    move  = { 1368, 694 },
     float = true,
 })
 
@@ -404,8 +407,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "gtk-files-dialog-floating",
     match = { class = "xdg-desktop-portal-gtk", title = "Files" },
-    size  = {700, 400},
-    move  = {1200, 640},
+    size  = { 700, 400 },
+    move  = { 1200, 640 },
     float = true,
 })
 
@@ -420,34 +423,34 @@ hl.window_rule({
 hl.window_rule({
     name  = "zenity-devices-floating",
     match = { class = "zenity", title = "Devices" },
-    size  = {500, 400},
-    move  = {1360, 640},
+    size  = { 500, 400 },
+    move  = { 1360, 640 },
     float = true
 })
 
 -- Mailspring
 hl.window_rule({
-    name  = "mailspring-floating",
-    match = { class = "Mailspring" },
-    size  = {1884, 1026},
-    float = true,
-    center= true
+    name   = "mailspring-floating",
+    match  = { class = "Mailspring" },
+    size   = { 1884, 1026 },
+    float  = true,
+    center = true
 })
 
 -- LocalSend
 hl.window_rule({
     name  = "localsend-main-floating",
     match = { class = "org.localsend.localsend_app", title = "LocalSend" },
-    size  = {558, 578},
-    move  = {1340, 462},
+    size  = { 558, 578 },
+    move  = { 1340, 462 },
     float = true
 })
 
 hl.window_rule({
     name  = "localsend-open-file-floating",
     match = { class = "localsend_app", title = "Open File" },
-    size  = {731, 578},
-    move  = {1200, 462},
+    size  = { 731, 578 },
+    move  = { 1200, 462 },
     float = true
 })
 
@@ -455,8 +458,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "gtk-choose-directory-floating",
     match = { class = "xdg-desktop-portal-gtk", title = "Choose Directory" },
-    size  = {691, 514},
-    move  = {1225, 522},
+    size  = { 691, 514 },
+    move  = { 1225, 522 },
     float = true,
 })
 
@@ -471,15 +474,15 @@ hl.window_rule({
 hl.window_rule({
     name  = "xournalpp bookmark - new",
     match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - New bookmark" },
-    move  = {"cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)"},
+    move  = { "cursor_x-(window_w*0.5)", "cursor_y-(window_h*0.5)" },
     float = true
 })
 
 hl.window_rule({
     name  = "xournalpp bookmark - manager",
     match = { class = "com.github.xournalpp.xournalpp", title = "Xournalpp - Bookmarks Manager" },
-    size  = {477,326},
-    move  = {"cursor_x-(window_w*0.2)", "cursor_y-(window_h*0.5)"},
+    size  = { 477, 326 },
+    move  = { "cursor_x-(window_w*0.2)", "cursor_y-(window_h*0.5)" },
     float = true
 })
 -- Ignore maximize requests from floating windows.
@@ -502,7 +505,7 @@ hl.window_rule({
     match   = { class = "^(hyprmode)$" },
     float   = true,
     center  = true,
-    size    = {600, 530},
+    size    = { 600, 530 },
     opacity = "0.95",
 })
 
@@ -563,15 +566,15 @@ hl.window_rule({
     float = true,
     center = true
 })
--- KeePassXC 
+-- KeePassXC
 hl.window_rule({
-    name  = "Keepassxc",
-    match = {
+    name   = "Keepassxc",
+    match  = {
         class = "org.keepassxc.KeePassXC",
         title = "negative:KeePassXC - Browser Access Request|Generate Password",
     },
     center = true,
-    size   = {1567, 929},
+    size   = { 1567, 929 },
     float  = true,
 })
 
@@ -582,19 +585,19 @@ hl.window_rule({
         title = "KeePassXC - Browser Access Request",
     },
     float = true,
-    move = {
+    move  = {
         "cursor_x-(window_w*0.5)",
         "cursor_y-(window_h*0.5)",
     }
 })
 
 hl.window_rule({
-    name  = "Keepassxc generate password",
-    match = {
+    name   = "Keepassxc generate password",
+    match  = {
         class = "org.keepassxc.KeePassXC",
         title = "Generate Password",
     },
-    float = true,
+    float  = true,
     center = true
 })
 
@@ -665,7 +668,7 @@ hl.window_rule({
     match = { class = "eu.betterbird.Betterbird" },
     float = true,
     center = true,
-    size = {1906,1033}
+    size = { 1906, 1033 }
 })
 
 -- Obsidian
@@ -673,4 +676,15 @@ hl.window_rule({
     name = "obsidian-workspace",
     match = { class = "md.obsidian.Obsidian" },
     workspace = "1 silent",
+})
+
+-- kde file picker
+hl.window_rule({
+    name = "kde-file-picker",
+    match = {
+        class = "org.freedesktop.impl.portal.desktop.kde",
+    },
+    float = true,
+    size = { 1018, 622 },
+    center = true
 })
