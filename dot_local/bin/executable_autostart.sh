@@ -120,7 +120,7 @@ medium_startup() {
     hypr_exec_ws "11" "pavucontrol"
     hypr_exec_ws "11" "blueman-manager"
     hypr_exec_ws "11" "LocalSend.AppImage"
-    run_once_name "dolphin" dolphin --daemon
+    hypr_exec_ws "11" "dolphin"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
 }

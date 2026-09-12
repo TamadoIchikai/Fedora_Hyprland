@@ -52,7 +52,7 @@ hl.env("EXTERNAL_SCALE", tostring(external_scale))
 ---------------------
 
 local terminal          = "foot"
-local fileManager       = "dolphin --new-window"
+local fileManager       = "$HOME/.local/bin/file_manager.sh"
 local menu              = "fuzzel-scale.sh"
 local browser           = "zen"
 local browser_second    = "Helium.AppImage"
@@ -210,10 +210,10 @@ hl.config({
 
 hl.config({
     master = {
-        new_status = "master",
+        new_status = "slave",
+        mfact = 0.60,
     },
 })
-
 ----------------
 ----  MISC  ----
 ----------------
@@ -606,6 +606,15 @@ hl.window_rule({
     name = "mpc-qt-workspace",
     match = { class = "io.github.mpc_qt.mpc-qt" },
     workspace = "10 silent",
+})
+
+-- Dolphin: park every freshly launched window on workspace 11 so there is
+-- always a warm instance waiting; file_manager.sh pulls it to the current
+-- workspace instantly and refills 11.
+hl.window_rule({
+    name = "dolphin-workspace",
+    match = { class = "org.kde.dolphin" },
+    workspace = "11 silent",
 })
 
 -- copyq menu
