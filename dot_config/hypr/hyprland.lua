@@ -355,8 +355,8 @@ hl.bind(mainAlt .. " + S", hl.dsp.window.move({ workspace = "-1" }))
 -- hl.bind(mainAlt .. " + S",          hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e-1" }))
-hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
@@ -606,15 +606,6 @@ hl.window_rule({
     name = "mpc-qt-workspace",
     match = { class = "io.github.mpc_qt.mpc-qt" },
     workspace = "10 silent",
-})
-
--- Dolphin: park every freshly launched window on workspace 11 so there is
--- always a warm instance waiting; file_manager.sh pulls it to the current
--- workspace instantly and refills 11.
-hl.window_rule({
-    name = "dolphin-workspace",
-    match = { class = "org.kde.dolphin" },
-    workspace = "11 silent",
 })
 
 -- copyq menu

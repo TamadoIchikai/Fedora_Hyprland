@@ -12,8 +12,13 @@ set -euo pipefail
 # the debt (refill 11 to MAX) and exits without pulling anything.
 #
 # 11 is a parking garage: dolphins parked there stay tiled and never more than
-# MAX are parked. The main flock only serializes the instant bring; the keeper
-# runs on its own lock so spawning never blocks a press.
+# MAX are parked. New dolphins are spawned directly onto 11 via a per-spawn
+# rule on hl.dsp.exec_cmd (workplace + silent), so they never flash on the
+# current workspace and dialogs from the running instance are unaffected (the
+# rule is scoped to the spawned PID, not a global rule). The keeper's poll+park
+# below is a fallback in case a window ever maps elsewhere. The main flock only
+# serializes the instant bring; the keeper runs on its own lock so spawning
+# never blocks a press.
 
 # Locks live in the per-user runtime dir (0700), not shared /tmp where another
 # local user could pre-create the file and starve the flock. Fallback to /tmp
@@ -34,7 +39,9 @@ valid_addr() { [[ "$1" =~ ^0x[0-9a-fA-F]+$ ]]; }
 valid_ws()   { [[ "$1" =~ ^[0-9]+$ ]]; }
 dispatch()   { hyprctl dispatch "$1" >/dev/null || true; }
 
-launch_dolphin() { dispatch "hl.dsp.exec_cmd(\"dolphin --new-window\")"; }
+launch_dolphin() {
+    dispatch "hl.dsp.exec_cmd([[dolphin --new-window]], { workspace = [[$DUMP_WS silent]] })"
+}
 
 bring_to() { # addr workspace - move there + focus it
     valid_addr "$1" || return 1
