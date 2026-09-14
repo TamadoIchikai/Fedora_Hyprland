@@ -516,6 +516,13 @@ hl.window_rule({
     float = true,
 })
 
+-- hyprland dialog
+hl.window_rule({
+    name  = "hyprland dialog",
+    match = { class = "hyprland-dialog" },
+    float = true,
+    move = {"monitor_w/2-window_w/2","monitor_h-window_h*1.23"}
+})
 -- File Roller extraction popup
 hl.window_rule({
     name  = "file-roller-floating",

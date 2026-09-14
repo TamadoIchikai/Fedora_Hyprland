@@ -16,6 +16,7 @@ export RESTIC_SOURCE_BASE="/mnt/sda2"
 
 # Qt theme
 export QT_QPA_PLATFORMTHEME=qt6ct
+export GTK_USE_PORTAL=1
 
 # Gtk theme
 export ADW_DEBUG_COLOR_SCHEME=prefer-dark
