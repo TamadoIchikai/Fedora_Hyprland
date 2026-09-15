@@ -1,13 +1,15 @@
+sudo mkdir -p /etc/systemd/system/systemd-hibernate.service.d
+
 sudo tee /etc/systemd/system/hibernate-prepare.service >/dev/null <<'EOF'
 [Unit]
 Description=Swap off zram and re-enable disk swap before hibernation
 Before=systemd-hibernate.service
 
 [Service]
-Type=oneshot
-ExecStart=-/usr/bin/swapoff /dev/zram0
-ExecStart=/usr/bin/swapoff /dev/nvme0n1p7
-ExecStart=/usr/bin/swapon /dev/nvme0n1p7
+ExecStartPre=-/usr/bin/swapoff /dev/zram0
+ExecStartPre=/usr/bin/swapoff /dev/nvme0n1p7
+ExecStartPre=/usr/bin/swapon /dev/nvme0n1p7
+ExecStopPost=/usr/bin/bash -c 'grep -q "^/dev/zram0 " /proc/swaps || exec /usr/lib/systemd/system-generators/zram-generator --setup-device zram0'
 
 [Install]
 WantedBy=systemd-hibernate.service
