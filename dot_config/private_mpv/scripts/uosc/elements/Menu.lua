@@ -134,6 +134,7 @@ function Menu:init(data, callback, opts)
 	self.is_closing = false
 	self.drag_last_y = nil
 	self.is_dragging = false
+	self.reorder = nil
 
 	if utils.shared_script_property_set then
 		utils.shared_script_property_set('uosc-menu-type', self.type or 'undefined')
@@ -160,6 +161,7 @@ end
 function Menu:destroy()
 	Element.destroy(self)
 	self.is_closing = false
+	self.reorder = nil
 	if not self.is_being_replaced then Elements:maybe('curtain', 'unregister', self.id) end
 	if utils.shared_script_property_set then
 		utils.shared_script_property_set('uosc-menu-type', nil)
@@ -721,6 +723,47 @@ function Menu:handle_cursor_up(shortcut)
 	self.drag_last_y = nil
 end
 
+-- Starts right-mouse drag reorder of the currently hovered item.
+---@param shortcut? Shortcut
+function Menu:handle_cursor_down_secondary(shortcut)
+	local menu = self.current
+	if not menu or not menu.on_move or menu.search then return end
+	local index = self:index_at_y(cursor.y)
+	if not index then return end
+	menu.selected_index = index
+	self.reorder = {from = index, to = index}
+	menu.fling = nil
+	request_render()
+end
+
+-- Ends right-mouse drag reorder and commits the move.
+---@param shortcut? Shortcut
+function Menu:handle_cursor_up_secondary(shortcut)
+	local reorder = self.reorder
+	if not reorder then return end
+	self.reorder = nil
+	local menu = self.current
+	local to = reorder.to
+	if menu and menu.on_move and to then
+		if to > reorder.from then to = to - 1 end
+		if to ~= reorder.from then
+			menu.selected_index = reorder.from
+			self:move_selected_item_to(to)
+		end
+	end
+	request_render()
+end
+
+---@param y number
+function Menu:index_at_y(y)
+	local menu = self.current
+	local items = menu.items
+	if not items or #items == 0 then return nil end
+	local index = math.floor((y - menu.top + menu.scroll_y) / self.scroll_step) + 1
+	if index < 1 or index > #items then return nil end
+	return index
+end
+
 function Menu:on_global_mouse_move()
 	self.mouse_nav = true
 	if self.drag_last_y then
@@ -729,6 +772,21 @@ function Menu:on_global_mouse_move()
 			local distance = self.drag_last_y - cursor.y
 			if distance ~= 0 then self:set_scroll_by(distance) end
 			self.drag_last_y = cursor.y
+		end
+	end
+	if self.reorder then
+		local menu = self.current
+		if menu.on_move then
+			local edge = self.scroll_step
+			if cursor.y < menu.top + edge and menu.scroll_y > 0 then
+				self:set_scroll_by(-self.scroll_step)
+			elseif cursor.y > menu.top + menu.height - edge and menu.scroll_y < menu.scroll_height then
+				self:set_scroll_by(self.scroll_step)
+			end
+			local to = self:index_at_y(cursor.y) or (cursor.y < menu.top and 1 or #menu.items + 1)
+			if to and to ~= self.reorder.to then
+				self.reorder.to = to
+			end
 		end
 	end
 	request_render()
@@ -1274,9 +1332,17 @@ function Menu:handle_shortcut(shortcut, info)
 	elseif id == 'home' or id == 'end' then
 		self:navigate_by_items(id == 'home' and -math.huge or math.huge)
 	elseif id == 'shift+tab' then
-		self:prev_action()
+		if menu.type == 'playlist' or menu.type == 'memo-history' then
+			self:navigate_by_items(-1, true)
+		else
+			self:prev_action()
+		end
 	elseif id == 'tab' then
-		self:next_action()
+		if menu.type == 'playlist' or menu.type == 'memo-history' then
+			self:navigate_by_items(1, true)
+		else
+			self:next_action()
+		end
 	elseif id == 'ctrl+up' then
 		self:move_selected_item_by(-1)
 	elseif id == 'ctrl+down' then
@@ -1371,6 +1437,8 @@ function Menu:render()
 
 	cursor:zone('primary_down', display, self:create_action(function() self:handle_cursor_down() end))
 	cursor:zone('primary_up', display, self:create_action(function(shortcut) self:handle_cursor_up(shortcut) end))
+	cursor:zone('secondary_down', display, self:create_action(function(shortcut) self:handle_cursor_down_secondary(shortcut) end))
+	cursor:zone('secondary_up', display, self:create_action(function(shortcut) self:handle_cursor_up_secondary(shortcut) end))
 	cursor:zone('wheel_down', self, function() self:handle_wheel_down() end)
 	cursor:zone('wheel_up', self, function() self:handle_wheel_up() end)
 
@@ -1456,7 +1524,7 @@ function Menu:render()
 			}
 
 			-- Select hovered item
-			if is_current and self.mouse_nav and item.selectable ~= false
+			if is_current and self.mouse_nav and not self.reorder and item.selectable ~= false
 				-- Do not select items if cursor is moving towards a submenu
 				and (not submenu_rect or not cursor:direction_to_rectangle_distance(submenu_rect))
 				and (submenu_is_hovered or get_point_to_rectangle_proximity(cursor, item_rect_hitbox) <= 0) then
@@ -1650,6 +1718,14 @@ function Menu:render()
 					clip = clip,
 				})
 			end
+		end
+
+		-- Right-drag reorder drop indicator
+		if is_current and self.reorder and self.reorder.to and menu.on_move then
+			local y = content_rect.ay - menu.scroll_y + self.scroll_step * (self.reorder.to - 1)
+			ass:rect(content_rect.ax, y - 2, content_rect.bx, y + 2, {
+				radius = state.radius, color = fg, opacity = 0.75 * menu_opacity, clip = scroll_clip,
+			})
 		end
 
 		-- Footnote / Selected action label

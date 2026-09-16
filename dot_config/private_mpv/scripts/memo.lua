@@ -1009,8 +1009,8 @@ local function make_item(record, ctx)
             return nil
         end
 
-        -- Directory menu groups entries by configured directory prefix, but
-        -- selecting the item loads the latest matching file from that group.
+        -- Directory menu groups entries by configured directory prefix.
+        -- Selecting the item loads the whole directory as a playlist.
         target_path = meta.path
         exists_path = meta.effective
         searchable = title .. " " .. dir_key
@@ -1057,7 +1057,7 @@ local function make_item(record, ctx)
     return {
         title = title,
         hint = format_timestamp(record.time),
-        value = { "loadfile", target_path, "replace" },
+        value = { "loadfile", ctx.dir_menu and dir_key or target_path, "replace" },
     }
 end
 
