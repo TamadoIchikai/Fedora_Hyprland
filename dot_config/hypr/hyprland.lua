@@ -77,7 +77,6 @@ local autostart_wrapper = "$HOME/.local/bin/autostart-wrapper.sh"
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("systemctl --user start hyprland-session.target")
-    hl.exec_cmd("systemctl --user start hyprlandMonitor_Watcher.service")
 
     local cmd = string.format([=[
 bash -lc '
