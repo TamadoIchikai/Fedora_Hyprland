@@ -42,6 +42,7 @@ local function browse_musics(mode)
         mp.osd_message("RESTIC_SOURCE_BASE not set", 3)
         return
     end
+    base = base:gsub("[/\\]+$", "")
     mp.commandv("script-message-to", "file_browser", "file-type-filter", mode)
     mp.commandv("script-message-to", "file_browser", "browse-directory", base .. "/Musics")
 end
