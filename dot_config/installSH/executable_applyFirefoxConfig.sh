@@ -46,18 +46,18 @@ SKIP_PROFILE_FILES=false
 if [[ -d "$INPUT_PROFILE_FOLDER" ]]; then
     echo ""
     read -p "INPUT_PROFILE_FOLDER detected, do you want to apply profile folder to .config/${OUTPUT_BROWSER}? [y/N]: " confirm_full_prof
-    
+
     if [[ "$confirm_full_prof" =~ ^[Yy]$ ]]; then
         echo "🚀 Copying entire profile folder..."
-        
+
         # Ensure the destination parent directory exists
         mkdir -p "$INIT_OUTPUT_PROFILE"
-        
+
         # Copy the whole folder (including the folder name itself)
         cp -a "$INPUT_PROFILE_FOLDER" "$INIT_OUTPUT_PROFILE/"
-        
+
         echo "✅ Successfully copied $(basename "$INPUT_PROFILE_FOLDER") to $INIT_OUTPUT_PROFILE/"
-        
+
         # Flag to skip the next section
         SKIP_PROFILE_FILES=true
     else
@@ -81,24 +81,45 @@ if [[ "$SKIP_PROFILE_FILES" == false ]]; then
     if [[ -n "$OUTPUT_PROFILE" ]]; then
         echo "✅ Found OUTPUT_PROFILE: $OUTPUT_PROFILE"
         read -p "Copy profile configs to this directory? [y/N]: " confirm_prof
-        
+
         if [[ "$confirm_prof" =~ ^[Yy]$ ]]; then
             files_to_copy=(
-                "places.sqlite" 
-                "search.json.mozlz4" 
-                "sessionCheckpoints.json" 
-                "storage.sqlite" 
-                "zen-sessions.jsonlz4" 
-                "user.js"
+                "places.sqlite"
+                "storage.sqlite"
+                "search.json.mozlz4"
+                "sessionstore.jsonlz4"
+                "zen-sessions.jsonlz4"
+                "zen-space-routing.jsonlz4"
+                "containers.json"
+                "extension-preferences.json"
+                "extension-settings.json"
+                "extensions.json"
+                "sessionCheckpoints.json"
                 "zen-keyboard-shortcuts.json"
+                "user.js"
+                "prefs.js"
             )
-            
+
+            folder_to_copy=("extensions")
+
             for f in "${files_to_copy[@]}"; do
                 if [[ -f "$INPUT_PROFILE/$f" ]]; then
                     cp "$INPUT_PROFILE/$f" "$OUTPUT_PROFILE/"
                     echo "  -> Copied $f"
                 else
                     echo "  -> ⚠️ Skipped $f (Not found in INPUT_PROFILE)"
+                fi
+            done
+
+            for folder in "${folder_to_copy[@]}"; do
+                if [[ -z "$folder" ]]; then
+                    continue
+                fi
+                if [[ -d "$INPUT_PROFILE/$folder" ]]; then
+                    cp -a "$INPUT_PROFILE/$folder" "$OUTPUT_PROFILE/"
+                    echo "  -> Copied folder $folder"
+                else
+                    echo "  -> ⚠️ Skipped folder $folder (Not found in INPUT_PROFILE)"
                 fi
             done
         else
@@ -124,7 +145,7 @@ if [[ -d "$INIT_OUTPUT_INSTALL" ]]; then
     # Search ONLY inside the specified test directory for the "zen" binary
     while IFS= read -r possible_zen; do
         candidate_dir="$(dirname "$possible_zen")"
-        
+
         # Check the 3 strict conditions
         if [[ -f "$candidate_dir/zen" && -f "$candidate_dir/zen-bin" && -d "$candidate_dir/defaults" ]]; then
             OUTPUT_INSTALL="$candidate_dir"
@@ -136,21 +157,21 @@ fi
 if [[ -n "$OUTPUT_INSTALL" ]]; then
     echo "✅ Found OUTPUT_INSTALL: $OUTPUT_INSTALL"
     read -p "Copy install configs to this directory? [y/N]: " confirm_inst
-    
+
     if [[ "$confirm_inst" =~ ^[Yy]$ ]]; then
-        
+
         # Helper function: copies files safely, checking if directory exists, using sudo if write-protected
         copy_install_file() {
             local src_file="$1"
             local dest_dir="$2"
-            
+
             if [[ -f "$src_file" ]]; then
                 # STRICT REQUIREMENT: No mkdir. Skip if destination directory is unavailable.
                 if [[ ! -d "$dest_dir" ]]; then
                     echo "  -> ❌ Skipped $(basename "$src_file"): Destination folder $dest_dir does not exist!"
                     return
                 fi
-                
+
                 # Check if we have write access
                 if [[ -w "$dest_dir" ]]; then
                     cp "$src_file" "$dest_dir/"

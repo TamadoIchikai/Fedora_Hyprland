@@ -4,7 +4,7 @@ set -euo pipefail
 # ---- ARGUMENT PARSING ----
 if [[ $# -eq 0 ]]; then
     echo "❌ Missing argument."
-    echo "👉 Usage: sudo $0 --install | --update"
+    echo "👉 Usage: sudo $0 --install | --update | --uninstall"
     exit 1
 fi
 
@@ -13,9 +13,11 @@ if [[ "$1" == "--install" ]]; then
     MODE="install"
 elif [[ "$1" == "--update" ]]; then
     MODE="update"
+elif [[ "$1" == "--uninstall" ]]; then
+    MODE="uninstall"
 else
     echo "❌ Invalid flag: $1"
-    echo "👉 Usage: sudo $0 --install | --update"
+    echo "👉 Usage: sudo $0 --install | --update | --uninstall"
     exit 1
 fi
 
@@ -28,7 +30,7 @@ fi
 
 # ---- CONFIGURATION ----
 INSTALL_DIR="/opt/zen"
-TMP_DIR="$(mktemp -d /tmp/zen_installer.XXXXXX)"
+TMP_DIR=""
 DESKTOP_FILE="/usr/share/applications/zen.desktop"
 GLOBAL_BIN="/usr/local/bin/zen"
 BIN_PATH="$INSTALL_DIR/zen"
@@ -50,12 +52,14 @@ cleanup() {
 trap cleanup EXIT
 
 # ---- DEPENDENCY CHECK ----
-for cmd in curl jq tar awk; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "❌ Error: '$cmd' is required but not installed." >&2
-        exit 1
-    fi
-done
+if [[ "$MODE" != "uninstall" ]]; then
+    for cmd in curl jq tar awk; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            echo "❌ Error: '$cmd' is required but not installed." >&2
+            exit 1
+        fi
+    done
+fi
 
 echo "========================================"
 echo "      Zen Browser System Manager        "
@@ -68,6 +72,84 @@ if [[ "$MODE" == "install" ]]; then
         exit 0
     fi
     echo "🚀 Starting fresh installation..."
+fi
+
+# ---- MODE: UNINSTALL ----
+if [[ "$MODE" == "uninstall" ]]; then
+    echo "🛑 Starting uninstallation of Zen Browser..."
+
+    echo ""
+    echo "This uninstaller will ONLY remove the following paths:"
+    echo "  - $INSTALL_DIR    (browser binaries + icon files)"
+    echo "  - $GLOBAL_BIN     (launcher binary)"
+    echo "  - $DESKTOP_FILE   (desktop entry)"
+    echo "Your browser profile, downloads, and input files under '$INPUT_INSTALL'"
+    echo "will NOT be touched."
+    echo ""
+
+    read -r -p "❓ Are you sure you want to permanently uninstall Zen Browser? [y/N] " confirm
+    if [[ ! "$confirm" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+        echo "❌ Uninstall cancelled by user."
+        exit 0
+    fi
+
+    echo ""
+
+    # ---- SAFETY VALIDATION: refuse dangerous paths ----
+    if [[ ! "$INSTALL_DIR" == /* ]] || [[ "$INSTALL_DIR" == "/" ]] \
+       || [[ "$INSTALL_DIR" == *"/../"* ]] || [[ "$INSTALL_DIR" == */.. ]]; then
+        echo "❌ Refusing to uninstall: '$INSTALL_DIR' is not a safe path." >&2
+        exit 1
+    fi
+
+    # 1) Desktop entry (only if it clearly references Zen Browser)
+    if [[ -f "$DESKTOP_FILE" ]] || [[ -L "$DESKTOP_FILE" ]]; then
+        if grep -Fq "Name=Zen Browser" "$DESKTOP_FILE" 2>/dev/null \
+           || grep -Fq "Exec=$GLOBAL_BIN" "$DESKTOP_FILE" 2>/dev/null; then
+            rm -f -- "$DESKTOP_FILE"
+            echo "✅ Removed desktop entry: $DESKTOP_FILE"
+        else
+            echo "⚠️  Skipped $DESKTOP_FILE: it does not reference Zen Browser."
+        fi
+    else
+        echo "⏭️  Desktop entry not found: $DESKTOP_FILE"
+    fi
+
+    # 2) Global launcher binary (only removed if it is a symlink into $INSTALL_DIR)
+    if [[ -L "$GLOBAL_BIN" ]]; then
+        real_target="$(readlink -f "$GLOBAL_BIN" 2>/dev/null || readlink "$GLOBAL_BIN" 2>/dev/null || echo "")"
+        if [[ -n "$real_target" && "$real_target" == "$INSTALL_DIR"/* ]]; then
+            rm -f -- "$GLOBAL_BIN"
+            echo "✅ Removed launcher binary: $GLOBAL_BIN"
+        else
+            echo "⚠️  Skipped $GLOBAL_BIN: it is not a symlink into $INSTALL_DIR (target: '$real_target')."
+        fi
+    elif [[ -e "$GLOBAL_BIN" ]]; then
+        echo "⚠️  Skipped $GLOBAL_BIN: it is a regular file, not a symlink created by this script."
+        echo "   If you wish to remove it, do so manually:  rm $GLOBAL_BIN"
+    else
+        echo "⏭️  Launcher binary not found: $GLOBAL_BIN"
+    fi
+
+    # 3) Install directory (contains the browser binaries and icon files)
+    if [[ -e "$INSTALL_DIR" ]] || [[ -L "$INSTALL_DIR" ]]; then
+        rm -rf -- "$INSTALL_DIR"
+        echo "✅ Removed install directory: $INSTALL_DIR"
+    else
+        echo "⏭️  Install directory not found: $INSTALL_DIR"
+    fi
+
+    # 4) Refresh system caches (best effort)
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "/usr/share/applications" >/dev/null 2>&1 || true
+    fi
+    if [[ -d "/usr/share/icons/hicolor" ]] && command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t "/usr/share/icons/hicolor" >/dev/null 2>&1 || true
+    fi
+
+    echo ""
+    echo "✅ Uninstall complete. Zen Browser has been removed."
+    exit 0
 fi
 
 # ---- FETCH LATEST VERSION DATA ----
@@ -119,6 +201,7 @@ fi
 echo "🔗 Download URL: $DOWNLOAD_URL"
 
 FILENAME=$(basename "$DOWNLOAD_URL")
+TMP_DIR="$(mktemp -d /tmp/zen_installer.XXXXXX)"
 TMP_DOWNLOAD_PATH="$TMP_DIR/$FILENAME"
 
 echo "⬇️ Downloading to temporary directory..."
