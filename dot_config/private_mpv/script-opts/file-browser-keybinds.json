@@ -1,0 +1,22 @@
+[
+    {
+        "key": "h",
+        "command": ["script-binding", "file_browser/dynamic/up_dir"],
+        "flags": { "repeatable": true }
+    },
+    {
+        "key": "j",
+        "command": ["script-binding", "file_browser/dynamic/scroll_down"],
+        "flags": { "repeatable": true }
+    },
+    {
+        "key": "k",
+        "command": ["script-binding", "file_browser/dynamic/scroll_up"],
+        "flags": { "repeatable": true }
+    },
+    {
+        "key": "l",
+        "command": ["script-binding", "file_browser/dynamic/down_dir"],
+        "flags": { "repeatable": true }
+    }
+]

@@ -1,3 +1,4 @@
+-- custom-scripts.lua
 -- 1. Show active shaders (clean, one per line)
 mp.register_script_message("show-shaders", function()
     local shaders = mp.get_property_native("glsl-shaders")
@@ -33,3 +34,17 @@ mp.register_script_message("smart-paste", function(mode)
     mp.commandv("loadfile", text, append and "append-play" or "replace")
     mp.osd_message(append and "Added to playlist" or "Playing from clipboard")
 end)
+
+-- 3. Open mpv-file-browser at $RESTIC_SOURCE_BASE/Musics
+local function browse_musics(mode)
+    local base = os.getenv("RESTIC_SOURCE_BASE")
+    if not base or base == "" then
+        mp.osd_message("RESTIC_SOURCE_BASE not set", 3)
+        return
+    end
+    mp.commandv("script-message-to", "file_browser", "file-type-filter", mode)
+    mp.commandv("script-message-to", "file_browser", "browse-directory", base .. "/Musics")
+end
+
+mp.register_script_message("browse-files", function() browse_musics("files") end)
+mp.register_script_message("browse-musics", function() browse_musics("dirs") end)
