@@ -388,8 +388,8 @@ hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true 
 hl.window_rule({
     name  = "pavucontrol-floating",
     match = { class = "org.pulseaudio.pavucontrol" },
-    size  = { 650, 400 },
-    move  = { 1200, 640 },
+    size  = { "monitor_w*0.3385", "monitor_h*0.3704" },
+    move  = { "monitor_w*0.625", "monitor_h*0.5926" },
     float = true,
 })
 
@@ -397,8 +397,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "blueman-manager-floating",
     match = { class = "blueman-manager" },
-    size  = { 529, 345 },
-    move  = { 1368, 694 },
+    size  = { "monitor_w*0.2755", "monitor_h*0.3194" },
+    move  = { "monitor_w*0.7125", "monitor_h*0.6426" },
     float = true,
 })
 
@@ -406,8 +406,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "gtk-files-dialog-floating",
     match = { class = "xdg-desktop-portal-gtk", title = "Files" },
-    size  = { 700, 400 },
-    move  = { 1200, 640 },
+    size  = { "monitor_w*0.3646", "monitor_h*0.3704" },
+    move  = { "monitor_w*0.625", "monitor_h*0.5926" },
     float = true,
 })
 
@@ -422,8 +422,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "zenity-devices-floating",
     match = { class = "zenity", title = "Devices" },
-    size  = { 500, 400 },
-    move  = { 1360, 640 },
+    size  = { "monitor_w*0.2604", "monitor_h*0.3704" },
+    move  = { "monitor_w*0.7083", "monitor_h*0.5926" },
     float = true
 })
 
@@ -440,16 +440,16 @@ hl.window_rule({
 hl.window_rule({
     name  = "localsend-main-floating",
     match = { class = "org.localsend.localsend_app", title = "LocalSend" },
-    size  = { 558, 578 },
-    move  = { 1340, 462 },
+    size  = { "monitor_w*0.2906", "monitor_h*0.5352" },
+    move  = { "monitor_w*0.6979", "monitor_h*0.4278" },
     float = true
 })
 
 hl.window_rule({
     name  = "localsend-open-file-floating",
     match = { class = "localsend_app", title = "Open File" },
-    size  = { 731, 578 },
-    move  = { 1200, 462 },
+    size  = { "monitor_w*0.3807", "monitor_h*0.5352" },
+    move  = { "monitor_w*0.625", "monitor_h*0.4278" },
     float = true
 })
 
@@ -457,8 +457,8 @@ hl.window_rule({
 hl.window_rule({
     name  = "gtk-choose-directory-floating",
     match = { class = "xdg-desktop-portal-gtk", title = "Choose Directory" },
-    size  = { 691, 514 },
-    move  = { 1225, 522 },
+    size  = { "monitor_w*0.3599", "monitor_h*0.4759" },
+    move  = { "monitor_w*0.638", "monitor_h*0.4833" },
     float = true,
 })
 
