@@ -49,3 +49,63 @@ end
 
 mp.register_script_message("browse-files", function() browse_musics("files") end)
 mp.register_script_message("browse-musics", function() browse_musics("dirs") end)
+
+-- 4. Toggle shuffle: shuffle everything and move the current song to the front,
+--    press again to restore the order the playlist had before the shuffle.
+local shuffled = false
+
+-- mpv's unshuffle is one-shot and restores entries by the original_index they
+-- were given during the last shuffle. Entries added or removed since then have
+-- no such index, so the restore would only be partial. Drop the toggle state
+-- instead, so the next press starts a fresh shuffle.
+mp.observe_property("playlist-count", "number", function()
+    shuffled = false
+end)
+
+mp.register_script_message("shuffle", function()
+    if shuffled then
+        mp.commandv("playlist-unshuffle")
+        shuffled = false
+        mp.osd_message("Playlist order restored")
+        return
+    end
+
+    local playlist = mp.get_property_native("playlist")
+    if not playlist or #playlist < 2 then
+        mp.osd_message("Not enough songs to shuffle")
+        return
+    end
+
+    -- id is unique per playlist entry, so it survives the shuffle. Matching on
+    -- filename would break on duplicates in the playlist.
+    local current_id
+    for _, entry in ipairs(playlist) do
+        if entry.current then
+            current_id = entry.id
+            break
+        end
+    end
+    if not current_id then
+        mp.osd_message("No current entry")
+        return
+    end
+
+    mp.commandv("playlist-shuffle")
+
+    -- playlist-move <a> <b> fills the slot vacated by index b, so the entry
+    -- lands at b when a > b and at b - 1 when a < b. Moving towards index 0
+    -- always wants b = 0.
+    local target
+    for i, entry in ipairs(mp.get_property_native("playlist") or {}) do
+        if entry.id == current_id then
+            target = i - 1
+            break
+        end
+    end
+    if target and target > 0 then
+        mp.commandv("playlist-move", target, 0)
+    end
+
+    shuffled = true
+    mp.osd_message("Playlist shuffled")
+end)
