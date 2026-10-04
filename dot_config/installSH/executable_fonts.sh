@@ -60,3 +60,31 @@ if $NEED_JETBRAINS || $NEED_SYMBOLS; then
 else
     echo "Nerd Fonts are installed."
 fi
+
+# --- CHECK FOR EXISTING LIBRON FONT ---
+NEED_LIBRON=true
+
+# Safely check for matching font files in the directory without breaking the script if empty
+shopt -s nullglob
+libron_files=("$FONT_DIR"/*Libron*.ttf)
+shopt -u nullglob
+
+if ((${#libron_files[@]} > 0)); then
+    echo "Libron font already exists. Skipping."
+    NEED_LIBRON=false
+fi
+
+# --- DOWNLOAD AND EXTRACT (ONLY IF NEEDED) ---
+if $NEED_LIBRON; then
+    TMP_DIR="$(mktemp -d)"
+    # Ensure cleanup happens automatically upon script exit or error
+    trap 'rm -rf "$TMP_DIR"' EXIT
+
+    wget -q -O "$TMP_DIR/Libron.zip" "https://github.com/nicoverbruggen/libron/releases/download/v0.25/Libron.zip"
+    unzip -o -qq "$TMP_DIR/Libron.zip" -d "$FONT_DIR"
+
+    # Refresh font cache since we added new fonts
+    fc-cache -fv > /dev/null
+else
+    echo "Libron font is installed."
+fi
