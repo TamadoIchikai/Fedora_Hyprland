@@ -694,3 +694,13 @@ hl.window_rule({
     size = { 1018, 622 },
     center = true
 })
+
+-- Zotero - New collection
+hl.window_rule({
+    name = "zotero-new-collection",
+    match = {
+        class = "Zotero",
+	title = "New Collection"
+    },
+    size = { 430, 180 }
+})
