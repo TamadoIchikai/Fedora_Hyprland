@@ -1,57 +1,20 @@
-
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <actions>
-	<action>
-		<icon>application-x-iso9660-appimage</icon>
-		<name>Create Desktop Entry (AppImage)</name>
-		<submenu>AppImage</submenu>
-		<unique-id>1791836280000000-1</unique-id>
-		<command>bash -c '"$HOME/.local/bin/AppImageManager.sh" install --dir "$1"' -- %f</command>
-		<description>Generate a desktop entry and icon for the selected AppImage</description>
-		<range>*</range>
-		<patterns>*.AppImage</patterns>
-		<other-files />
-	</action>
-	<action>
-		<icon>emblem-remove</icon>
-		<name>Remove AppImage (from Desktop)</name>
-		<submenu>AppImage</submenu>
-		<unique-id>1791836280000000-2</unique-id>
-		<command>bash -lc '"$HOME/.local/bin/AppImageManager.sh" delete'</command>
-		<description>Remove the installed AppImage desktop entry and icon</description>
-		<range>*</range>
-		<patterns>*.AppImage</patterns>
-		<other-files />
-	</action>
-	<action>
-		<icon>system-run</icon>
-		<name>Open Directory as Admin</name>
-		<submenu>Tools</submenu>
-		<unique-id>1791836280000000-3</unique-id>
-		<command>thunar admin://%f</command>
-		<description>Open the selected directory as administrator</description>
-		<range>*</range>
-		<patterns>*</patterns>
-		<directories />
-	</action>
+    <action>
+       	<icon>utilities-terminal</icon>
+       	<name>Open Terminal here</name>
+           <unique-id>1791836280000000-3</unique-id>
+       	<command>foot --working-directory=%f</command>
+       	<description>Open foot terminal in current directory</description>
+       	<patterns>*</patterns>
+       	<directories />
+    	</action>
 	<action>
 		<icon>code-context</icon>
 		<name>Open IDE here</name>
-		<submenu>Tools</submenu>
 		<unique-id>1791836280000000-4</unique-id>
 		<command>zed -n %f</command>
 		<description>Open the selected directory in Zed</description>
-		<range>*</range>
-		<patterns>*</patterns>
-		<directories />
-	</action>
-	<action>
-		<icon>document-scan</icon>
-		<name>Scan with gdu</name>
-		<submenu>Tools</submenu>
-		<unique-id>1791836280000000-5</unique-id>
-		<command>foot --working-directory=%f gdu</command>
-		<description>Scan storage usage in the selected directory with gdu</description>
 		<range>*</range>
 		<patterns>*</patterns>
 		<directories />
@@ -91,7 +54,8 @@
 		<command>env peazip -add2archive %F</command>
 		<description>Add to Archive... (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -133,7 +97,8 @@
 		<command>env peazip -add27z %F</command>
 		<description>Add to 7Z (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -175,7 +140,8 @@
 		<command>env peazip -add2zip %F</command>
 		<description>Add to ZIP (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -217,7 +183,8 @@
 		<command>env peazip -add2gzip %F</command>
 		<description>Add to GZIP (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -259,7 +226,8 @@
 		<command>env peazip -add2xz %F</command>
 		<description>Add to XZ (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -301,7 +269,8 @@
 		<command>env peazip -add2tar %F</command>
 		<description>Add to TAR (single non-archive file)</description>
 		<range>1-1</range>
-		<patterns>*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
+		<patterns
+        >*.txt;*.md;*.markdown;*.rst;*.org;*.tex;*.csv;*.tsv;*.log;*.json;*.jsonc;*.yaml;*.yml;*.toml;*.xml;*.html;*.htm;*.css;*.scss;*.sass;*.less;*.js;*.mjs;*.cjs;*.ts;*.tsx;*.jsx;*.vue;*.svelte;*.py;*.pyw;*.pyi;*.ipynb;*.c;*.h;*.cc;*.hh;*.cpp;*.hpp;*.cxx;*.hxx;*.rs;*.go;*.java;*.kt;*.kts;*.swift;*.cs;*.fs;*.vb;*.php;*.phtml;*.rb;*.pl;*.pm;*.lua;*.r;*.jl;*.m;*.mm;*.sql;*.graphql;*.gql;*.proto;*.thrift;*.cmake;*.make;*.mk;*.sh;*.bash;*.zsh;*.fish;*.ps1;*.bat;*.cmd;*.xhtml;*.xsd;*.xsl;*.xslt;*.dtd;*.ini;*.cfg;*.conf;*.config;*.properties;*.desktop;*.service;*.target;*.socket;*.mount;*.timer;*.rules;*.policy;*.jsonld;*.env;*.example;*.sample;*.template;*.lock;*.sum;*.mod;*.gitignore;*.gitattributes;*.editorconfig;*.gitmodules;*.gitconfig;*.npmrc;*.nvmrc;*.yarnrc;*.prettierrc;*.eslintrc;*.babelrc;*.dockerignore;*.dockerfile;*.containerfile;*.makefile;*.gnumakefile;*.cmakein;*.cmakepatch;*.patch;*.diff;*.pot;*.po;*.mo;*.txtnote;*.adoc;*.asciidoc;*.wiki;*.rstx;*.bib;*.bbl;*.sty;*.cls;*.aux;*.toc;*.lof;*.lot;*.csvtsv;*.srt;*.vtt;*.sub;*.ass;*.ssa;*.lrc;*.nfo;*.cue;*.m3u;*.m3u8;*.pls;*.sfv;*.md5;*.sha1;*.sha256;*.sha512;*.asc;*.sig;*.pem;*.crt;*.cer;*.key;*.pub;*.der;*.p12;*.pfx;*.csr;*.req;*.conf.old;*.bak;*.old;*.orig;*.save;*.tmp;*.pdf;*.doc;*.docx;*.odt;*.rtf;*.xls;*.xlsx;*.ods;*.ppt;*.pptx;*.odp;*.pps;*.ppsx;*.mobi;*.djvu;*.pages;*.numbers;*.png;*.jpg;*.jpeg;*.jpe;*.gif;*.bmp;*.webp;*.avif;*.svg;*.tif;*.tiff;*.heic;*.heif;*.raw;*.dng;*.cr2;*.cr3;*.nef;*.arw;*.rw2;*.orf;*.psd;*.xcf;*.ai;*.eps;*.icns;*.ico;*.mp3;*.flac;*.wav;*.aac;*.ogg;*.opus;*.m4a;*.alac;*.wma;*.mid;*.midi;*.au;*.aiff;*.aif;*.caf;*.ape;*.amr;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.mpeg;*.mpg;*.m4v;*.wmv;*.ogv;*.mts;*.m2ts;*.flv;*.3gp;*.3g2;*.vob;*.appimage;*.bin;*.exe;*.dll;*.so;*.dylib;*.o;*.a;*.elf;*.wasm;*.qss;*.qml;*.ui;*.hpp.in;*.h.in;*.c.in;*.cpp.in;*.pyx;*.pxd;*.pxi;*.pxd.in;*.texi;*.potx;*.drawio;*.dxf;*.dwg;*.step;*.stp;*.iges;*.igs;*.stl;*.obj;*.mtl;*.gltf;*.glb;*.fbx;*.dae;*.blend;*.scad;*.fcstd;*.fcstd1;*.sldprt;*.sldasm;*.slddrw;*.sldlfp;*.lockb;*.tf;*.tfvars;*.hcl;*.nomad;*.consul;*.reg;*.sqlitedb;*.db;*.sqlite;*.sqlite3;*.psd1;*.psd1xml;*.xaml;*.resx;*.csproj;*.sln;*.vcxproj;*.vcproj;*.props;*.targets;*.gradle;*.ktsys;Makefile;GNUmakefile;Dockerfile;Containerfile;LICENSE;COPYING;NOTICE;README;INSTALL;AUTHORS;CONTRIBUTING;CHANGELOG;TODO;PKGBUILD;Justfile;.gitignore;.gitattributes;.gitmodules;.editorconfig;.bashrc;.bash_profile;.profile;.zshrc;.vimrc;.gitconfig;.npmrc;.yarnrc;.env;.env.example;.python-version;.clang-format</patterns>
 		<audio-files />
 		<image-files />
 		<other-files />
@@ -316,7 +285,8 @@
 		<command>env peazip -ext2test %F</command>
 		<description>Test archive integrity</description>
 		<range>*</range>
-		<patterns>*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
+		<patterns
+        >*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
 		<other-files />
 	</action>
 	<action>
@@ -327,7 +297,8 @@
 		<command>env peazip -ext2main %F</command>
 		<description>Open PeaZip extraction interface</description>
 		<range>*</range>
-		<patterns>*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
+		<patterns
+        >*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
 		<other-files />
 	</action>
 	<action>
@@ -338,7 +309,8 @@
 		<command>env peazip -ext2here %F</command>
 		<description>Extract archive(s) into the current directory</description>
 		<range>*</range>
-		<patterns>*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
+		<patterns
+        >*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
 		<other-files />
 	</action>
 	<action>
@@ -349,7 +321,8 @@
 		<command>env peazip -ext2folder %F</command>
 		<description>Extract here using PeaZip folder policy</description>
 		<range>*</range>
-		<patterns>*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
+		<patterns
+        >*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
 		<other-files />
 	</action>
 	<action>
@@ -360,7 +333,54 @@
 		<command>env peazip -ext2newfolder %F</command>
 		<description>Always extract into a new folder</description>
 		<range>*</range>
-		<patterns>*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
+		<patterns
+        >*.7z;*.7Z;*.zip;*.ZIP;*.rar;*.RAR;*.tar;*.TAR;*.gz;*.GZ;*.bz2;*.BZ2;*.xz;*.XZ;*.zst;*.ZST;*.iso;*.ISO</patterns>
 		<other-files />
+	</action>
+	<action>
+		<icon>application-x-iso9660-appimage</icon>
+		<name>Create Desktop Entry (AppImage)</name>
+		<submenu>AppImage</submenu>
+		<unique-id>1791836280000000-1</unique-id>
+		<command
+        >bash -c '"$HOME/.local/bin/AppImageManager.sh" install --dir "$1"' -- %f</command>
+		<description
+        >Generate a desktop entry and icon for the selected AppImage</description>
+		<range>*</range>
+		<patterns>*.AppImage</patterns>
+		<other-files />
+	</action>
+	<action>
+		<icon>emblem-remove</icon>
+		<name>Remove AppImage (from Desktop)</name>
+		<submenu>AppImage</submenu>
+		<unique-id>1791836280000000-2</unique-id>
+		<command>bash -lc '"$HOME/.local/bin/AppImageManager.sh" delete'</command>
+		<description>Remove the installed AppImage desktop entry and icon</description>
+		<range>*</range>
+		<patterns>*.AppImage</patterns>
+		<other-files />
+	</action>
+	<action>
+		<icon>system-run</icon>
+		<name>Open Directory as Admin</name>
+		<submenu>Tools</submenu>
+		<unique-id>1791836280000000-5</unique-id>
+		<command>thunar admin://%f</command>
+		<description>Open the selected directory as administrator</description>
+		<range>*</range>
+		<patterns>*</patterns>
+		<directories />
+	</action>
+	<action>
+		<icon>document-scan</icon>
+		<name>Scan with gdu</name>
+		<submenu>Tools</submenu>
+		<unique-id>1791836280000000-6</unique-id>
+		<command>foot --working-directory=%f gdu</command>
+		<description>Scan storage usage in the selected directory with gdu</description>
+		<range>*</range>
+		<patterns>*</patterns>
+		<directories />
 	</action>
 </actions>
