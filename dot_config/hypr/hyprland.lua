@@ -52,7 +52,7 @@ hl.env("EXTERNAL_SCALE", tostring(external_scale))
 ---------------------
 
 local terminal          = "foot"
-local fileManager       = "$HOME/.local/bin/file_manager.sh"
+local fileManager       = "thunar --window"
 local menu              = "fuzzel-scale.sh"
 local browser           = "zen"
 local browser_second    = "Helium.AppImage"
@@ -104,8 +104,8 @@ fi
 exec %s
 '
 ]=],
-        external_output, -- 1: jq select physically connected
-        dualMonitorMode, -- 2: --mode argument
+        external_output,  -- 1: jq select physically connected
+        dualMonitorMode,  -- 2: --mode argument
         autostart_wrapper -- 3: exec autostart wrapper
     )
 
@@ -520,7 +520,7 @@ hl.window_rule({
     name  = "hyprland dialog",
     match = { class = "hyprland-dialog" },
     float = true,
-    move = {"monitor_w/2-window_w/2","monitor_h-window_h*1.23"}
+    move  = { "monitor_w/2-window_w/2", "monitor_h-window_h*1.23" }
 })
 -- File Roller extraction popup
 hl.window_rule({
@@ -700,7 +700,7 @@ hl.window_rule({
     name = "zotero-new-collection",
     match = {
         class = "Zotero",
-	title = "New Collection"
+        title = "New Collection"
     },
     size = { 430, 180 }
 })

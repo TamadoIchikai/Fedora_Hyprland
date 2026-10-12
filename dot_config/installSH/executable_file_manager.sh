@@ -2,15 +2,15 @@
 set -euo pipefail
 
 sudo dnf install -y \
-dolphin redhat-menus kf6-kded \
+thunar thunar-archive-plugin thunar-volman \
 gvfs gvfs-fuse udisks2 gvfs-smb gvfs-mtp \
 peazip-qt6 unzip unrar 7zip \
 dconf gsettings-desktop-schemas \
 papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \
-kdegraphics-thumbnailers \
+evince-thumbnailer ffmpegthumbnailer \
 polkit mate-polkit \
-xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-kde
+xdg-desktop-portal xdg-desktop-portal-gtk
 
 # Ensure the GVfs daemon is not masked (common issue in minimal installs)
 systemctl --user unmask gvfs-daemon.service gvfs-metadata-service.service
@@ -97,5 +97,3 @@ xdg-mime default zen.desktop application/xhtml+xml
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
-
-kbuildsycoca6 --noincremental
