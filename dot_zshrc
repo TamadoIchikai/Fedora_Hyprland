@@ -138,5 +138,4 @@ eval "$(zoxide init --cmd cd zsh)"
 export UV_PROJECT_ENVIRONMENT=".env_linux"
 export UID=$(id -u)
 export GID=$(id -g)
-
-
+export PATH="$PATH:$RESTIC_SOURCE_BASE/Robotics/SCARA_Robot/STM32/arm-gnu-toolchain/bin"
