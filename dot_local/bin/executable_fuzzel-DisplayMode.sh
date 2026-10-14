@@ -62,6 +62,7 @@ LAPTOP_MODE="${LAPTOP_MODE:-1920x1080@60}"
 EXTERNAL_MODE="${EXTERNAL_MODE:-1920x1080@60}"
 LAPTOP_POS="${LAPTOP_POS:-0x0}"
 EXTERNAL_POS_EXTEND="${EXTERNAL_POS_EXTEND:-1920x0}"
+EXTERNAL_POS_ONLY="${EXTERNAL_POS_ONLY:-0x0}"
 EXTERNAL_POS_MIRROR="${EXTERNAL_POS_MIRROR:-0x0}"
 LAPTOP_SCALE="${LAPTOP_SCALE:-1}"
 EXTERNAL_SCALE="${EXTERNAL_SCALE:-1}"
@@ -142,7 +143,7 @@ case "$SELECTION" in
             notify-send "Display Error" "External screen not connected! Aborting." -u critical
             exit 1
         fi
-        enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"
+        enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_ONLY" "$EXTERNAL_SCALE"
         if verify_active "$EXTERNAL"; then
             if [[ -n "$laptop_connected" ]]; then disable_monitor "$LAPTOP"; fi
             notify-send "Display Mode" "External screen only" -i video-display
@@ -161,3 +162,13 @@ case "$SELECTION" in
         notify-send "Display Mode" "Displays mirrored" -i video-display
         ;;
 esac
+
+# 7. Restore parked windows' rule-defined geometry.
+# Changing the monitor layout makes mango re-center floating clients (it drops
+# the window_rule offset_x/offset_y, which only apply at map time), so the
+# parked apps would reappear centered. Let the layout settle, then re-assert
+# their configured offsets. Non-fatal: never block a mode switch on this.
+if command -v "$HOME/.config/waybar/scripts/reposition-parked.sh" >/dev/null 2>&1; then
+    sleep 0.5
+    "$HOME/.config/waybar/scripts/reposition-parked.sh" >/dev/null 2>&1 || true
+fi

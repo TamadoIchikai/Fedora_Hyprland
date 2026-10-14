@@ -6,23 +6,28 @@ umask 077
 source "$HOME/.config/abstractions/wm.sh"
 
 # ---------------------------------------------------------------
-# Hyprland Monitor Hotplug Watchdog (event-driven, zero polling)
+# Monitor Hotplug Watchdog (event-driven, zero polling)
+#
+# Compositor-agnostic: every compositor operation goes through the
+# WM_* API (see ~/.config/abstractions), so the same watchdog runs under
+# Hyprland and MangoWC.
 #
 # Three independent event sources:
 #   1. udev DRM connector events (kernel level, reliable)
-#   2. Hyprland socket2 IPC events (monitorremoved/added)
+#   2. compositor monitor IPC via WM_monitor_watch (monitoradded/removed,
+#      re-emitted by the backend in a normalized form)
 #   3. logind PrepareForSleep(false) = resume from suspend/hibernate,
 #      guarantees a display check on every wake even if the hotplug
 #      events above are late or missing.
 #
 # What this handles:
-#   - The "blind state": 0 real monitors rendering (Hyprland hides
-#     this behind a virtual "FALLBACK" output that shows up as an
-#     active monitor, so we count only REAL hardware monitors).
+#   - The "blind state": 0 real monitors rendering (some compositors hide
+#     this behind a virtual "FALLBACK" output that shows up as an active
+#     monitor, so we count only REAL hardware monitors).
 #     Rescue: reload config, then force-enable the laptop output.
 #   - The "ghost display" state: a physically connected external is
-#     silently disabled (signal present, no picture). On a
-#     monitoradded event we re-enable it + turn DPMS on.
+#     silently disabled (signal present, no picture). On a monitoradded
+#     event we re-enable it + turn DPMS on.
 # ---------------------------------------------------------------
 
 # ----- Configuration (env vars may override) -----
@@ -41,7 +46,7 @@ LAST_SKIP_LOG=0                                      # for rate-limiting lock-sk
 # followed by our O_TRUNC opens (exec 8>, echo >), silently truncating an
 # arbitrary file we can write, and could be used to hold the instance lock
 # as a denial-of-service.
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}/hyprland-monitor-watcher"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}/monitor-watcher"
 mkdir -m 700 -p "$RUNTIME_DIR" 2>/dev/null || {
     echo "Error: cannot create runtime dir: $RUNTIME_DIR" >&2
     exit 1
@@ -50,28 +55,23 @@ LOCKFILE="$RUNTIME_DIR/watcher.lock"                # mutex for checks/rescues
 INSTANCE_LOCK="$RUNTIME_DIR/watcher.instance"       # single-instance guard
 STAMP="$RUNTIME_DIR/rescue.cooldown"                # cooldown marker
 
-# jq predicate selecting real (hardware) outputs: Hyprland's virtual
-# FALLBACK output and headless outputs are not real monitors.
+# jq predicate selecting real (hardware) outputs: the virtual FALLBACK
+# output and headless outputs are not real monitors.
 REAL_MONITOR='((.name | startswith("FALLBACK") | not) and (.name | startswith("HEADLESS-") | not))'
 
 # ----- Environment sanity checks -----
-if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-    echo "Error: HYPRLAND_INSTANCE_SIGNATURE is not set. Are you running this inside Hyprland?" >&2
-    exit 1
-fi
-
-SOCKET="${XDG_RUNTIME_DIR:-/tmp}/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
-if [[ ! -S "$SOCKET" ]]; then
-    SOCKET="/tmp/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
-fi
-if [[ ! -S "$SOCKET" ]]; then
-    echo "Error: Hyprland event socket not found: $SOCKET" >&2
+if [[ -z "${WM_CURR:-}" ]]; then
+    echo "Error: no supported compositor detected (WM_CURR is unset). Is the WM API installed?" >&2
     exit 1
 fi
 
 command -v jq >/dev/null 2>&1 || { echo "Error: jq is required" >&2; exit 1; }
-command -v socat >/dev/null 2>&1 || { echo "Error: socat is required" >&2; exit 1; }
 command -v flock >/dev/null 2>&1 || { echo "Error: flock is required" >&2; exit 1; }
+
+if ! command -v WM_monitor_watch >/dev/null 2>&1; then
+    echo "Error: WM API backend for '$WM_CURR' did not provide WM_monitor_watch." >&2
+    exit 1
+fi
 
 # ----- Single-instance guard -----
 # Held for the lifetime of this process. A second copy of the script
@@ -118,7 +118,7 @@ output_active() {
         | jq -e --arg m "$mon" 'any(.[]; .name == $m)' >/dev/null 2>&1
 }
 
-# True if output is known to Hyprland (active OR inactive/disabled).
+# True if output is known to the compositor (active OR inactive/disabled).
 output_present() {
     local mon="$1"
     WM_monitor_present "$mon" >/dev/null 2>&1
@@ -126,14 +126,14 @@ output_present() {
 
 # Connector names are compositor-controlled tokens (letters, digits,
 # '-', '.', '_'). A name that fails this check is never interpolated into
-# a hyprctl eval Lua string, so a malformed or hostile name cannot inject
-# Lua (e.g. a ' that breaks out of the string literal).
+# a compositor command string, so a malformed or hostile name cannot inject
+# into the underlying eval/argument.
 valid_mon_name() {
     [[ "$1" =~ ^[A-Za-z0-9._-]{1,64}$ ]]
 }
 
 # Some GPUs resume with outputs active but DPMS off (black screen).
-# Re-light anything Hyprland currently renders.
+# Re-light anything the compositor currently renders.
 ensure_active_dpms() {
     WM_monitor_list --all 2>/dev/null \
         | jq -r ".[] | select($REAL_MONITOR and .disabled == false) | .name" 2>/dev/null \
@@ -170,7 +170,7 @@ rescue_laptop() {
     fi
 
     # A real monitor is rendering -> healthy. Do NOT stamp the cooldown:
-    # if this check ran early (before Hyprland finished removing the
+    # if this check ran early (before the compositor finished removing the
     # output), the follow-up event must be allowed to trigger again.
     if (( count > 0 )); then
         log "ok: $count real monitor(s) rendering, no rescue needed"
@@ -205,7 +205,7 @@ rescue_laptop() {
 
     # Stage 2: force-enable the laptop output directly, with verification.
     if ! valid_mon_name "$LAPTOP"; then
-        log "ERROR: LAPTOP output name is not a safe token; refusing eval: $LAPTOP"
+        log "ERROR: LAPTOP output name is not a safe token; refusing enable: $LAPTOP"
         notify_event "RESCUE FAILED - LAPTOP output name is unsafe" critical
         exec 9>&-
         return 1
@@ -232,7 +232,7 @@ rescue_laptop() {
 
 # ----- Repair a monitor that was just (re)added but is not rendering -----
 # Fixes the "ghost display" case: signal present (LED lit) but no
-# picture, because Hyprland re-added the output in a disabled state.
+# picture, because the compositor re-added the output in a disabled state.
 repair_added() {
     local mon="$1"
 
@@ -264,7 +264,7 @@ repair_added() {
             log "repair failed: $mon still not rendering"
         fi
     else
-        log "monitor $mon added event, but not present in Hyprland"
+        log "monitor $mon added event, but not present in the compositor"
     fi
 
     exec 9>&-
@@ -272,21 +272,6 @@ repair_added() {
 
 maybe_rescue() {
     rescue_laptop &
-}
-
-# Extract the monitor name from monitoradded/removed and their v2 forms.
-event_monitor_name() {
-    local line="$1"
-    local payload
-    case "$line" in
-        monitoraddedv2\>\>*|monitorremovedv2\>\>*)
-            payload="${line#*>>}"
-            printf '%s' "${payload#*,}" | cut -d, -f1
-            ;;
-        monitoradded\>\>*|monitorremoved\>\>*)
-            printf '%s' "${line#*>>}"
-            ;;
-    esac
 }
 
 # ----- Event source 1: udev DRM connector events (kernel level) -----
@@ -304,47 +289,44 @@ listen_udev() {
     done
 }
 
-# ----- Event source 2: Hyprland socket2 IPC events -----
-listen_hypr() {
+# ----- Event source 2: compositor monitor IPC (normalized by the WM API) -----
+# WM_monitor_watch streams normalized lines: "add <name>", "remove <name>",
+# and (where the compositor exposes it) "change <name>".
+listen_wm() {
     while true; do
-        if [[ ! -S "$SOCKET" ]]; then
-            log "hyprland socket missing; retrying in ${RECONNECT_DELAY}s"
-            sleep "$RECONNECT_DELAY"
-            continue
-        fi
-        log "hyprland socket listener starting: $SOCKET"
-        socat -U - UNIX-CONNECT:"$SOCKET" 2>/dev/null \
-            | while read -r line; do
-                case "$line" in
-                    monitorremovedv2*|monitoraddedv2*)
-                        # v2 events carry an ID,NAME,DESC payload; the legacy
-                        # "monitorremoved>>NAME" twin always accompanies them
-                        # (Hyprland >= 0.55), so we react to v2 only and avoid
-                        # doubling every reaction and log line. React to
-                        # FALLBACK/HEADLESS churn too, but don't echo it.
-                        name="$(event_monitor_name "$line")"
+        log "compositor monitor listener starting (WM=${WM_CURR:-<unset>})"
+        WM_monitor_watch 2>/dev/null \
+            | while read -r action name; do
+                case "$action" in
+                    add)
                         case "$name" in
                             FALLBACK*|HEADLESS-*)
+                                # Virtual/headless churn: re-check, don't echo.
                                 maybe_rescue
                                 ;;
                             *)
-                                log "hyprland event: $line"
+                                log "monitor added: $name"
                                 maybe_rescue
-                                if [[ "$line" == monitoraddedv2* ]]; then
-                                    repair_added "$name" &
-                                fi
+                                repair_added "$name" &
                                 ;;
                         esac
                         ;;
+                    remove)
+                        log "monitor removed: $name"
+                        maybe_rescue
+                        ;;
+                    change)
+                        maybe_rescue
+                        ;;
                 esac
             done
-        log "hyprland socket listener exited; reconnecting in ${RECONNECT_DELAY}s"
+        log "compositor monitor listener exited; reconnecting in ${RECONNECT_DELAY}s"
         sleep "$RECONNECT_DELAY"
     done
 }
 
 # ----- Event source 3: system suspend/resume (logind) -----
-# After suspend/hibernate, udev and Hyprland are usually late (or
+# After suspend/hibernate, udev and the compositor are usually late (or
 # silent) about connectors that changed while frozen, so a blind state
 # can linger with no event to react to. logind's PrepareForSleep(false)
 # fires on EVERY wake, guaranteeing we re-check the display state
@@ -370,17 +352,17 @@ listen_resume() {
 }
 
 # ----- Main -----
-log "starting hyprland monitor watchdog (laptop=$LAPTOP, external=$EXTERNAL)"
+log "starting monitor watchdog (WM=${WM_CURR:-<unset>}, laptop=$LAPTOP, external=$EXTERNAL)"
 
 listen_udev &
 UDEV_PID=$!
-listen_hypr &
-HYPR_PID=$!
+listen_wm &
+WM_PID=$!
 listen_resume &
 RESUME_PID=$!
 
 # ----- Graceful shutdown -----
-# Take down the whole tree (listener subshells, socat, udevadm, the
+# Take down the whole tree (listener subshells, socat/mmsg, udevadm, the
 # `while read` pipeline halves, any in-flight rescue/repair) so nothing
 # survives after we exit. The instance lock (fd 8) and the check mutex
 # release automatically once the last process holding them dies.
@@ -422,4 +404,4 @@ trap 'shutdown_gracefully TERM' TERM
 trap 'shutdown_gracefully INT' INT
 trap 'kill_children "$$" 2>/dev/null' EXIT
 
-wait "$UDEV_PID" "$HYPR_PID" "$RESUME_PID"
+wait "$UDEV_PID" "$WM_PID" "$RESUME_PID"
