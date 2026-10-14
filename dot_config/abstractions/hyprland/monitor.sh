@@ -33,6 +33,11 @@ WM_monitor_present() {
 WM_monitor_enable() {
     local name="$1" mode="${2:-}" pos="${3:-}" scale="${4:-}" mirror="${5:-}" rc
     [ -n "$name" ] || { WM_err "WM_monitor_enable: missing name"; return 1; }
+    WM_monitor_name_valid "$name" || { WM_err "WM_monitor_enable: invalid name '$name'"; return 1; }
+    [ -z "$mode" ]   || WM_mode_valid "$mode"           || { WM_err "WM_monitor_enable: invalid mode '$mode'"; return 1; }
+    [ -z "$pos" ]    || WM_mode_valid "$pos"            || { WM_err "WM_monitor_enable: invalid position '$pos'"; return 1; }
+    [ -z "$scale" ]  || WM_number_valid "$scale"        || { WM_err "WM_monitor_enable: invalid scale '$scale'"; return 1; }
+    [ -z "$mirror" ] || WM_monitor_name_valid "$mirror" || { WM_err "WM_monitor_enable: invalid mirror '$mirror'"; return 1; }
 
     local lua="hl.monitor({ output = '$name', disabled = false"
     [ -n "$mode" ]   && lua="$lua, mode = '$mode'"
@@ -48,8 +53,9 @@ WM_monitor_enable() {
 }
 
 WM_monitor_disable() {
-    local name="$1" rc
+    local name="$1"
     [ -n "$name" ] || { WM_err "WM_monitor_disable: missing name"; return 1; }
+    WM_monitor_name_valid "$name" || { WM_err "WM_monitor_disable: invalid name '$name'"; return 1; }
     hyprctl eval "hl.monitor({ output = '$name', disabled = true })" >/dev/null
     return "$?"
 }
@@ -58,6 +64,7 @@ WM_monitor_disable() {
 WM_monitor_dpms() {
     local name="$1" state="$2" action
     [ -n "$name" ] || { WM_err "WM_monitor_dpms: missing name"; return 1; }
+    WM_monitor_name_valid "$name" || { WM_err "WM_monitor_dpms: invalid name '$name'"; return 1; }
     case "$state" in
         on|true|1)   action=on ;;
         off|false|0) action=off ;;

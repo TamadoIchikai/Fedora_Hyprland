@@ -32,12 +32,14 @@ WM_window_active() {
 WM_window_focus() {
     local handle="$1"
     [ -n "$handle" ] || { WM_err "WM_window_focus: missing handle"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_focus: invalid handle '$handle'"; return 1; }
     hyprctl dispatch "hl.dsp.focus({ window = 'address:$handle' })" >/dev/null
 }
 
 WM_window_close() {
     local handle="$1"
     [ -n "$handle" ] || { WM_err "WM_window_close: missing handle"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_close: invalid handle '$handle'"; return 1; }
     hyprctl dispatch "hl.dsp.window.close({ window = 'address:$handle' })" >/dev/null
 }
 
@@ -45,6 +47,7 @@ WM_window_move_to_workspace() {
     local handle="$1" ws="$2" follow="${3:-false}" wslua
     [ -n "$handle" ] || { WM_err "WM_window_move_to_workspace: missing handle"; return 1; }
     [ -n "$ws" ]     || { WM_err "WM_window_move_to_workspace: missing workspace"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_move_to_workspace: invalid handle '$handle'"; return 1; }
 
     case "$ws" in
         *[!0-9]*) wslua="$(WM_lua_str "$ws")" ;;
@@ -61,8 +64,5 @@ WM_window_workspace() {
 }
 
 WM_window_handle_valid() {
-    case "${1:-}" in
-        ''|*[!0-9a-fA-Fx]*) return 1 ;;
-    esac
-    [[ "${1}" =~ ^(0x)?[0-9a-fA-F]+$ ]]
+    [[ "${1:-}" =~ ^(0x)?[0-9a-fA-F]+$ ]]
 }

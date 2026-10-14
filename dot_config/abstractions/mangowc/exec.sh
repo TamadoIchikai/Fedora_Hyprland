@@ -3,6 +3,9 @@
 # mangowc/exec.sh — MangoWC command launching.
 # NOTE: MangoWC has no native per-spawn workspace/float options, so the
 #       workspace/floating variants are best-effort and marked TODO(mango).
+# SECURITY: the command passed to WM_exec* is treated as trusted — it is an
+#       arbitrary command spawn, so it cannot be allowlisted. Callers must not
+#       pass untrusted input. `mmsg` comma/arg parsing is TODO(mango).
 
 WM_exec() {
     local cmd="$1"
@@ -28,6 +31,8 @@ WM_exec_on_workspace() {
 WM_exec_floating() {
     local cmd="$1" center="${2:-true}" w="${3:-0.6}" h="${4:-0.6}"
     [ -n "$cmd" ] || { WM_err "WM_exec_floating: missing command"; return 1; }
+    WM_number_valid "$w" || { WM_err "WM_exec_floating: invalid width '$w'"; return 1; }
+    WM_number_valid "$h" || { WM_err "WM_exec_floating: invalid height '$h'"; return 1; }
 
     # TODO(mango): no per-spawn float/center/size. Spawn, then apply
     #   `togglefloating` + `centerwin` + `resizewin client,<id>` to the new

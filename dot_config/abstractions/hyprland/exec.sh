@@ -29,6 +29,8 @@ WM_exec_on_workspace() {
 WM_exec_floating() {
     local cmd="$1" center="${2:-true}" w="${3:-0.6}" h="${4:-0.6}"
     [ -n "$cmd" ] || { WM_err "WM_exec_floating: missing command"; return 1; }
+    WM_number_valid "$w" || { WM_err "WM_exec_floating: invalid width '$w'"; return 1; }
+    WM_number_valid "$h" || { WM_err "WM_exec_floating: invalid height '$h'"; return 1; }
     case "$center" in true|1|yes) center=true ;; *) center=false ;; esac
 
     hyprctl dispatch "hl.dsp.exec_cmd($(WM_lua_long "$cmd"), { float = true, center = $center, size = { '(monitor_w*$w)', '(monitor_h*$h)' } })" >/dev/null

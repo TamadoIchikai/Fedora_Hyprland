@@ -61,6 +61,7 @@ WM_window_active() {
 WM_window_focus() {
     local handle="$1"
     [ -n "$handle" ] || { WM_err "WM_window_focus: missing handle"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_focus: invalid handle '$handle'"; return 1; }
     # TODO(mango): verify `focusid client,<id>`.
     mmsg dispatch focusid "client,$handle" >/dev/null
 }
@@ -68,6 +69,7 @@ WM_window_focus() {
 WM_window_close() {
     local handle="$1"
     [ -n "$handle" ] || { WM_err "WM_window_close: missing handle"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_close: invalid handle '$handle'"; return 1; }
     # TODO(mango): verify `killclient` accepts a client target.
     mmsg dispatch killclient "client,$handle" >/dev/null
 }
@@ -76,6 +78,8 @@ WM_window_move_to_workspace() {
     local handle="$1" ws="$2" follow="${3:-false}"
     [ -n "$handle" ] || { WM_err "WM_window_move_to_workspace: missing handle"; return 1; }
     [ -n "$ws" ]     || { WM_err "WM_window_move_to_workspace: missing workspace"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_move_to_workspace: invalid handle '$handle'"; return 1; }
+    [[ "$ws" =~ ^[0-9]+$ ]] || { WM_err "WM_window_move_to_workspace: invalid workspace '$ws'"; return 1; }
 
     # `tag,<mask> client,<id>` moves; `tagsilent` is the same without focus.
     # TODO(mango): verify follow semantics (whether `tag` already switches the
@@ -93,6 +97,7 @@ WM_window_move_to_workspace() {
 
 WM_window_workspace() {
     local handle="$1"
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_workspace: invalid handle '$handle'"; return 1; }
     # TODO(mango): verify `.tags`; a window may occupy multiple tags, this
     #              returns the first.
     mmsg get all-clients \

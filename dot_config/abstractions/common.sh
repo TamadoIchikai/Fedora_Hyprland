@@ -24,6 +24,13 @@ WM_park_workspace() {
     printf '%s' "${WM_PARK_WORKSPACE:-}"
 }
 
+# Strict allowlists for values interpolated into compositor command strings.
+# These reject the quote/bracket/backslash characters that could break out of
+# the Lua or mmsg argument the value is embedded in.
+WM_monitor_name_valid() { [[ "${1:-}" =~ ^[A-Za-z0-9._-]+$ ]]; }
+WM_mode_valid()         { [[ "${1:-}" =~ ^[A-Za-z0-9@._xX-]+$ ]]; }
+WM_number_valid()       { [[ "${1:-}" =~ ^[0-9]*\.?[0-9]+$ ]]; }
+
 # Emit a Lua single-quoted string literal for arbitrary text.
 WM_lua_str() {
     local s="$1"

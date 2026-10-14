@@ -14,6 +14,8 @@ fi
 WM_API_LOADED=1
 
 : "${WM_API_DIR:=$HOME/.config/abstractions}"
+# Note: WM_API_DIR and WM_CURR decide which files are sourced/executed below.
+# They are treated as trusted (user-session) inputs, not attacker-controlled.
 
 # Shared helpers (WM_err, WM_have, WM_require, ...).
 source "$WM_API_DIR/common.sh" 2>/dev/null || true
@@ -53,11 +55,14 @@ export WM_CURR
 WM_API_BACKEND="$(WM_API_DIR="$WM_API_DIR" "$WM_API_DIR/compositor_selector.sh" 2>/dev/null)" || WM_API_BACKEND=""
 
 if [ -n "$WM_API_BACKEND" ] && [ -d "$WM_API_BACKEND" ]; then
-    for _wm_file in "$WM_API_BACKEND"/*.sh; do
-        [ -e "$_wm_file" ] || continue
+    # Source a fixed allowlist rather than globbing every *.sh in the dir, so
+    # a stray or planted file can't be executed in every new shell.
+    for _wm_part in exec monitor session window workspace; do
+        _wm_file="$WM_API_BACKEND/$_wm_part.sh"
+        [ -f "$_wm_file" ] || { WM_err "missing backend file: $_wm_part.sh"; continue; }
         source "$_wm_file"
     done
-    unset _wm_file
+    unset _wm_file _wm_part
 else
     WM_err "no backend loaded (WM_CURR='${WM_CURR:-<unset>}')"
 fi

@@ -7,12 +7,8 @@
 _wm="${WM_CURR:-${DESKTOP_COMPOSITOR:-}}"
 
 case "$_wm" in
-    hyprland)
-        echo "${WM_API_DIR:-$HOME/.config/abstractions}/hyprland"
-        ;;
-
-    mangowc)
-        echo "${WM_API_DIR:-$HOME/.config/abstractions}/mangowc"
+    hyprland|mangowc)
+        echo "${WM_API_DIR:-$HOME/.config/abstractions}/$_wm"
         ;;
 
     *)
