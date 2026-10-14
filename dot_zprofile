@@ -43,14 +43,6 @@ fi
 systemctl --user import-environment SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
 dbus-update-activation-environment --systemd SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
 
-# -----------------------------
-# Auto-start Hyprland on tty1
-# -----------------------------
-
-if [[ -z "${DISPLAY:-}" ]] && [[ "$(tty)" == "/dev/tty1" ]] && { command -v Hyprland || command -v hyprland || command -v start-hyprland; } >/dev/null 2>&1; then
-    exec start-hyprland
-fi
-
 # Detect current Wayland compositor
 case "$XDG_CURRENT_DESKTOP" in
     Hyprland)
