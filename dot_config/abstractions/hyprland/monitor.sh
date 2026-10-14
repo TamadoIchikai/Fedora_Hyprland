@@ -72,3 +72,31 @@ WM_monitor_dpms() {
     esac
     hyprctl eval "hl.dispatch(hl.dsp.dpms({ action = '$action', monitor = '$name' }))" >/dev/null
 }
+
+# WM_monitor_watch: stream normalized monitor hotplug events, one per line:
+#     add <name>     an output appeared
+#     remove <name>  an output disappeared
+# Backed by Hyprland's event socket (socket2). Blocks until the socket closes;
+# callers (e.g. the monitor watchdog) are responsible for reconnecting.
+WM_monitor_watch() {
+    WM_have socat || { WM_err "WM_monitor_watch: socat not found"; return 1; }
+    local sig="${HYPRLAND_INSTANCE_SIGNATURE:-}"
+    [ -n "$sig" ] || { WM_err "WM_monitor_watch: HYPRLAND_INSTANCE_SIGNATURE not set"; return 1; }
+    local sock="${XDG_RUNTIME_DIR:-/tmp}/hypr/$sig/.socket2.sock"
+    [ -S "$sock" ] || sock="/tmp/hypr/$sig/.socket2.sock"
+    [ -S "$sock" ] || { WM_err "WM_monitor_watch: event socket not found: $sock"; return 1; }
+
+    # React to the v2 events only; the legacy "monitoradded>>NAME" twin always
+    # accompanies them (Hyprland >= 0.55), so handling both would double every
+    # event. The v2 payload after ">>" is "ID,NAME,DESC".
+    socat -U - UNIX-CONNECT:"$sock" 2>/dev/null | while IFS= read -r line; do
+        case "$line" in
+            monitoraddedv2\>\>*)
+                printf 'add %s\n' "$(printf '%s' "${line#*>>}" | cut -d, -f2)"
+                ;;
+            monitorremovedv2\>\>*)
+                printf 'remove %s\n' "$(printf '%s' "${line#*>>}" | cut -d, -f2)"
+                ;;
+        esac
+    done
+}

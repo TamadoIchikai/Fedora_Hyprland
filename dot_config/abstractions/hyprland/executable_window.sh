@@ -36,6 +36,28 @@ WM_window_focus() {
     hyprctl dispatch "hl.dsp.focus({ window = 'address:$handle' })" >/dev/null
 }
 
+# WM_window_set_geometry <handle> <x> <y> [w] [h]
+# Sets a window's absolute geometry (parity with the MangoWC backend), used to
+# restore a parked window's rule-defined position after a monitor layout change.
+# Hyprland's `hl.dsp.window.move/resize` default to absolute coordinates
+# (relative moves pass `relative = true` explicitly).
+WM_window_set_geometry() {
+    local handle="$1" x="$2" y="$3" w="${4:-}" h="${5:-}"
+    [ -n "$handle" ] || { WM_err "WM_window_set_geometry: missing handle"; return 1; }
+    [ -n "$x" ] && [ -n "$y" ] || { WM_err "WM_window_set_geometry: missing position"; return 1; }
+    WM_window_handle_valid "$handle" || { WM_err "WM_window_set_geometry: invalid handle '$handle'"; return 1; }
+    local v
+    for v in "$x" "$y" "$w" "$h"; do
+        [ -z "$v" ] || [[ "$v" =~ ^-?[0-9]+$ ]] || {
+            WM_err "WM_window_set_geometry: non-integer value '$v'"; return 1; }
+    done
+
+    if [ -n "$w" ] && [ -n "$h" ]; then
+        hyprctl dispatch "hl.dsp.window.resize({ x = $w, y = $h, window = 'address:$handle' })" >/dev/null
+    fi
+    hyprctl dispatch "hl.dsp.window.move({ x = $x, y = $y, window = 'address:$handle' })" >/dev/null
+}
+
 WM_window_close() {
     local handle="$1"
     [ -n "$handle" ] || { WM_err "WM_window_close: missing handle"; return 1; }
@@ -61,6 +83,13 @@ WM_window_move_to_workspace() {
 WM_window_workspace() {
     local handle="$1"
     hyprctl clients -j | jq -r --arg a "$handle" '.[] | select(.address == $a) | .workspace.id' | head -n1
+}
+
+# WM_window_monitor <handle> -> the client's monitor id (Hyprland uses a numeric
+# id). Provided for API parity with the MangoWC backend.
+WM_window_monitor() {
+    local handle="$1"
+    hyprctl clients -j | jq -r --arg a "$handle" '.[] | select(.address == $a) | (.monitor // empty)' | head -n1
 }
 
 WM_window_handle_valid() {

@@ -6,6 +6,10 @@
 WM_PARK_WORKSPACE=9
 
 WM_workspace_active() {
-    # TODO(mango): verify how to read the selected tag of the focused monitor.
-    mmsg get tags 2>/dev/null | jq -r '[.[] | select(.selected == true or .is_selected == true)][0].id // empty'
+    # Selected tag of the focused monitor (`active_tags[0]`).
+    local mon
+    mon="$(WM_monitor_focused 2>/dev/null)"
+    mmsg get all-monitors 2>/dev/null \
+        | jq -r --arg m "$mon" \
+            '(.monitors[] | select(.name == $m) | .active_tags[0]) // empty'
 }
