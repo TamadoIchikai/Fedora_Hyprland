@@ -3,6 +3,8 @@ set -uo pipefail
 set +m
 umask 077
 
+source "$HOME/.config/abstractions/wm.sh"
+
 # ---------------------------------------------------------------
 # Hyprland Monitor Hotplug Watchdog (event-driven, zero polling)
 #
@@ -100,7 +102,7 @@ notify_event() {
 # Count actively rendering REAL hardware monitors (FALLBACK / HEADLESS-* excluded).
 real_monitor_count() {
     local count
-    count=$(hyprctl monitors -j 2>/dev/null \
+    count=$(WM_monitor_list 2>/dev/null \
         | jq -r "[.[] | select($REAL_MONITOR)] | length" 2>/dev/null)
     if [[ "$count" =~ ^[0-9]+$ ]]; then
         printf '%s' "$count"
@@ -112,15 +114,14 @@ real_monitor_count() {
 # True if output is currently an active (rendering) monitor.
 output_active() {
     local mon="$1"
-    hyprctl monitors -j 2>/dev/null \
+    WM_monitor_list 2>/dev/null \
         | jq -e --arg m "$mon" 'any(.[]; .name == $m)' >/dev/null 2>&1
 }
 
 # True if output is known to Hyprland (active OR inactive/disabled).
 output_present() {
     local mon="$1"
-    hyprctl monitors all -j 2>/dev/null \
-        | jq -e --arg m "$mon" 'any(.[]; .name == $m)' >/dev/null 2>&1
+    WM_monitor_present "$mon" >/dev/null 2>&1
 }
 
 # Connector names are compositor-controlled tokens (letters, digits,
@@ -134,10 +135,10 @@ valid_mon_name() {
 # Some GPUs resume with outputs active but DPMS off (black screen).
 # Re-light anything Hyprland currently renders.
 ensure_active_dpms() {
-    hyprctl monitors all -j 2>/dev/null \
+    WM_monitor_list --all 2>/dev/null \
         | jq -r ".[] | select($REAL_MONITOR and .disabled == false) | .name" 2>/dev/null \
         | while read -r m; do
-            hyprctl dispatch dpms on "$m" >/dev/null 2>&1
+            WM_monitor_dpms "$m" on >/dev/null 2>&1
         done
 }
 
@@ -192,7 +193,7 @@ rescue_laptop() {
     notify_event "Display lost. Re-enabling $LAPTOP..."
 
     # Stage 1: reload config, re-applying monitor rules.
-    hyprctl reload >/dev/null 2>&1
+    WM_reload >/dev/null 2>&1
     sleep 1
 
     if output_active "$LAPTOP"; then
@@ -212,8 +213,7 @@ rescue_laptop() {
     local attempt
     for (( attempt = 1; attempt <= RESCUE_TRIES; attempt++ )); do
         log "force-enabling $LAPTOP (attempt $attempt/$RESCUE_TRIES)"
-        hyprctl eval "hl.monitor({ output = '$LAPTOP', disabled = false })" >/dev/null 2>&1
-        hyprctl dispatch dpms on "$LAPTOP" >/dev/null 2>&1
+        WM_monitor_enable "$LAPTOP" >/dev/null 2>&1
         sleep 1.5
         if output_active "$LAPTOP"; then
             log "rescue ok (forced enable): $LAPTOP is back on"
@@ -251,12 +251,11 @@ repair_added() {
 
     if output_active "$mon"; then
         # Rendering already; just make sure DPMS is not stuck off.
-        hyprctl dispatch dpms on "$mon" >/dev/null 2>&1
+        WM_monitor_dpms "$mon" on >/dev/null 2>&1
         log "monitor $mon added and rendering (dpms ensured)"
     elif output_present "$mon"; then
         log "monitor $mon present but not rendering; re-enabling"
-        hyprctl eval "hl.monitor({ output = '$mon', disabled = false })" >/dev/null 2>&1
-        hyprctl dispatch dpms on "$mon" >/dev/null 2>&1
+        WM_monitor_enable "$mon" >/dev/null 2>&1
         sleep 1
         if output_active "$mon"; then
             log "repair ok: $mon is rendering again"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$HOME/.config/abstractions/wm.sh"
+
 TERMINAL="foot"
 WINDOW_TITLE="AutostartTestPopup"
 GEOM_W="0.55"
@@ -22,8 +24,8 @@ if ! command -v "$TERMINAL" >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! command -v hyprctl >/dev/null 2>&1; then
-    echo "ERROR: hyprctl not found"
+if [ -z "${WM_CURR:-}" ]; then
+    echo "ERROR: no supported compositor detected"
     exit 1
 fi
 
@@ -48,8 +50,4 @@ CMD="$(
         bash "$AUTOSTART_SCRIPT"
 )"
 
-hyprctl dispatch "hl.dsp.exec_cmd([[$CMD]], {
-    float = true,
-    center = true,
-    size = { '(monitor_w*$GEOM_W)', '(monitor_h*$GEOM_H)' }
-})"
+WM_exec_floating "$CMD" true "$GEOM_W" "$GEOM_H"

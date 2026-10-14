@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$HOME/.config/abstractions/wm.sh"
 
 # Hardened for Waybar click handlers:
 # - quiet by default (no stdout/stderr noise)
@@ -13,11 +14,8 @@ LAUNCH_CMD="${2:-}"
 DEBUG="${DEBUG:-0}"
 LOG_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/waybar-toggle-app.log"
 
-# Hyprland window addresses are hex, optionally with 0x prefix.
-readonly ADDRESS_RE='^(0x)?[0-9a-fA-F]+$'
-
 # Workspace the monitored apps are parked on when not in use.
-readonly HIDDEN_WORKSPACE=11
+readonly HIDDEN_WORKSPACE="$(WM_park_workspace)"
 
 log() {
   (( DEBUG )) || return 0
@@ -37,45 +35,23 @@ need_cmd() {
   }
 }
 
-lua_sq() {
-  local out="$1"
-  out="${out//\\/\\\\}"
-  out="${out//\'/\\\'}"
-  printf '%s' "$out"
-}
-
 is_valid_address() {
-  [[ "$1" =~ $ADDRESS_RE ]]
+  WM_window_handle_valid "$1"
 }
 
 is_valid_workspace() {
   [[ "$1" =~ ^[0-9]+$ ]]
 }
 
-hypr_dispatch() {
-  hyprctl dispatch "$1" >/dev/null 2>&1
-}
-
-# move_to_workspace <address> <workspace> <follow?>
-move_to_workspace() {
-  hypr_dispatch "hl.dsp.window.move({ workspace = $2, window = 'address:$1', follow = $3 })"
-}
-
-# focus_window <address>
-focus_window() {
-  hypr_dispatch "hl.dsp.focus({ window = 'address:$1' })"
-}
-
 # ---- preflight ----
 [ -n "$APP_CLASS" ] || graceful_exit "no APP_CLASS"
 [ -n "$LAUNCH_CMD" ] || graceful_exit "no LAUNCH_CMD"
 
-need_cmd hyprctl
 need_cmd jq
 
 # ---- helpers ----
 get_window_info() {
-  hyprctl clients -j 2>/dev/null \
+  WM_window_list 2>/dev/null \
     | jq -r --arg c "$APP_CLASS" '
         limit(1; .[] | select(.class == $c))
         | "\(.address)\t\(.workspace.id)"
@@ -83,17 +59,16 @@ get_window_info() {
 }
 
 # ---- main ----
-current_ws=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id' 2>/dev/null)
+current_ws=$(WM_workspace_active 2>/dev/null)
 [ -n "$current_ws" ] || graceful_exit "could not read current workspace"
 is_valid_workspace "$current_ws" || graceful_exit "invalid workspace id: $current_ws"
 
 window_info="$(get_window_info)"
 window_addr="${window_info%%$'\t'*}"
-launch_cmd_lua="$(lua_sq "$LAUNCH_CMD")"
 
 if [ -z "$window_addr" ]; then
   # Not running: start it on the hidden workspace, silently.
-  hypr_dispatch "hl.dsp.exec_cmd('$launch_cmd_lua', { workspace = '${HIDDEN_WORKSPACE} silent' })" \
+  WM_exec_on_workspace "$HIDDEN_WORKSPACE" "$LAUNCH_CMD" \
     || graceful_exit "failed to exec"
 
   # Wait for the window to appear (slow starters can take >1s).
@@ -106,8 +81,8 @@ if [ -z "$window_addr" ]; then
 
   if [ -n "$window_addr" ]; then
     is_valid_address "$window_addr" || graceful_exit "invalid window address"
-    move_to_workspace "$window_addr" "$current_ws" true
-    focus_window "$window_addr"
+    WM_window_move_to_workspace "$window_addr" "$current_ws" true
+    WM_window_focus "$window_addr"
   else
     log "launched but window not found yet (class=$APP_CLASS)"
   fi
@@ -122,11 +97,11 @@ is_valid_address "$window_addr" || graceful_exit "invalid window address"
 
 if [ "$app_ws" = "$current_ws" ]; then
   # App is visible on current workspace: hide it back to the hidden workspace.
-  move_to_workspace "$window_addr" "$HIDDEN_WORKSPACE" false
+  WM_window_move_to_workspace "$window_addr" "$HIDDEN_WORKSPACE" false
 else
   # App exists elsewhere: bring it to current workspace and focus it.
-  move_to_workspace "$window_addr" "$current_ws" true
-  focus_window "$window_addr"
+  WM_window_move_to_workspace "$window_addr" "$current_ws" true
+  WM_window_focus "$window_addr"
 fi
 
 graceful_exit "done (toggled)"

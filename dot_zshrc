@@ -139,3 +139,6 @@ export UV_PROJECT_ENVIRONMENT=".env_linux"
 export UID=$(id -u)
 export GID=$(id -g)
 export PATH="$PATH:$RESTIC_SOURCE_BASE/Robotics/SCARA_Robot/STM32/arm-gnu-toolchain/bin"
+
+# Compositor-agnostic window API (WM_* functions)
+[ -r "$HOME/.config/abstractions/wm.sh" ] && source "$HOME/.config/abstractions/wm.sh"

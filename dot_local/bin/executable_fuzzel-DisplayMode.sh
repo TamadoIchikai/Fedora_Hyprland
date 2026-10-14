@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -uo pipefail
+source "$HOME/.config/abstractions/wm.sh"
 
 # ---------------------------------------------------------
 # 0. Argument Parsing & Help Menu
@@ -53,7 +54,6 @@ done
 
 # 1. Dependency check
 command -v jq >/dev/null || { echo "Error: jq not found" >&2; exit 1; }
-command -v hyprctl >/dev/null || { echo "Error: hyprctl not found" >&2; exit 1; }
 
 # 2. Ingest Variables
 LAPTOP="${LAPTOP_OUTPUT:-eDP-1}"
@@ -66,52 +66,27 @@ EXTERNAL_POS_MIRROR="${EXTERNAL_POS_MIRROR:-0x0}"
 LAPTOP_SCALE="${LAPTOP_SCALE:-1}"
 EXTERNAL_SCALE="${EXTERNAL_SCALE:-1}"
 
-# 3. Lua-Native Safe switching functions
+# 3. Safe switching functions (compositor-agnostic)
+# enable_monitor <name> <mode> <pos> <scale> [mirror-of]
 enable_monitor() {
-    local out
-    local mirror_str=""
-    
-    if [[ $# -eq 5 && -n "$5" ]]; then
-        mirror_str=", mirror = '$5'"
+    if ! WM_monitor_enable "$@"; then
+        notify-send "Monitor Enable Error ($1)" "failed to enable $1" -u critical || true
     fi
-    
-    local lua_cmd="hl.monitor({ output = '$1', mode = '$2', position = '$3', scale = $4, disabled = false${mirror_str} })"
-    
-    out=$(hyprctl eval "$lua_cmd" 2>&1) || true
-    
-    if [[ "$out" != "ok" && "$out" != *"ok"* && -n "$out" ]]; then
-        notify-send "Hyprctl Enable Error ($1)" "$out" -u critical || true
-    fi
-    
-    hyprctl dispatch dpms on "$1" >/dev/null 2>&1 || true
 }
 
 disable_monitor() {
-    local out
-    local lua_cmd="hl.monitor({ output = '$1', disabled = true })"
-    
-    out=$(hyprctl eval "$lua_cmd" 2>&1) || true
-    
-    if [[ "$out" != "ok" && "$out" != *"ok"* && -n "$out" ]]; then
-        notify-send "Hyprctl Disable Error ($1)" "$out" -u critical || true
+    if ! WM_monitor_disable "$1"; then
+        notify-send "Monitor Disable Error ($1)" "failed to disable $1" -u critical || true
     fi
-    
-    hyprctl dispatch dpms off "$1" >/dev/null 2>&1 || true
 }
 
 verify_active() {
-    sleep 1 
-    local active_monitors
-    active_monitors=$(hyprctl monitors -j 2>/dev/null || echo "[]") 
-    if jq -e ".[] | select(.name == \"$1\")" <<< "$active_monitors" >/dev/null; then
-        return 0 
-    else
-        return 1 
-    fi
+    sleep 1
+    WM_monitor_list 2>/dev/null | jq -e --arg m "$1" 'any(.[]; .name == $m)' >/dev/null
 }
 
 # 4. Check for physical connections
-monitors_all_json=$(hyprctl monitors all -j 2>/dev/null || echo "[]")
+monitors_all_json=$(WM_monitor_list --all 2>/dev/null || echo "[]")
 laptop_connected=$(jq -r ".[] | select(.name == \"$LAPTOP\") | .name" <<< "$monitors_all_json")
 external_connected=$(jq -r ".[] | select(.name == \"$EXTERNAL\") | .name" <<< "$monitors_all_json")
 

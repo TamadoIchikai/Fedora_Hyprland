@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Floating centered Qalculate popup on Hyprland Lua config
+source "$HOME/.config/abstractions/wm.sh"
+
+# Floating centered Qalculate popup
 
 TERMINAL="foot"
 WINDOW_TITLE="QalcPopup"
@@ -17,4 +19,4 @@ CMD="$TERMINAL --title $WINDOW_TITLE \
 --override \"font=JetBrainsMono Nerd Font:size=$FONT_SIZE\" \
 bash -lc 'clear; echo \"Qalculate ready.\"; exec qalc -s \"autocalc on\"'"
 
-hyprctl dispatch "hl.dsp.exec_cmd([[$CMD]], { float = true, center = true, size = { '(monitor_w*0.65)', '(monitor_h*0.60)' } })"
+WM_exec_floating "$CMD" true 0.65 0.60

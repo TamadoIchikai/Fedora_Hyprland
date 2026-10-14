@@ -12,12 +12,11 @@
 
 set -euo pipefail
 
-readonly TARGET_WORKSPACE=11
+source "$HOME/.config/abstractions/wm.sh"
+
+readonly TARGET_WORKSPACE="$(WM_park_workspace)"
 readonly CHECK_INTERVAL=0.5
 readonly GRACE_PERIOD_MS=500
-
-# Hyprland window addresses are hex, optionally with 0x prefix.
-readonly ADDRESS_RE='^(0x)?[0-9a-fA-F]+$'
 
 readonly APPS=(
   "org.pulseaudio.pavucontrol"
@@ -30,7 +29,7 @@ need_cmd() {
 }
 
 validate_address() {
-  [[ "$1" =~ $ADDRESS_RE ]]
+  WM_window_handle_valid "$1"
 }
 
 declare -A monitored_apps
@@ -55,17 +54,14 @@ move_window_silent() {
 
   validate_address "$address" || return 0
 
-  hyprctl dispatch \
-    "hl.dsp.window.move({ workspace = ${TARGET_WORKSPACE}, window = 'address:${address}', follow = false })" \
-    &>/dev/null || true
+  WM_window_move_to_workspace "$address" "$TARGET_WORKSPACE" false &>/dev/null || true
 }
 
 activewindow_info() {
-  hyprctl activewindow -j 2>/dev/null | jq -r '"\(.class // "")|\(.address // "")"'
+  WM_window_active 2>/dev/null | jq -r '"\(.class // "")|\(.address // "")"'
 }
 
 main() {
-  need_cmd hyprctl
   need_cmd jq
 
   echo "Window mover started (workspace ${TARGET_WORKSPACE})"
@@ -75,7 +71,7 @@ main() {
   while true; do
     now=$(get_timestamp_ms)
 
-    current_ws=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty')
+    current_ws=$(WM_workspace_active 2>/dev/null)
 
     # Nothing to do while parked on the target workspace: skip the snapshot.
     if [[ "$current_ws" == "$TARGET_WORKSPACE" ]]; then
@@ -102,7 +98,7 @@ main() {
 
       [[ "$ws" == "$TARGET_WORKSPACE" ]] && continue
       candidates+=("$class|$address")
-    done < <(hyprctl clients -j 2>/dev/null | jq -r '
+    done < <(WM_window_list 2>/dev/null | jq -r '
       .[] | "\(.class // "")|\(.address // "")|\(.workspace.id)"
     ')
 

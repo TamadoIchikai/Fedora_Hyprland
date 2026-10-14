@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$HOME/.config/abstractions/wm.sh"
+
 BG_LOG="${BG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/autostart.log}"
 AUDIO_OS_START="${HOME}/.local/share/sounds/OS_Startup.mp3"
 AUDIO_PLAYER="paplay --volume=65536"
@@ -63,29 +65,21 @@ run_once_pattern() {
     detach_run "$@"
 }
 
-hypr_exec_ws() {
+exec_ws() {
     local workspace="$1"
     shift
     local cmd="$*"
 
-    # Workspace is embedded into a Hyprland Lua expression. Only accept a
-    # plain number (or a "N silent" pair) so hostile input can't break out of
-    # the [[ ]] string literal and inject dispatch commands.
+    # Workspace must be a plain number (optionally with a trailing " silent").
+    # Only accept a number so hostile input can't smuggle extra dispatches.
     if ! [[ "$workspace" =~ ^[0-9]+(\ silent)?$ ]]; then
         log "warning: refusing unsafe workspace value: $workspace"
         return 0
     fi
 
-    # The command is also embedded in a [[ ]] Lua string; reject the closing
-    # delimiter so neither field can inject extra Hyprland expressions.
-    if [[ "$cmd" == *"]]"* ]]; then
-        log "warning: refusing command containing ]] : $cmd"
-        return 0
-    fi
-
     log "start on workspace $workspace: $cmd"
 
-    hyprctl dispatch "hl.dsp.exec_cmd([[$cmd]], { workspace = [[$workspace silent]] })" \
+    WM_exec_on_workspace "$workspace" "$cmd" \
         >>"$BG_LOG" 2>&1 || {
             log "warning: failed to start on workspace $workspace: $cmd"
             return 0
@@ -117,10 +111,10 @@ fast_startup() {
 medium_startup() {
     log "========== medium_startup =========="
 
-    hypr_exec_ws "11" "pavucontrol"
-    hypr_exec_ws "11" "blueman-manager"
-    hypr_exec_ws "11" "LocalSend.AppImage"
-    hypr_exec_ws "11" "thunar --window"
+    exec_ws "11" "pavucontrol"
+    exec_ws "11" "blueman-manager"
+    exec_ws "11" "LocalSend.AppImage"
+    exec_ws "11" "thunar --window"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
     run_once_name "hyprlandMonitor_Watcher.sh" "$HOME/.local/bin/hyprlandMonitor_Watcher.sh"
@@ -133,7 +127,7 @@ complex_startup() {
     start_user_service "opentabletdriver.service"
 
     run_once_pattern "md.obsidian.Obsidian" flatpak run md.obsidian.Obsidian
-    hypr_exec_ws "2" "zen"
+    exec_ws "2" "zen"
     run_once_pattern "betterbird" flatpak run eu.betterbird.Betterbird -mail
 
     local tray_attempts=0

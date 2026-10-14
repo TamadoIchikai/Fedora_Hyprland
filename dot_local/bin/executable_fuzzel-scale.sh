@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Automatically adjust fuzzel font size depending on which monitor (laptop vs external) you're on
+source "$HOME/.config/abstractions/wm.sh"
 
-# Get the focused monitor name from Hyprland
-MONITOR=$(hyprctl monitors -j | jq -r '.[] | select(.focused==true).name')
+# Get the focused monitor name
+MONITOR=$(WM_monitor_focused)
 
 # Define your laptop monitor name (check with `hyprctl monitors`)
 LAPTOP_MONITOR="eDP-1"

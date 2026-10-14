@@ -55,9 +55,11 @@ fi
 case "$XDG_CURRENT_DESKTOP" in
     Hyprland)
         export DESKTOP_COMPOSITOR="hyprland"
+        export WM_CURR="hyprland"
         ;;
     MangoWC)
         export DESKTOP_COMPOSITOR="mangowc"
+        export WM_CURR="mangowc"
         ;;
     *)
         export DESKTOP_COMPOSITOR="unknown"

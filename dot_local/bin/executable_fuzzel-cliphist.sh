@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$HOME/.config/abstractions/wm.sh"
 
 thumbnail_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cliphist/thumbnails"
 
@@ -28,7 +29,7 @@ EOF
 # Function to detect focused app and paste accordingly
 paste_to_app() {
   # Get focused window class from Hyprland
-  app_id=$(hyprctl activewindow -j | jq -r '.class')
+  app_id=$(WM_window_active | jq -r '.class')
   
   # Determine which paste keybind to use based on app_id
   # Add or modify app_ids as needed

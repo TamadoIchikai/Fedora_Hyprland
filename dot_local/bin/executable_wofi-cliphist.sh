@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$HOME/.config/abstractions/wm.sh"
 
 # --- Auto-Paste Setup Functions ---
 
 get_active_window_json() {
-    hyprctl activewindow -j 2>/dev/null || printf '{}'
+    WM_window_active 2>/dev/null || printf '{}'
 }
 
 get_focused_app_id() {

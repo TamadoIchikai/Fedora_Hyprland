@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+source "$HOME/.config/abstractions/wm.sh"
 
 SELECTION="$(printf "  - Lock\n󰙧  - Suspend\n󰒲  - Hibernate\n󰗽  - Log out\n󰜉  - Reboot\n  - Reboot to UEFI\n  - Shutdown" | fuzzel --dmenu -l 7 -p "Power Menu: ")"
 
 case "$SELECTION" in
 	*"Lock")
 		sleep 0.5
-		hyprlock;;
+		WM_lock;;
 	*"Suspend")
 		systemctl suspend
 		;;
@@ -13,7 +14,7 @@ case "$SELECTION" in
 		systemctl hibernate
 		;;
 	*"Log out")
-		hyprctl dispatch exit
+		WM_exit
 		;;
 	*"Reboot")
 		systemctl reboot
