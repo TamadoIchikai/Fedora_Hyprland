@@ -100,10 +100,13 @@ notify_event() {
 }
 
 # Count actively rendering REAL hardware monitors (FALLBACK / HEADLESS-* excluded).
+# Uses --all + `.disabled == false`: some backends (MangoWC) list a physically
+# connected but switched-off output in their plain monitor list, so filtering on
+# presence alone would count a disabled screen as rendering.
 real_monitor_count() {
     local count
-    count=$(WM_monitor_list 2>/dev/null \
-        | jq -r "[.[] | select($REAL_MONITOR)] | length" 2>/dev/null)
+    count=$(WM_monitor_list --all 2>/dev/null \
+        | jq -r "[.[] | select($REAL_MONITOR and .disabled == false)] | length" 2>/dev/null)
     if [[ "$count" =~ ^[0-9]+$ ]]; then
         printf '%s' "$count"
     else
@@ -114,8 +117,8 @@ real_monitor_count() {
 # True if output is currently an active (rendering) monitor.
 output_active() {
     local mon="$1"
-    WM_monitor_list 2>/dev/null \
-        | jq -e --arg m "$mon" 'any(.[]; .name == $m)' >/dev/null 2>&1
+    WM_monitor_list --all 2>/dev/null \
+        | jq -e --arg m "$mon" 'any(.[]; .name == $m and .disabled == false)' >/dev/null 2>&1
 }
 
 # True if output is known to the compositor (active OR inactive/disabled).
