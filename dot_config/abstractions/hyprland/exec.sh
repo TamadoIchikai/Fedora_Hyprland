@@ -25,6 +25,14 @@ WM_exec_on_workspace() {
     hyprctl dispatch "hl.dsp.exec_cmd($(WM_lua_long "$cmd"), { workspace = $(WM_lua_long "$spec") })" >/dev/null
 }
 
+# WM_exec_on_park_workspace <cmd>
+# Place the app on the compositor's parking workspace without switching view.
+WM_exec_on_park_workspace() {
+    local cmd="$1"
+    [ -n "$cmd" ] || { WM_err "WM_exec_on_park_workspace: missing command"; return 1; }
+    WM_exec_on_workspace "$(WM_park_workspace)" "$cmd" silent
+}
+
 # WM_exec_floating <cmd> [center=true] [width=0.6] [height=0.6]
 WM_exec_floating() {
     local cmd="$1" center="${2:-true}" w="${3:-0.6}" h="${4:-0.6}"

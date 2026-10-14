@@ -27,6 +27,15 @@ WM_exec_on_workspace() {
     mmsg dispatch "spawn,$cmd" >/dev/null
 }
 
+# WM_exec_on_park_workspace <cmd>
+# MangoWC cannot target a tag at spawn time; placement onto the parking tag is
+# handled declaratively by window_rule=tags:<park> in config.conf. Just spawn.
+WM_exec_on_park_workspace() {
+    local cmd="$1"
+    [ -n "$cmd" ] || { WM_err "WM_exec_on_park_workspace: missing command"; return 1; }
+    WM_exec "$cmd"
+}
+
 # WM_exec_floating <cmd> [center=true] [width=0.6] [height=0.6]
 WM_exec_floating() {
     local cmd="$1" center="${2:-true}" w="${3:-0.6}" h="${4:-0.6}"

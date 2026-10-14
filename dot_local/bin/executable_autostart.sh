@@ -86,6 +86,17 @@ exec_ws() {
         }
 }
 
+exec_park() {
+    local cmd="$*"
+
+    log "start on parking workspace: $cmd"
+
+    WM_exec_on_park_workspace "$cmd" >>"$BG_LOG" 2>&1 || {
+        log "warning: failed to start on parking workspace: $cmd"
+        return 0
+    }
+}
+
 start_user_service() {
     local service="$1"
     log "start service: $service"
@@ -111,10 +122,10 @@ fast_startup() {
 medium_startup() {
     log "========== medium_startup =========="
 
-    exec_ws "11" "pavucontrol"
-    exec_ws "11" "blueman-manager"
-    exec_ws "11" "LocalSend.AppImage"
-    exec_ws "11" "thunar --window"
+    exec_park "pavucontrol"
+    exec_park "blueman-manager"
+    exec_park "LocalSend.AppImage"
+    exec_park "thunar --window"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
     run_once_name "hyprlandMonitor_Watcher.sh" "$HOME/.local/bin/hyprlandMonitor_Watcher.sh"

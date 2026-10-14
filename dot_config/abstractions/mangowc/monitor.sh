@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 #
 # mangowc/monitor.sh — MangoWC monitor operations.
-# NOTE: UNVERIFIED offline; every mapping is marked TODO(mango).
 
+# `mmsg get all-monitors` returns {"monitors":[...]}; emit the bare array so
+# callers behave identically to the Hyprland backend.
 WM_monitor_list() {
-    # TODO(mango): confirm whether `get all-monitors` includes disabled
-    #              outputs, or whether wlr-randr is needed for those.
-    mmsg get all-monitors
+    mmsg get all-monitors 2>/dev/null | jq -c '.monitors'
 }
 
+# Focused client's monitor, falling back to the monitor under the cursor.
 WM_monitor_focused() {
-    # TODO(mango): verify verb (`get monitor`?) and field name.
-    mmsg get monitor 2>/dev/null | jq -r '.name // empty'
+    local m
+    m="$(mmsg get all-clients 2>/dev/null | jq -r '.clients[] | select(.is_focused == true) | .monitor' | head -n1)"
+    [ -n "$m" ] || m="$(mmsg get cursorpos 2>/dev/null | jq -r '.monitor // empty')"
+    printf '%s' "$m"
 }
 
 WM_monitor_active_count() {
-    mmsg get all-monitors | jq -r 'length'
+    mmsg get all-monitors 2>/dev/null | jq -r '[.monitors[] | select(.active == true)] | length'
 }
 
 WM_monitor_present() {
     local name="$1"
     [ -n "$name" ] || { WM_err "WM_monitor_present: missing name"; return 1; }
-    mmsg get all-monitors | jq -e --arg m "$name" 'any(.[]; .name == $m)' >/dev/null
+    WM_monitor_list 2>/dev/null | jq -e --arg m "$name" 'any(.[]; .name == $m)' >/dev/null
 }
 
 # WM_monitor_enable <name> [mode] [pos] [scale] [mirror-of]
