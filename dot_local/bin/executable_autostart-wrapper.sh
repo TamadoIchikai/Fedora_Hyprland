@@ -3,6 +3,10 @@ set -euo pipefail
 
 source "$HOME/.config/abstractions/wm.sh"
 
+DBG="${XDG_CACHE_HOME:-$HOME/.cache}/mango-autostart-debug.log"
+dbg() { printf '[%s] wrapper: %s\n' "$(date -Is)" "$*" >>"$DBG" 2>/dev/null || true; }
+dbg "entered (WM_CURR=${WM_CURR:-<unset>})"
+
 TERMINAL="foot"
 WINDOW_TITLE="AutostartTestPopup"
 GEOM_W="0.55"
@@ -50,4 +54,6 @@ CMD="$(
         bash "$AUTOSTART_SCRIPT"
 )"
 
-WM_exec_floating "$CMD" true "$GEOM_W" "$GEOM_H"
+dbg "spawning terminal: $CMD"
+WM_exec_floating "$CMD" true "$GEOM_W" "$GEOM_H" && rc=0 || rc=$?
+dbg "WM_exec_floating rc=$rc"

@@ -128,7 +128,7 @@ medium_startup() {
     exec_park "thunar --window"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
-    run_once_name "hyprlandMonitor_Watcher.sh" "$HOME/.local/bin/hyprlandMonitor_Watcher.sh"
+    run_once_name "MonitorWatcher.sh" "$HOME/.local/bin/MonitorWatcher.sh"
 }
 
 complex_startup() {
