@@ -10,12 +10,11 @@ local external_mode       = "1920x1080@60.0"
 
 local laptop_pos          = "0x0"
 local external_pos_extend = "1920x0"
-local external_pos_mirror = "0x0"
 
 local laptop_scale        = 1
 local external_scale      = 1
 
-local dualMonitorMode     = "external" --laptop/external/extend/mirror
+local dualMonitorMode     = "external" --laptop/external/extend
 
 hl.monitor({
     output   = laptop_output,
@@ -41,7 +40,6 @@ hl.env("LAPTOP_MODE", laptop_mode)
 hl.env("EXTERNAL_MODE", external_mode)
 hl.env("LAPTOP_POS", laptop_pos)
 hl.env("EXTERNAL_POS_EXTEND", external_pos_extend)
-hl.env("EXTERNAL_POS_MIRROR", external_pos_mirror)
 
 -- hl.env requires strings, so we cast the number values using tostring()
 hl.env("LAPTOP_SCALE", tostring(laptop_scale))
