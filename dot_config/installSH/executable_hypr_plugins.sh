@@ -17,6 +17,12 @@ set -euo pipefail
 PLUGIN_URL="https://github.com/sandwichfarm/hyprexpo"
 PLUGIN_NAME="hyprexpo"          # also the build output (hyprexpo.so)
 
+# Shared version pins (HYPREXPO_REV, ...). Env vars win over the file defaults;
+# see versions.env for semantics and the Hyprland/hyprexpo bump workflow.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=versions.env
+source "$SCRIPT_DIR/versions.env"
+
 # --- Package sets -----------------------------------------------------------
 # Meta package that pulls the whole hyprpm/Hyprland-header build closure.
 DEP_META=(hyprland-devel)
@@ -55,6 +61,14 @@ Options:
   --force       Rebuild/reinstall even if the plugin repository already exists
   --keep-deps   Skip the post-install dependency cleanup
   -h, --help    Show this help message
+
+Version pinning:
+  HYPREXPO_REV and HYPRLAND_EVR are read from versions.env (next to this
+  script). When HYPREXPO_REV is empty the newest hyprexpo tag matching the
+  installed Hyprland version is auto-resolved; when set it is validated
+  against the installed Hyprland tag (drift aborts). hyprpm keeps the rev
+  pinned across subsequent updates. Override ad hoc, e.g.:
+      HYPREXPO_REV=v0.56.2+3 $0 --install --force
 
 Run as your normal user (not root). sudo is used for dnf operations.
 EOF
@@ -105,6 +119,46 @@ install_pkgs() {
   fi
   echo "📦 Installing: ${missing[*]}"
   sudo dnf install -y --setopt=install_weak_deps=False "${missing[@]}"
+}
+
+# ---------------------------------------------------------------------------
+# Version pinning
+# ---------------------------------------------------------------------------
+# Installed Hyprland release tag, e.g. "v0.56.2" (from `Hyprland --version`).
+installed_hyprland_tag() {
+  Hyprland --version 2>/dev/null | sed -n 's/^Tag:[[:space:]]*\([^,[:space:]]*\).*/\1/p' | head -n1
+}
+
+# Resolve the hyprexpo git rev to install. Sets RESOLVED_REV.
+#  - HYPREXPO_REV set: validated against the installed Hyprland tag, no network.
+#  - HYPREXPO_REV empty: auto-resolve the newest hyprexpo tag matching the
+#    installed Hyprland version (tags follow "v<version>[+N]"), via ls-remote.
+RESOLVED_REV=""
+resolve_hyprexpo_rev() {
+  local hl_tag hl_ver
+  hl_tag="$(installed_hyprland_tag)"
+  [[ -n "$hl_tag" ]] || die "Could not parse the installed Hyprland tag (Hyprland --version)."
+  hl_ver="${hl_tag#v}"
+
+  if [[ -n "$HYPREXPO_REV" ]]; then
+    if [[ "$HYPREXPO_REV" == "v${hl_ver}" || "$HYPREXPO_REV" == "v${hl_ver}+"* || "$HYPREXPO_REV" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+      RESOLVED_REV="$HYPREXPO_REV"
+      echo "📌 Using pinned hyprexpo rev: $RESOLVED_REV (Hyprland $hl_tag)"
+      return 0
+    fi
+    die "HYPREXPO_REV='$HYPREXPO_REV' does not match installed Hyprland $hl_tag (tags look like 'v${hl_ver}' or 'v${hl_ver}+N'). Fix versions.env or your Hyprland version."
+  fi
+
+  echo "🔎 Auto-resolving newest hyprexpo tag for Hyprland $hl_tag..."
+  local tag
+  tag="$(git ls-remote --tags --refs "$PLUGIN_URL" 2>/dev/null \
+    | awk -F/ '{print $NF}' \
+    | grep -E "^v${hl_ver//./\\.}([+][0-9]+)?$" \
+    | sort -Vu \
+    | tail -n1)" || true
+  [[ -n "$tag" ]] || die "No hyprexpo release tag found for Hyprland $hl_tag. Either wait for sandwichfarm/hyprexpo to cut a release, or set HYPREXPO_REV in versions.env to a known-good commit (at your own risk)."
+  RESOLVED_REV="$tag"
+  echo "✅ Matched hyprexpo tag: $RESOLVED_REV"
 }
 
 # Remove the given packages, but never one that another installed package still
@@ -172,8 +226,8 @@ hyprpm_add() {
     echo "♻️  Removing existing plugin repository for a clean rebuild..."
     hyprpm remove "$PLUGIN_NAME" || hyprpm remove "$PLUGIN_URL" || true
   fi
-  echo "🔗 Adding plugin repository: $PLUGIN_URL"
-  hyprpm add "$PLUGIN_URL"
+  echo "🔗 Adding plugin repository: $PLUGIN_URL @ $RESOLVED_REV"
+  hyprpm add "$PLUGIN_URL" "$RESOLVED_REV"
 }
 
 hyprpm_enable() {
@@ -284,6 +338,7 @@ do_install() {
   echo "🧩 Installing/updating Hyprland headers (hyprpm update)..."
   hyprpm update
 
+  resolve_hyprexpo_rev
   hyprpm_add
   hyprpm_enable
   hyprpm_reload
