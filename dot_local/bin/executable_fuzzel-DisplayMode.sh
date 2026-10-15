@@ -15,7 +15,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --fuzzel                 Open the graphical Fuzzel interactive menu"
-    echo "  --mode <mode>            Manually set display mode (laptop, external, extend, mirror)"
+    echo "  --mode <mode>            Manually set display mode (laptop, external, extend)"
     echo "  -h, --help               Show this help message"
     echo ""
     exit 0
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
                 MODE_ARG="${2,,}" # Convert to lowercase for safety
                 shift 2
             else
-                echo "Error: --mode requires an argument (laptop/external/extend/mirror)" >&2
+                echo "Error: --mode requires an argument (laptop/external/extend)" >&2
                 exit 1
             fi
             ;;
@@ -63,12 +63,11 @@ EXTERNAL_MODE="${EXTERNAL_MODE:-1920x1080@60}"
 LAPTOP_POS="${LAPTOP_POS:-0x0}"
 EXTERNAL_POS_EXTEND="${EXTERNAL_POS_EXTEND:-1920x0}"
 EXTERNAL_POS_ONLY="${EXTERNAL_POS_ONLY:-0x0}"
-EXTERNAL_POS_MIRROR="${EXTERNAL_POS_MIRROR:-0x0}"
 LAPTOP_SCALE="${LAPTOP_SCALE:-1}"
 EXTERNAL_SCALE="${EXTERNAL_SCALE:-1}"
 
 # 3. Safe switching functions (compositor-agnostic)
-# enable_monitor <name> <mode> <pos> <scale> [mirror-of]
+# enable_monitor <name> <mode> <pos> <scale>
 enable_monitor() {
     if ! WM_monitor_enable "$@"; then
         notify-send "Monitor Enable Error ($1)" "failed to enable $1" -u critical || true
@@ -91,22 +90,53 @@ monitors_all_json=$(WM_monitor_list --all 2>/dev/null || echo "[]")
 laptop_connected=$(jq -r ".[] | select(.name == \"$LAPTOP\") | .name" <<< "$monitors_all_json")
 external_connected=$(jq -r ".[] | select(.name == \"$EXTERNAL\") | .name" <<< "$monitors_all_json")
 
+# Currently-active (rendering) outputs. Needed to avoid transient overlaps:
+# Hyprland refuses to register (and warns about) monitors that share a position,
+# so we must never enable/move one onto a spot a still-active one occupies.
+monitors_active_json=$(WM_monitor_list 2>/dev/null || echo "[]")
+laptop_active=$(jq -r ".[] | select(.name == \"$LAPTOP\") | .name" <<< "$monitors_active_json")
+external_active=$(jq -r ".[] | select(.name == \"$EXTERNAL\") | .name" <<< "$monitors_active_json")
+
+# Detect the *current* layout: none | laptop | external | extend.
+current_layout() {
+    local act="${1:-$monitors_active_json}" ln ex
+    ln=$(jq -r --arg m "$LAPTOP"   '[.[]|select(.name==$m)]|length' <<<"$act")
+    ex=$(jq -r --arg m "$EXTERNAL" '[.[]|select(.name==$m)]|length' <<<"$act")
+    if   [[ "$ln" -gt 0 && "$ex" -gt 0 ]]; then echo extend
+    elif [[ "$ln" -gt 0 ]]; then echo laptop
+    elif [[ "$ex" -gt 0 ]]; then echo external
+    else echo none
+    fi
+}
+
+# Reliable path into external-only: raise the external off 0x0 first (so it can
+# never momentarily overlap the internal), verify it woke, drop the internal,
+# then slide the external into its single-screen 0x0 position.
+apply_external_only() {
+    enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"
+    verify_active "$EXTERNAL" || return 1
+    if [[ -n "$laptop_connected" ]]; then disable_monitor "$LAPTOP"; fi
+    enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_ONLY" "$EXTERNAL_SCALE"
+    return 0
+}
+
+CURRENT_LAYOUT=$(current_layout)
+
 # 5. Show Menu OR Process CLI Flag
 SELECTION=""
 
 if [[ "$USE_FUZZEL" == true ]]; then
     # Launch Fuzzel if --fuzzel was explicitly passed
-    SELECTION=$(printf "󰍹  - Extend (Dual Monitor)\n󰌢  - Internal Screen Only\n󰍺  - External Screen Only\n󰍺  - Mirror Displays" \
-                | fuzzel --dmenu -l 4 -p "Display Mode:  " || true)
+    SELECTION=$(printf "󰍹  - Extend (Dual Monitor)\n󰌢  - Internal Screen Only\n󰍺  - External Screen Only" \
+                | fuzzel --dmenu -l 3 -p "Display Mode:  " || true)
 elif [[ -n "$MODE_ARG" ]]; then
     # Map the CLI argument to the selection strings
     case "$MODE_ARG" in
         laptop)   SELECTION="Internal Screen Only" ;;
         external) SELECTION="External Screen Only" ;;
         extend)   SELECTION="Extend" ;;
-        mirror)   SELECTION="Mirror Displays" ;;
         *)
-            echo "Error: Invalid mode: $MODE_ARG. Use laptop, external, extend, or mirror." >&2
+            echo "Error: Invalid mode: $MODE_ARG. Use laptop, external, or extend." >&2
             exit 1
             ;;
     esac
@@ -119,8 +149,18 @@ fi
 # 6. Execute Logic
 case "$SELECTION" in
     *"Extend"*)
-        if [[ -n "$laptop_connected" ]]; then enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"; fi
-        if [[ -n "$external_connected" ]]; then enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"; fi
+        if [[ -z "$laptop_connected" || -z "$external_connected" ]]; then
+            notify-send "Display Error" "Extend needs both screens (internal + external)." -u critical
+            exit 1
+        fi
+        if [[ "$CURRENT_LAYOUT" == "extend" ]]; then
+            notify-send "Display Mode" "Already extended" -i video-display
+            exit 0
+        fi
+        # Position the external first so the internal can claim 0x0 without ever
+        # momentarily overlapping an external that is still sitting at 0x0.
+        enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"
+        enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"
         notify-send "Display Mode" "Extended to both displays" -i video-display
         ;;
         
@@ -128,6 +168,15 @@ case "$SELECTION" in
         if [[ -z "$laptop_connected" ]]; then
             notify-send "Display Error" "Internal screen not found! Aborting to prevent blind state." -u critical
             exit 1
+        fi
+        if [[ "$CURRENT_LAYOUT" == "laptop" ]]; then
+            notify-send "Display Mode" "Already internal-only" -i video-display
+            exit 0
+        fi
+        # If the external is still rendering at 0x0, move it aside before the
+        # internal takes 0x0 (otherwise Hyprland rejects the overlap).
+        if [[ -n "$external_active" ]]; then
+            enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"
         fi
         enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"
         if verify_active "$LAPTOP"; then
@@ -143,23 +192,15 @@ case "$SELECTION" in
             notify-send "Display Error" "External screen not connected! Aborting." -u critical
             exit 1
         fi
-        enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_ONLY" "$EXTERNAL_SCALE"
-        if verify_active "$EXTERNAL"; then
-            if [[ -n "$laptop_connected" ]]; then disable_monitor "$LAPTOP"; fi
+        if [[ "$CURRENT_LAYOUT" == "external" ]]; then
+            notify-send "Display Mode" "Already external-only" -i video-display
+            exit 0
+        fi
+        if apply_external_only; then
             notify-send "Display Mode" "External screen only" -i video-display
         else
             notify-send "Display Error" "External screen failed to wake up. Aborting to prevent blind state." -u critical
         fi
-        ;;
-        
-    *"Mirror Displays"*)
-        if [[ -n "$laptop_connected" ]]; then 
-            enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"
-        fi
-        if [[ -n "$external_connected" && -n "$laptop_connected" ]]; then 
-            enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_MIRROR" "$EXTERNAL_SCALE" "$LAPTOP"
-        fi
-        notify-send "Display Mode" "Displays mirrored" -i video-display
         ;;
 esac
 
