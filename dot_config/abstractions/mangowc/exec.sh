@@ -47,16 +47,21 @@ _mango_new_client_id() {
 # _mango_tag_worker <tag> <dispatch> <cmd>
 # Spawn <cmd>, wait for its window (polling until the compositor IPC is ready —
 # it can lag at session start — and the client maps), then move it onto <tag>
-# with the given dispatch verb. Diagnostics go to $WM_EXEC_TAG_LOG when set.
+# with the given dispatch verb. The move is held back by $WM_EXEC_TAG_DELAY
+# (default 0.5s) so the window settles on screen before being relocated, which
+# avoids the flash/tearing of relocating a surface mid-map. Diagnostics go to
+# $WM_EXEC_TAG_LOG when set.
 _mango_tag_worker() {
     local tag="$1" dispatch="$2" cmd="$3"
     local log="${WM_EXEC_TAG_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/mango-exec-tag.log}" spid nid
+    local delay="${WM_EXEC_TAG_DELAY:-0.5}"   # let the window settle before relocating
     setsid sh -c "$cmd" >/dev/null 2>&1 &
     spid=$!
     for _ in $(seq 1 300); do   # up to ~30s
         sleep 0.1
         nid="$(_mango_new_client_id "$spid")"
         if [ -n "$nid" ]; then
+            sleep "$delay"
             if mmsg dispatch "$dispatch,$tag client,$nid" >/dev/null 2>&1; then
                 [ -n "$log" ] && printf '%s tag=%s %s client=%s pid=%s cmd=%q\n' \
                     "$(date -Is)" "$tag" "$dispatch" "$nid" "$spid" "$cmd" >>"$log" 2>/dev/null
