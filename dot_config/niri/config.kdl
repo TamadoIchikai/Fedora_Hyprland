@@ -1,0 +1,535 @@
+// This config is in the KDL format: https://kdl.dev
+// "/-" comments out the following node.
+// Check the wiki for a full description of the configuration:
+// https://niri-wm.github.io/niri/Configuration:-Introduction
+
+// Input device configuration.
+// Find the full list of options on the wiki:
+// https://niri-wm.github.io/niri/Configuration:-Input
+input {
+    // Focus windows/outputs on mouse hover (Hyprland had follow_mouse = 1).
+    focus-follows-mouse
+
+    keyboard {
+        xkb {
+            layout "us"
+            options "caps:swapescape"
+        }
+
+        // Enable numlock on startup, omitting this setting disables it.
+        numlock
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+        accel-profile "flat"
+    }
+
+    mouse {
+        accel-profile "flat"
+	accel-speed -1.0
+    }
+}
+
+// Override environment variables for processes spawned by niri.
+// These feed the display-mode helper scripts.
+environment {
+    LAPTOP_OUTPUT "eDP-1"
+    EXTERNAL_OUTPUT "HDMI-A-1"
+    LAPTOP_MODE "1920x1080@60.1"
+    EXTERNAL_MODE "1920x1080@60.0"
+    LAPTOP_POS "0x0"
+    EXTERNAL_POS_EXTEND "1920x0"
+    EXTERNAL_POS_MIRROR "0x0"
+
+    LAPTOP_SCALE "1"
+    EXTERNAL_SCALE "1"
+    XCURSOR_SIZE "24"
+
+    // niri launched directly (not via niri-session) does not set this, which
+    // made the WM abstraction layer misdetect the compositor (mmsg present ->
+    // mangowc). Pin it so spawned scripts select the niri backend.
+    XDG_CURRENT_DESKTOP "niri"
+    // Inherited WM_CURR (exported by the login shell before niri started) can
+    // short-circuit the abstraction layer's detection; pin it for niri's
+    // children so scripts always load the niri backend.
+    WM_CURR "niri"
+}
+
+// Output positions: laptop left of external monitor.
+output "eDP-1" {
+    mode "1920x1080@60.1"
+    scale 1
+    position x=0 y=0
+}
+
+output "HDMI-A-1" {
+    mode "1920x1080@60.0"
+    scale 1
+    position x=1920 y=0
+}
+
+// Named workspaces always exist, even when empty.
+// Declared "1".."11" so the layout matches the old Hyprland setup:
+//   "1"  -> Obsidian
+//   "2"  -> zen
+//   "11" -> parking workspace (WM_exec_on_park_workspace), unreachable by the
+//           Alt+1..0 binds.
+workspace "1"
+workspace "2"
+workspace "3"
+workspace "4"
+workspace "5"
+workspace "6"
+workspace "7"
+workspace "8"
+workspace "9"
+workspace "10"
+workspace "11"
+
+// Settings that influence how windows are positioned and sized.
+// Find more information on the wiki:
+// https://niri-wm.github.io/niri/Configuration:-Layout
+layout {
+    // Hyprland had gaps_in 2 / gaps_out 5; niri has a single gaps value.
+    gaps 5
+
+    always-center-single-column
+    center-focused-column "never"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    // New windows open full width (was 0.5 = half); matches the "app fills the
+    // column on a fresh workspace" behaviour from the Hyprland setup.
+
+    // Hyprland border_size 2 with focus ring equivalent.
+    focus-ring {
+        off
+    }
+
+    border {
+        on
+        width 2
+        active-color "#9198a1aa"
+        inactive-color "#2b2b2baa"
+        urgent-color "#9b0000"
+    }
+
+    // Hyprland shadow: enabled, range 4, render_power 3, color 0xee1a1a1a.
+    shadow {
+        on
+        softness 12
+        spread 0
+        offset x=0 y=4
+        color "#1a1a1aee"
+    }
+}
+
+// Startup: import the session env, then run the display-mode script when an
+// external monitor is connected, then hand off to the autostart wrapper.
+// (waybar is started by autostart.sh, so it is not spawned here.)
+spawn-sh-at-startup "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+spawn-sh-at-startup "bash -lc 'sleep 1; if niri msg --json outputs 2>/dev/null | grep -q HDMI-A-1; then $HOME/.local/bin/fuzzel-DisplayMode.sh --mode external >/dev/null 2>&1; sleep 1; fi; exec $HOME/.local/bin/autostart-wrapper.sh'"
+
+// Uncomment this line to ask the clients to omit their client-side decorations if possible.
+// If the client will specifically ask for CSD, the request will be honored.
+// Additionally, clients will be informed that they are tiled, removing some client-side rounded corners.
+// This option will also fix border/focus ring drawing behind some semitransparent windows.
+// After enabling or disabling this, you need to restart the apps for this to take effect.
+prefer-no-csd
+
+hotkey-overlay {
+    // Uncomment this line to disable the "Important Hotkeys" pop-up at startup.
+    // skip-at-startup
+}
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+// Animation settings.
+// https://niri-wm.github.io/niri/Configuration:-Animations
+// Duration = Hyprland speed (deciseconds) x 100ms.
+animations {
+    // Hyprland had workspace animations disabled.
+    workspace-switch {
+        off
+    }
+
+    // windowsIn (speed 1.2, easeOutQuint).
+    window-open {
+        duration-ms 120
+        curve "cubic-bezier" 0.23 1 0.32 1
+    }
+
+    // windowsOut (speed 1.2, linear).
+    window-close {
+        duration-ms 120
+        curve "cubic-bezier" 0 0 1 1
+    }
+
+    // windows (move/resize, speed 1.5 easeOutQuint) -> spring approximation.
+    window-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    window-resize {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+}
+
+// Window rules let you adjust behavior for individual windows.
+// https://niri-wm.github.io/niri/Configuration:-Window-Rules
+
+// Rounded corners for all windows (Hyprland rounding 5).
+window-rule {
+    geometry-corner-radius 5
+    clip-to-geometry true
+}
+
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+// --- Floating dialogs / utilities -------------------------------------------
+
+window-rule {
+    match app-id=r#"^org\.pulseaudio\.pavucontrol$"#
+    open-floating true
+    default-column-width { fixed 650; }
+    default-window-height { fixed 400; }
+    default-floating-position x=1200 y=640
+}
+
+window-rule {
+    match app-id=r#"^blueman-manager$"#
+    open-floating true
+    default-column-width { fixed 529; }
+    default-window-height { fixed 345; }
+    default-floating-position x=1368 y=694
+}
+
+window-rule {
+    match app-id=r#"^xdg-desktop-portal-gtk$"# title=r#"^Files$"#
+    open-floating true
+    default-column-width { fixed 700; }
+    default-window-height { fixed 400; }
+    default-floating-position x=1200 y=640
+}
+
+window-rule {
+    match app-id=r#"^com-abdownloadmanager-desktop-AppKt$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^zenity$"# title=r#"^Devices$"#
+    open-floating true
+    default-column-width { fixed 500; }
+    default-window-height { fixed 400; }
+    default-floating-position x=1360 y=640
+}
+
+window-rule {
+    match app-id=r#"^Mailspring$"#
+    open-floating true
+    default-column-width { fixed 1884; }
+    default-window-height { fixed 1026; }
+}
+
+window-rule {
+    match app-id=r#"^org\.localsend\.localsend_app$"# title=r#"^LocalSend$"#
+    open-floating true
+    default-column-width { fixed 558; }
+    default-window-height { fixed 578; }
+    default-floating-position x=1340 y=462
+}
+
+window-rule {
+    match app-id=r#"^localsend_app$"# title=r#"^Open File$"#
+    open-floating true
+    default-column-width { fixed 731; }
+    default-window-height { fixed 578; }
+    default-floating-position x=1200 y=462
+}
+
+window-rule {
+    match app-id=r#"^xdg-desktop-portal-gtk$"# title=r#"^Choose Directory$"#
+    open-floating true
+    default-column-width { fixed 691; }
+    default-window-height { fixed 514; }
+    default-floating-position x=1225 y=522
+}
+
+window-rule {
+    match app-id=r#"^swayimg$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^com\.github\.xournalpp\.xournalpp$"# title=r#"^Xournalpp - New bookmark$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^com\.github\.xournalpp\.xournalpp$"# title=r#"^Xournalpp - Bookmarks Manager$"#
+    open-floating true
+    default-column-width { fixed 477; }
+    default-window-height { fixed 326; }
+}
+
+window-rule {
+    match app-id=r#"^hyprmode$"#
+    open-floating true
+    default-column-width { fixed 600; }
+    default-window-height { fixed 530; }
+    opacity 0.95
+}
+
+window-rule {
+    match app-id=r#"^xdg-desktop-portal-gtk$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^hyprland-dialog$"#
+    open-floating true
+    default-floating-position x=0 y=0 relative-to="bottom"
+}
+
+window-rule {
+    match app-id=r#"^org\.gnome\.FileRoller$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^Thunar$"# title=r#"^Confirm to replace files$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^Thunar$"# title=r#"^File Operation Progress$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^Thunar$"# title=r#"^Rename ".*"$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^vivaldi-stable$"# title=r#"^Bitwarden - Vivaldi$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^vivaldi-stable$"# title=r#"^Open File$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+    open-floating true
+    default-column-width { fixed 1567; }
+    default-window-height { fixed 929; }
+}
+
+window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"# title=r#"^KeePassXC - Browser Access Request$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"# title=r#"^Generate Password$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^com\.github\.hluk\.copyq$"# title=r#"^CopyQ$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^peazip$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^code$"# title=r#"^Open Folder$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^code$"# title=r#"^Open File$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^org\.gnome\.seahorse\.Application$"# title=r#"^Passwords and Keys$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^eu\.betterbird\.Betterbird$"#
+    open-floating true
+    default-column-width { fixed 1906; }
+    default-window-height { fixed 1033; }
+}
+
+// Obsidian opens on its named workspace.
+window-rule {
+    match app-id=r#"^md\.obsidian\.Obsidian$"#
+    open-on-workspace "1"
+}
+
+window-rule {
+    match app-id=r#"^org\.freedesktop\.impl\.portal\.desktop\.kde$"#
+    open-floating true
+    default-column-width { fixed 1018; }
+    default-window-height { fixed 622; }
+}
+
+// Zotero "New Collection" keeps a fixed tiled size (not floating).
+window-rule {
+    match app-id=r#"^Zotero$"# title=r#"^New Collection$"#
+    default-column-width { fixed 430; }
+    default-window-height { fixed 180; }
+}
+
+binds {
+    // Mod = Super on a TTY.
+
+    // --- Applications -------------------------------------------------------
+
+    Shift+BackSpace { spawn-sh "wtype -k delete"; }
+    Mod+Z { spawn "foot"; }
+    Mod+E { spawn-sh "thunar --window"; }
+    Mod+Alt+E { spawn-sh "id=$(niri msg --json windows 2>/dev/null | jq -r '.[] | select(.app_id | test(\"[Bb]etterbird\")) | .id' | head -n1); if [ -n \"$id\" ]; then niri msg action focus-window --id \"$id\"; else flatpak run eu.betterbird.Betterbird -mail; fi"; }
+    Mod+O { spawn-sh "$HOME/.local/bin/fuzzel-scale.sh"; }
+    Mod+B { spawn "zen"; }
+    Mod+Alt+B { spawn-sh "Helium.AppImage"; }
+    Mod+G { spawn-sh "grim -g \"$(slurp)\" - | GTK_THEME=Adwaita:dark swappy -f -"; }
+    Mod+Alt+G { spawn-sh "$HOME/.config/hypr/scripts/hyprPicker.sh"; }
+    Mod+V { spawn-sh "wofi-cliphist.sh"; }
+    Mod+Alt+P { spawn-sh "fuzzel-powermenu.sh"; }
+    Mod+P { spawn-sh "fuzzel-DisplayMode.sh --fuzzel"; }
+    Mod+Space { spawn-sh "$HOME/.local/bin/fcitx5_changeKeyboard.sh"; }
+    Mod+Alt+Ctrl+P { spawn-sh "niri msg action load-config-file"; }
+    Alt+O { spawn-sh "qalc_floating.sh"; }
+    Alt+Tab { spawn-sh "hyprAppSwitcher.sh"; }
+    Mod+Ctrl+X { spawn-sh "chezmoi apply"; }
+    Mod+Alt+X { spawn-sh "$HOME/.config/waybar/scripts/restartWaybar.sh"; }
+    Mod+Alt+C { spawn-sh "niri msg action load-config-file"; }
+
+    // --- Window state -------------------------------------------------------
+
+    Mod+C { toggle-window-floating; }
+    Mod+F { maximize-column; }
+    Mod+Alt+F { fullscreen-window; }
+    Mod+Q { close-window; }
+
+    // --- Focus / move (Vim-style) ------------------------------------------
+
+    Mod+H { focus-column-left; }
+    Mod+L { focus-column-right; }
+    Mod+K { focus-window-up; }
+    Mod+J { focus-window-down; }
+
+    Mod+Alt+H { move-column-left; }
+    Mod+Alt+L { move-column-right; }
+    Mod+Alt+K { move-window-up; }
+    Mod+Alt+J { move-window-down; }
+
+    // --- Groups (niri: tabbed columns) -------------------------------------
+
+    Mod+N { toggle-column-tabbed-display; }
+    Mod+Alt+N { expel-window-from-column; }
+
+    // --- Workspace navigation ----------------------------------------------
+
+    Mod+Tab repeat=false { toggle-overview; }
+    Mod+D { focus-workspace-down; }
+    Mod+S { focus-workspace-up; }
+
+    Alt+1 { focus-workspace "1"; }
+    Alt+2 { focus-workspace "2"; }
+    Alt+3 { focus-workspace "3"; }
+    Alt+4 { focus-workspace "4"; }
+    Alt+5 { focus-workspace "5"; }
+    Alt+6 { focus-workspace "6"; }
+    Alt+7 { focus-workspace "7"; }
+    Alt+8 { focus-workspace "8"; }
+    Alt+9 { focus-workspace "9"; }
+    Alt+0 { focus-workspace "10"; }
+
+    Alt+Shift+1 { move-window-to-workspace "1"; }
+    Alt+Shift+2 { move-window-to-workspace "2"; }
+    Alt+Shift+3 { move-window-to-workspace "3"; }
+    Alt+Shift+4 { move-window-to-workspace "4"; }
+    Alt+Shift+5 { move-window-to-workspace "5"; }
+    Alt+Shift+6 { move-window-to-workspace "6"; }
+    Alt+Shift+7 { move-window-to-workspace "7"; }
+    Alt+Shift+8 { move-window-to-workspace "8"; }
+    Alt+Shift+9 { move-window-to-workspace "9"; }
+    Alt+Shift+0 { move-window-to-workspace "10"; }
+
+    Alt+Ctrl+Shift+1 { move-window-to-workspace focus=false "1"; }
+    Alt+Ctrl+Shift+2 { move-window-to-workspace focus=false "2"; }
+    Alt+Ctrl+Shift+3 { move-window-to-workspace focus=false "3"; }
+    Alt+Ctrl+Shift+4 { move-window-to-workspace focus=false "4"; }
+    Alt+Ctrl+Shift+5 { move-window-to-workspace focus=false "5"; }
+    Alt+Ctrl+Shift+6 { move-window-to-workspace focus=false "6"; }
+    Alt+Ctrl+Shift+7 { move-window-to-workspace focus=false "7"; }
+    Alt+Ctrl+Shift+8 { move-window-to-workspace focus=false "8"; }
+    Alt+Ctrl+Shift+9 { move-window-to-workspace focus=false "9"; }
+    Alt+Ctrl+Shift+0 { move-window-to-workspace focus=false "10"; }
+
+    Mod+Alt+D { move-column-to-workspace-down; }
+    Mod+Alt+S { move-column-to-workspace-up; }
+
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp   cooldown-ms=150 { focus-workspace-up; }
+
+    // --- Width / height -----------------------------------------------------
+
+    Mod+R { switch-preset-column-width; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // --- Screenshots --------------------------------------------------------
+
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Alt+Print { screenshot-window; }
+
+    // --- Locking / exit -----------------------------------------------------
+
+    Super+Alt+L allow-when-locked=true { spawn "swaylock"; }
+    Mod+Shift+E { quit; }
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+
+    // --- Multimedia keys ----------------------------------------------------
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn-sh "brightnessctl s 10%+"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "brightnessctl s 10%-"; }
+
+    XF86AudioNext  allow-when-locked=true { spawn-sh "playerctl next"; }
+    XF86AudioPause allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioPlay  allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioPrev  allow-when-locked=true { spawn-sh "playerctl previous"; }
+}
