@@ -272,6 +272,9 @@ local secondMod = "ALT"
 local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
+hl.bind("SUPER + A", function()
+        hl.plugin.hyprexpo.expo("toggle")
+end)
 hl.bind("SHIFT + backspace", hl.dsp.exec_cmd("wtype -k 'delete'"))
 
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd(terminal))
