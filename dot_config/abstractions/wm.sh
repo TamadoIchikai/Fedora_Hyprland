@@ -27,13 +27,14 @@ source "$WM_API_DIR/common.sh" 2>/dev/null || true
 WM_detect() {
     if [ -n "${WM_CURR:-}" ]; then
         case "$WM_CURR" in
-            hyprland|mangowc) printf '%s' "$WM_CURR"; return 0 ;;
+            hyprland|mangowc|niri) printf '%s' "$WM_CURR"; return 0 ;;
         esac
     fi
 
     case "${XDG_CURRENT_DESKTOP:-}" in
         *Mango*|*mango*)     printf 'mangowc';  return 0 ;;
         *Hyprland*|*hyprland*) printf 'hyprland'; return 0 ;;
+        *Niri*|*niri*)       printf 'niri';     return 0 ;;
     esac
 
     if [ -n "${MANGO_INSTANCE_SIGNATURE:-}" ] || WM_have mmsg; then
@@ -41,6 +42,9 @@ WM_detect() {
     fi
     if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || WM_have hyprctl; then
         printf 'hyprland'; return 0
+    fi
+    if [ -n "${NIRI_SOCKET:-}" ] || WM_have niri; then
+        printf 'niri'; return 0
     fi
 
     return 1
@@ -73,6 +77,7 @@ WM_dispatch() {
     case "$WM_CURR" in
         hyprland) hyprctl dispatch "$@" ;;
         mangowc)  mmsg dispatch "$@" ;;
+        niri)     niri msg "$@" ;;
         *) return 1 ;;
     esac
 }
