@@ -43,7 +43,10 @@ WM_monitor_enable() {
     [ -n "$mode" ]   && lua="$lua, mode = '$mode'"
     [ -n "$pos" ]    && lua="$lua, position = '$pos'"
     [ -n "$scale" ]  && lua="$lua, scale = $scale"
-    [ -n "$mirror" ] && lua="$lua, mirror = '$mirror'"
+    # Always emit mirror (empty = "not mirrored"). Hyprland merges hl.monitor
+    # rule fields, so omitting mirror leaves a stale mirror in place; passing an
+    # explicit empty string is what actually clears it.
+    lua="$lua, mirror = '$mirror'"
     lua="$lua })"
 
     hyprctl eval "$lua" >/dev/null
