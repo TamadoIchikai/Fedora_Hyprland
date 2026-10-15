@@ -140,5 +140,13 @@ export UID=$(id -u)
 export GID=$(id -g)
 export PATH="$PATH:$RESTIC_SOURCE_BASE/Robotics/SCARA_Robot/STM32/arm-gnu-toolchain/bin"
 
-# Compositor-agnostic window API (WM_* functions)
-[ -r "$HOME/.config/abstractions/wm.sh" ] && source "$HOME/.config/abstractions/wm.sh"
+# Compositor-agnostic window API (WM_* functions).
+# Only load when a Wayland compositor session is actually active. Otherwise a
+# bare login shell has no compositor environment (XDG_CURRENT_DESKTOP etc.),
+# so WM_detect would fall back to probing installed binaries and export a
+# guessed WM_CURR (e.g. mangowc because `mmsg` happens to be installed). That
+# value leaks into the session environment and into systemd user services,
+# making them misdetect the compositor.
+if [[ -n "${XDG_CURRENT_DESKTOP:-}${HYPRLAND_INSTANCE_SIGNATURE:-}${NIRI_SOCKET:-}${MANGO_INSTANCE_SIGNATURE:-}" ]]; then
+    [ -r "$HOME/.config/abstractions/wm.sh" ] && source "$HOME/.config/abstractions/wm.sh"
+fi
