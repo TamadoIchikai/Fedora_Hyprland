@@ -128,7 +128,11 @@ medium_startup() {
     exec_park "thunar --window"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
-    run_once_name "MonitorWatcher.sh" "$HOME/.local/bin/MonitorWatcher.sh"
+    # MonitorWatcher is started by its systemd user service
+    # (MonitorWatcher.service, WantedBy=graphical-session.target) so that it is
+    # tied to the compositor session and torn down cleanly on logout. Starting it
+    # here too would detach (setsid) an orphan that survives logout and holds the
+    # single-instance lock, blocking the next session's watcher.
 }
 
 complex_startup() {
