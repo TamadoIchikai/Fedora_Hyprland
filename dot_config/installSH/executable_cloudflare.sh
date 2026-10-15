@@ -23,7 +23,8 @@ sudo visudo -cf /etc/sudoers.d/warp-toggle
 # --- 4. Keep WARP fully off after reboot (no background service) ---
 sudo systemctl disable warp-svc.service
 systemctl --user disable warp-desktop-svc.service
-
+systemctl --user mask app-com.cloudflare.WarpTaskbar@autostart.service
+systemctl --user mask warp-desktop-svc.service
 # --- 5. Connect and verify ---
 warp-cli connect
 sleep 2
