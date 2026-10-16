@@ -10,14 +10,17 @@
       "paused": "",
       "stopped": ""
     },
-    "dynamic-order": ["artist"]
+    "dynamic-order": ["artist"],
+    "artist-len": 14,
+    "ellipsis": "...",
+    "align": 0.0
   },
   "custom/mpris": {
     "exec": "$HOME/.config/waybar/scripts/mpris-fallback.sh",
     "interval": 1
   },
 
-  "group/mpris": {
+  "group/mprisbox": {
     "orientation": "horizontal",
     "modules": ["mpris", "custom/mpris"]
   },
@@ -50,16 +53,16 @@
     "escape": true
   },
   "custom/timer": {
-	  "exec": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh",
-	  "return-type": "json",
-	  "format": "{}",
-	  "on-click": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh click",
-	  "on-click-right": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh right",
-	  "on-click-middle": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh middle",
-	  "on-scroll-up": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh down",
-	  "on-scroll-down": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh up",
-	  "tooltip": true,
-	  "escape": true
+    "exec": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh",
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh click",
+    "on-click-right": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh right",
+    "on-click-middle": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh middle",
+    "on-scroll-up": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh down",
+    "on-scroll-down": "$HOME/.config/waybar/scripts/timer_multi_monitor.sh up",
+    "tooltip": true,
+    "escape": true
   },
 
   "custom/layout": {
@@ -77,39 +80,38 @@
     "tooltip-format": "{app}: {title}"
   },
 
-  
   "tray": {
     "icon-size": 24,
     "spacing": 10,
     "show-passive-items": true
   },
-  
+
   "clock": {
     "format": "󰅐  {:%a %d %b %H:%M}",
     "tooltip-format": "<tt><big>{calendar}</big></tt>",
     "calendar": {
-		"mode"          : "month",
-		"mode-mon-col"  : 3,
-		"weeks-pos"     : "right",
-		"on-scroll"     : 1,
-		"on-click-right": "mode",
-		"format": {
-			"months":     "<span color='#ffead3'><b>{}</b></span>",
-			"days":       "<span color='#ecc6d9'><b>{}</b></span>",
-			"weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
-			"weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
-			"today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
-		}
-	},
-	"actions": {
-		"on-click-right": "mode",
-		"on-click-forward": "tz_up",
-		"on-click-backward": "tz_down",
-		"on-scroll-up": "shift_up",
-		"on-scroll-down": "shift_down"
-	}
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "on-click-right": "mode",
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "days": "<span color='#ecc6d9'><b>{}</b></span>",
+        "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-click-forward": "tz_up",
+      "on-click-backward": "tz_down",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
   },
-  
+
   "battery": {
     "states": {
       "warning": 30,
@@ -121,5 +123,4 @@
     "format-alt": "{icon} {time}",
     "format-icons": ["󰢟", "󰂆", "󰂈", "󰢞", "󱈑"]
   }
-
 }

@@ -82,17 +82,20 @@ button:hover {
     padding-left: 5px;
 }
 
-#mpris {
+#mprisbox {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
+    min-width: 200px;
+    padding-left: 7px;
+    padding-right: 7px;
 }
 #custom-layout {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
     color: #cbcdcb;
 }
 
