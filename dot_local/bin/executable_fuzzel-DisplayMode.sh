@@ -154,23 +154,23 @@ case "$SELECTION" in
             exit 1
         fi
         if [[ "$CURRENT_LAYOUT" == "extend" ]]; then
-            notify-send "Display Mode" "Already extended" -i video-display
+            notify-send "Display Mode" "Already extended" -i video-display -e
             exit 0
         fi
         # Position the external first so the internal can claim 0x0 without ever
         # momentarily overlapping an external that is still sitting at 0x0.
         enable_monitor "$EXTERNAL" "$EXTERNAL_MODE" "$EXTERNAL_POS_EXTEND" "$EXTERNAL_SCALE"
         enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"
-        notify-send "Display Mode" "Extended to both displays" -i video-display
+        notify-send "Display Mode" "Extended to both displays" -i video-display -e
         ;;
-        
+
     *"Internal Screen Only"*)
         if [[ -z "$laptop_connected" ]]; then
             notify-send "Display Error" "Internal screen not found! Aborting to prevent blind state." -u critical
             exit 1
         fi
         if [[ "$CURRENT_LAYOUT" == "laptop" ]]; then
-            notify-send "Display Mode" "Already internal-only" -i video-display
+            notify-send "Display Mode" "Already internal-only" -i video-display -e
             exit 0
         fi
         # If the external is still rendering at 0x0, move it aside before the
@@ -181,23 +181,23 @@ case "$SELECTION" in
         enable_monitor "$LAPTOP" "$LAPTOP_MODE" "$LAPTOP_POS" "$LAPTOP_SCALE"
         if verify_active "$LAPTOP"; then
             if [[ -n "$external_connected" ]]; then disable_monitor "$EXTERNAL"; fi
-            notify-send "Display Mode" "Internal screen only" -i video-display
+            notify-send "Display Mode" "Internal screen only" -i video-display -e
         else
             notify-send "Display Error" "Internal screen failed to wake up. Aborting." -u critical
         fi
         ;;
-        
+
     *"External Screen Only"*)
         if [[ -z "$external_connected" ]]; then
             notify-send "Display Error" "External screen not connected! Aborting." -u critical
             exit 1
         fi
         if [[ "$CURRENT_LAYOUT" == "external" ]]; then
-            notify-send "Display Mode" "Already external-only" -i video-display
+            notify-send "Display Mode" "Already external-only" -i video-display -e
             exit 0
         fi
         if apply_external_only; then
-            notify-send "Display Mode" "External screen only" -i video-display
+            notify-send "Display Mode" "External screen only" -i video-display -e
         else
             notify-send "Display Error" "External screen failed to wake up. Aborting to prevent blind state." -u critical
         fi
