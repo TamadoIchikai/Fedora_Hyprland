@@ -1,54 +1,46 @@
 // -*- mode: jsonc -*-
 {
-    // "layer": "top", // Waybar at top layer
-    "position": "bottom", // Waybar position (top|bottom|left|right)
-    // "width": 1280, // Waybar width
-    "spacing": 4, // Gaps between modules (4px)
-    // margins
-    "margin-bottom": 3,
-    "margin-left": 5,
-    "margin-right": 5,
+  // "layer": "top", // Waybar at top layer
+  "position": "bottom", // Waybar position (top|bottom|left|right)
+  // "width": 1280, // Waybar width
+  "spacing": 4, // Gaps between modules (4px)
+  // margins
+  "margin-bottom": 3,
+  "margin-left": 5,
+  "margin-right": 5,
 
-    // Choose the order of the modules
-    "include": [
-	"${SCRIPTS}/scripts/hardware.json",
-	"${SCRIPTS}/scripts/media.json",
-	"${SCRIPTS}/scripts/modules.json",
-	"${SCRIPTS}/scripts/connection.json"
-    ],
-    "modules-left": [
-	"custom/appmenu",
-	"group/hardware",
-	"group/mpris"
-    ],
-    "modules-center": [
-	"hyprland/submap",
-        "hyprland/workspaces"
-    ],
-    "modules-right": [
-	"tray",
-        "group/media",
-	"battery",
-	"group/connection",
-        "clock",
-	"custom/timer",
-	"custom/notification"
-    ],
-    "hyprland/workspaces": {
-	    "format": "{icon}:{windows}",
-	    "format-window-separator": "",
-	    "workspace-taskbar": {
-		"enable": true,
-		"update-active-window": true,
-		"format": "{icon}",
-		"icon-size": 15,
-		"on-click-window": "${HOME}/.config/waybar/scripts/focus-window.sh {address} {button}"
-	    },
-	    "ignore-workspaces": ["11"]
-	},
-	"hyprland/submap": {
-	    "format": "{}",
-	    "tooltip": false
-	}   
-
+  // Choose the order of the modules
+  "include": [
+    "${SCRIPTS}/scripts/hardware.json",
+    "${SCRIPTS}/scripts/media.json",
+    "${SCRIPTS}/scripts/modules.json",
+    "${SCRIPTS}/scripts/connection.json",
+  ],
+  "modules-left": ["custom/appmenu", "group/hardware", "group/mpris"],
+  "modules-center": ["hyprland/submap", "custom/layout", "hyprland/workspaces"],
+  "modules-right": [
+    "tray",
+    "group/media",
+    "battery",
+    "group/connection",
+    "clock",
+    "custom/timer",
+    "custom/notification",
+  ],
+  "hyprland/workspaces": {
+    "format": "{icon}:{windows}",
+    "format-window-separator": "",
+    "workspace-taskbar": {
+      "enable": true,
+      "update-active-window": true,
+      "format": "{icon}",
+      "icon-size": 15,
+      "on-click-window": "${HOME}/.config/waybar/scripts/focus-window.sh {address} {button}",
+    },
+    "ignore-workspaces": ["11"],
+  },
+  "hyprland/submap": {
+    "format": "󰙕",
+    "tooltip": false,
+  },
 }

@@ -62,6 +62,13 @@
 	  "escape": true
   },
 
+  "custom/layout": {
+    "exec": "$HOME/.config/waybar/scripts/layout.sh",
+    "interval": 1,
+    "format": "{}",
+    "tooltip": false
+  },
+
   "hyprland/scratchpad": {
     "format": "{icon} {count}",
     "show-empty": false,

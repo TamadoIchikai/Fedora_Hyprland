@@ -273,7 +273,7 @@ local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
 hl.bind("SUPER + A", function()
-        hl.plugin.hyprexpo.expo("toggle")
+    hl.plugin.hyprexpo.expo("toggle")
 end)
 hl.bind("SHIFT + backspace", hl.dsp.exec_cmd("wtype -k 'delete'"))
 
@@ -296,8 +296,8 @@ hl.bind(mainMod .. " + CTRL + X", hl.dsp.exec_cmd("chezmoi apply"))
 hl.bind(mainAlt .. " + X", hl.dsp.exec_cmd("$HOME/.config/waybar/scripts/restartWaybar.sh"))
 hl.bind(mainAlt .. " + C", hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
 -- Window state
-hl.bind(mainMod .. " + C", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
+hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainAlt .. " + F", hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 
 -- Move focus with Vim-style keys
@@ -325,6 +325,24 @@ hl.define_submap("resize", function()
 
     -- Use `reset` to go back to the global submap
     hl.bind("escape", hl.dsp.submap("reset"))
+end)
+
+-- Cycle through tiling layouts with SUPER + R
+local layouts = { "dwindle", "scrolling" }
+
+hl.bind(mainMod .. " + C", function()
+    local current = hl.get_config("general.layout")
+
+    for i, layout in ipairs(layouts) do
+        if current == layout then
+            local nextLayout = layouts[(i % #layouts) + 1]
+            hl.config({ general = { layout = nextLayout } })
+            return
+        end
+    end
+
+    -- Fallback if the current layout isn't in the list
+    hl.config({ general = { layout = layouts[1] } })
 end)
 
 -- Groups

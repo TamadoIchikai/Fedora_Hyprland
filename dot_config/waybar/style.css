@@ -2,7 +2,10 @@
    Global Styles
    =============================== */
 * {
-    font-family: "Symbols Nerd Font Mono","JetBrainsMono Nerd Font","Font Awesome 6 Free","Font Awesome 6 Brands",Roboto,Helvetica,Arial,sans-serif;
+    font-family:
+        "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font",
+        "Font Awesome 6 Free", "Font Awesome 6 Brands", Roboto, Helvetica,
+        Arial, sans-serif;
     font-size: 13px;
     color: #cbcdcb;
 }
@@ -24,8 +27,8 @@ button {
     color: #ffffff;
 }
 
-button:hover { 
-    background: rgba(255,255,255,0.1); 
+button:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* ===============================
@@ -48,7 +51,7 @@ button:hover {
 /* Focused workspace = white underline */
 #workspaces button.active {
     color: #ffffff;
-    border-bottom: 2px solid #9198A1;
+    border-bottom: 2px solid #9198a1;
     border-left: 2px dashed gray;
     border-right: 2px dashed gray;
     border-top: 2px dashed gray;
@@ -67,12 +70,11 @@ button:hover {
    Groups (boxed modules)
    =============================== */
 
-
 #clock,
 #media,
 #hardware,
 #battery,
-#connection{
+#connection {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
@@ -85,25 +87,41 @@ button:hover {
     border: 1px solid #444444;
     border-radius: 6px;
 }
+#custom-layout {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+    color: #cbcdcb;
+}
 
-#custom-appmenu{
+#submap {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+    color: #cbcdcb;
+}
+
+#custom-appmenu {
     padding-left: 10px;
     padding-right: 10px;
-    color: #51A2DA;
+    color: #51a2da;
     font-size: 15px;
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
 }
 
-#tray{
+#tray {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
     padding-right: 3px;
     padding-left: 3px;
 }
-
 
 /* ===============================
    Individual Modules
@@ -138,13 +156,25 @@ button:hover {
 /* ===============================
    CPU / RAM Color States
    =============================== */
-#cpu.good      { color: #55ac3f; }  /* green */
-#cpu.warning   { color: #b38d38; }  /* yellow */
-#cpu.critical   { color: #c42927; }  /* red */
+#cpu.good {
+    color: #55ac3f;
+} /* green */
+#cpu.warning {
+    color: #b38d38;
+} /* yellow */
+#cpu.critical {
+    color: #c42927;
+} /* red */
 
-#memory.good    { color: #55ac3f; }
-#memory.warning  { color: #b38d38; }
-#memory.critical { color: #c42927; }
+#memory.good {
+    color: #55ac3f;
+}
+#memory.warning {
+    color: #b38d38;
+}
+#memory.critical {
+    color: #c42927;
+}
 
 /* ===============================
    Dimmed / Muted States
@@ -152,122 +182,135 @@ button:hover {
 #pulseaudio.muted,
 #wireplumber.muted,
 #network.disconnected,
-#bluetooth.disabled{
+#bluetooth.disabled {
     color: #888888;
 }
 
-#battery.critical { color: #ff0000; }
-#battery.warning { color: #ffff00; }
-
+#battery.critical {
+    color: #ff0000;
+}
+#battery.warning {
+    color: #ffff00;
+}
 
 /* ===============================
    System Tray
    =============================== */
 
-#tray>.needs-attention { 
-    -gtk-icon-effect: highlight; 
-    color: #ff5555; 
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    color: #ff5555;
 }
 
-#custom-localsend{ padding-right: 4px;}
+#custom-localsend {
+    padding-right: 4px;
+}
 
-#custom-warp.connected{ padding-right: 3px; color: white}
+#custom-warp.connected {
+    padding-right: 3px;
+    color: white;
+}
 
-#custom-warp.disconnected{ padding-right: 3px; color: #888888;}
+#custom-warp.disconnected {
+    padding-right: 3px;
+    color: #888888;
+}
 
-#bluetooth, #bluetooth.disable{ padding-right: 3px;}
+#bluetooth,
+#bluetooth.disable {
+    padding-right: 3px;
+}
 
- /* Waybar Timer */
- #custom-timer {
-     /*color: #cdd6f4;*/
-     font-size: 15px;
-     font-weight: 900;
-     transition: all 0.2s ease;
-     background: #111111;
-     border: 1px solid #444444;
-     border-radius: 6px;
-     padding-right: 4px;
-     padding-left: 6px;
- }
+/* Waybar Timer */
+#custom-timer {
+    /*color: #cdd6f4;*/
+    font-size: 15px;
+    font-weight: 900;
+    transition: all 0.2s ease;
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 4px;
+    padding-left: 6px;
+}
 
- /* --- STATE: DISABLED (00:00, Idle) --- */
- #custom-timer.disabled {
-     background: #111111;
-     color: #cbcdcb;
-     opacity: 0.6;
-     font-weight: normal;
-     animation-duration: 1s;
-     animation-timing-function: ease-in-out;
-     animation-direction: alternate;
- }
+/* --- STATE: DISABLED (00:00, Idle) --- */
+#custom-timer.disabled {
+    background: #111111;
+    color: #cbcdcb;
+    opacity: 0.6;
+    font-weight: normal;
+    animation-duration: 1s;
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+}
 
- /* --- STATE: IDLE (Active but 00:00) --- */
- #custom-timer.idle {
-     background: #111111;
-     color: #cbcdcb;
- }
+/* --- STATE: IDLE (Active but 00:00) --- */
+#custom-timer.idle {
+    background: #111111;
+    color: #cbcdcb;
+}
 
- /* --- STATE: SELECTION MODE --- */
- #custom-timer.select {
-     background-color: #373948;
-     color: #85b2fa;
- }
+/* --- STATE: SELECTION MODE --- */
+#custom-timer.select {
+    background-color: #373948;
+    color: #85b2fa;
+}
 
- /* --- STATE: RUNNING (Normal Timer & Pomodoro Work) --- */
- #custom-timer.running {
-     color: #cbcdcb;
-     background: #111111;
- }
+/* --- STATE: RUNNING (Normal Timer & Pomodoro Work) --- */
+#custom-timer.running {
+    color: #cbcdcb;
+    background: #111111;
+}
 
- /* --- STATE: POMODORO BREAK (New) --- */
- #custom-timer.pomo_break {
-     color: #f9e2af; /* Yellow/Gold to distinguish break from work */
- }
+/* --- STATE: POMODORO BREAK (New) --- */
+#custom-timer.pomo_break {
+    color: #f9e2af; /* Yellow/Gold to distinguish break from work */
+}
 
- /* --- STATE: POMODORO MESSAGE (New: "Work 1/4") --- */
- #custom-timer.pomo_msg {
-     color: #cba6f7; /* Lavender/Purple for status messages */
- }
+/* --- STATE: POMODORO MESSAGE (New: "Work 1/4") --- */
+#custom-timer.pomo_msg {
+    color: #cba6f7; /* Lavender/Purple for status messages */
+}
 
- /* --- STATE: PAUSED --- */
- #custom-timer.paused {
-     background-color: #404040;
-     color: #f9e2af;
-     /*border: 1px solid #f9e2af; */
- }
+/* --- STATE: PAUSED --- */
+#custom-timer.paused {
+    background-color: #404040;
+    color: #f9e2af;
+    /*border: 1px solid #f9e2af; */
+}
 
- /* --- STATE: WARNING (< 10s or 30s alert) --- */
- #custom-timer.warning {
-     animation-name: red-alert;
-     animation-duration: 1s;
-     animation-timing-function: ease-in-out;
-     animation-iteration-count: infinite;
-     animation-direction: alternate;
- }
+/* --- STATE: WARNING (< 10s or 30s alert) --- */
+#custom-timer.warning {
+    animation-name: red-alert;
+    animation-duration: 1s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
 
- /* --- STATE: DONE --- */
- #custom-timer.done {
-     background-color: #bfbfbf;
-     color: #11111b;
- }
+/* --- STATE: DONE --- */
+#custom-timer.done {
+    background-color: #bfbfbf;
+    color: #11111b;
+}
 
- /* --- STATE: RESET ANIMATION --- */
- #custom-timer.reset {
-     color: #ff4d4d;
- }
+/* --- STATE: RESET ANIMATION --- */
+#custom-timer.reset {
+    color: #ff4d4d;
+}
 
- /* -----------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
  * KEYFRAMES: Red Color Fading
  * ----------------------------------------------------------------------------- */
- @keyframes red-alert {
-     0% {
-         color: #ff4d4d; /* Bright, visible Red */
-         opacity: 1;
-     }
-     100% {
-         color: #ff4d4d;
-         opacity: 0.8; /* Fade cleanly to 80% transparency */
-         text-shadow: none;
-     }
- }
-
+@keyframes red-alert {
+    0% {
+        color: #ff4d4d; /* Bright, visible Red */
+        opacity: 1;
+    }
+    100% {
+        color: #ff4d4d;
+        opacity: 0.8; /* Fade cleanly to 80% transparency */
+        text-shadow: none;
+    }
+}
