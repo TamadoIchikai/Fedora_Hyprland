@@ -179,18 +179,18 @@ hl.curve("ultraSlow", { type = "bezier", points = { { 0.5, 0.5 }, { 0.5, 0.5 } }
 -- so they are ready if you later switch animations.enabled back to true.
 hl.animation({ leaf = "global", enabled = true, speed = 1.5, bezier = "default" })
 hl.animation({ leaf = "border", enabled = true, speed = 1.5, bezier = "easeOutQuint" })
-hl.animation({ leaf = "windows", enabled = true, speed = 1.5, bezier = "easeOutQuint" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.2, bezier = "easeOutQuint", style = "popin 100%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.2, bezier = "linear", style = "popin 100%" })
+hl.animation({ leaf = "windows", enabled = true, speed = 2.0, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 2.0, bezier = "easeOutQuint", style = "popin 100%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2.0, bezier = "linear", style = "popin 100%" })
 hl.animation({ leaf = "fade", enabled = true, speed = 1.4, bezier = "easeInOutCubic" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.2, bezier = "easeOutQuint" })
 hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.0, bezier = "easeInOutCubic" })
 hl.animation({ leaf = "layers", enabled = true, speed = 0.05, bezier = "linear" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 0.05, bezier = "linear" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 0.05, bezier = "linear" })
-hl.animation({ leaf = "workspaces", enabled = false })
-hl.animation({ leaf = "workspacesIn", enabled = false })
-hl.animation({ leaf = "workspacesOut", enabled = false })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 1.5, style = "fade", bezier = "easeInOutCubic" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.0, style = "fade", bezier = "easeOutQuint" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2.5, style = "fade", bezier = "easeInOutCubic" })
 
 ---------------
 ---- LAYOUT ----
