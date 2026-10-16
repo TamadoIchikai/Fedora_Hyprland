@@ -69,17 +69,30 @@ button:hover {
 /* ===============================
    Groups (boxed modules)
    =============================== */
-
-#clock,
 #media,
 #hardware,
-#battery,
 #connection {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
     padding-right: 5px;
     padding-left: 5px;
+}
+
+#battery {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+#clock {
+    background: #111111;
+    border: 1px solid #444444;
+    border-radius: 6px;
+    padding-right: 7px;
+    padding-left: 8px;
 }
 
 #mprisbox {
@@ -123,7 +136,7 @@ button:hover {
     border: 1px solid #444444;
     border-radius: 6px;
     padding-right: 3px;
-    padding-left: 3px;
+    padding-left: 5px;
 }
 
 /* ===============================
