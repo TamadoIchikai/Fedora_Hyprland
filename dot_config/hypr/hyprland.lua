@@ -72,6 +72,8 @@ local keyboardManager   = "$HOME/.local/bin/fcitx5_changeKeyboard.sh"
 -------------------
 
 local autostart_wrapper = "$HOME/.local/bin/autostart-wrapper.sh"
+
+--[==[
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("systemctl --user start hyprland-session.target")
@@ -108,6 +110,10 @@ exec %s
     )
 
     hl.exec_cmd(cmd)
+end)
+]==]
+hl.on("hyprland.start", function()
+    hl.exec_cmd("bash -lc 'exec " .. autostart_wrapper .. "'")
 end)
 ---
 -------------------------------
@@ -722,4 +728,19 @@ hl.window_rule({
         title = "New Collection"
     },
     size = { 430, 180 }
+})
+
+-- MuJoCo: workspace 12 on the laptop monitor
+hl.workspace_rule({
+    workspace = "12",
+    monitor = laptop_output,
+})
+
+hl.window_rule({
+    name = "mujoco-laptop-workspace",
+    match = {
+        title = "MuJoCo",
+    },
+    monitor = laptop_output,
+    workspace = "12 silent",
 })
