@@ -12,8 +12,7 @@
     },
     "dynamic-order": ["artist"],
     "artist-len": 14,
-    "ellipsis": "...",
-    "align": 0.0
+    "ellipsis": "..."
   },
   "custom/mpris": {
     "exec": "$HOME/.config/waybar/scripts/mpris-fallback.sh",

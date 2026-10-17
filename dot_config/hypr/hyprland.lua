@@ -729,18 +729,3 @@ hl.window_rule({
     },
     size = { 430, 180 }
 })
-
--- MuJoCo: workspace 12 on the laptop monitor
-hl.workspace_rule({
-    workspace = "12",
-    monitor = laptop_output,
-})
-
-hl.window_rule({
-    name = "mujoco-laptop-workspace",
-    match = {
-        title = "MuJoCo",
-    },
-    monitor = laptop_output,
-    workspace = "12 silent",
-})
