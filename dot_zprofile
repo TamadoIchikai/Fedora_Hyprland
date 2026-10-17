@@ -58,3 +58,10 @@ case "$XDG_CURRENT_DESKTOP" in
         ;;
 esac
 
+# -----------------------------
+# Auto-start Hyprland on tty1
+# -----------------------------
+
+if [[ -z "${DISPLAY:-}" ]] && [[ "$(tty)" == "/dev/tty1" ]] && { command -v Hyprland || command -v hyprland || command -v start-hyprland; } >/dev/null 2>&1; then
+    exec start-hyprland
+fi
