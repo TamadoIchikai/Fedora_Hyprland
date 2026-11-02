@@ -194,9 +194,9 @@ hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.0, bezier = "easeInOu
 hl.animation({ leaf = "layers", enabled = true, speed = 0.05, bezier = "linear" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 0.05, bezier = "linear" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 0.05, bezier = "linear" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 1.5, style = "fade", bezier = "easeInOutCubic" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.0, style = "fade", bezier = "easeOutQuint" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2.5, style = "fade", bezier = "easeInOutCubic" })
+hl.animation({ leaf = "workspaces", enabled = false, speed = 1.5, style = "fade", bezier = "easeInOutCubic" })
+hl.animation({ leaf = "workspacesIn", enabled = false, speed = 1.0, style = "fade", bezier = "easeOutQuint" })
+hl.animation({ leaf = "workspacesOut", enabled = false, speed = 2.5, style = "fade", bezier = "easeInOutCubic" })
 
 ---------------
 ---- LAYOUT ----
@@ -205,8 +205,8 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2.5, style = "fad
 hl.config({
     dwindle = {
         preserve_split        = true,
-        force_split           = 2,
-        use_active_for_splits = false,
+        force_split           = 2,     -- new window goes to the right (or bottom)
+        use_active_for_splits = true,  -- split the focused window, not the one under the cursor
         smart_resizing        = true,
     },
 })
@@ -728,4 +728,20 @@ hl.window_rule({
         title = "New Collection"
     },
     size = { 430, 180 }
+})
+
+-- Ensure workspace 12 belongs to the laptop monitor
+hl.workspace_rule({
+    workspace = "12",
+    monitor = laptop_output,
+})
+
+-- MuJoCo: move to workspace 12 on the laptop monitor
+hl.window_rule({
+    name = "mujoco-laptop-workspace",
+    match = {
+        class = "Mujoco_class",
+    },
+    monitor = laptop_output,
+    workspace = "12",
 })
