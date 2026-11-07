@@ -27,6 +27,31 @@ if [[ -r "$INSTALLSH_DIR/lib/state.sh" ]]; then
     # This keeps login checks working without shell-exported credentials.
     GITHUB_TOKEN="$(installsh_github_token 2>/dev/null || true)"
     export GITHUB_TOKEN
+
+    # Reuse the shared flag helpers instead of keeping local duplicates.
+    kv_get() { installsh_flag_get "$@"; }
+    flag_files() { installsh_flag_list "$@"; }
+fi
+
+# Fallbacks for systems where state.sh is unavailable.
+if ! command -v kv_get >/dev/null 2>&1; then
+    kv_get() {
+        local file="$1"
+        local key="$2"
+        local line
+
+        [[ -r "$file" ]] || return 1
+        line="$(grep -m1 -E "^${key}=" -- "$file" 2>/dev/null || true)"
+        [[ -n "$line" ]] || return 1
+        printf '%s\n' "${line#*=}"
+    }
+fi
+
+if ! command -v flag_files >/dev/null 2>&1; then
+    flag_files() {
+        [[ -d "$FLAGS_DIR" ]] || return 0
+        find "$FLAGS_DIR" -maxdepth 1 -type f -name '*.env' -printf '%p\n' 2>/dev/null | sort
+    }
 fi
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/update-check"
@@ -103,22 +128,6 @@ EOF
 
 log() {
     printf '[%s] %s\n' "$(date -Is)" "$*" >>"$LOG_FILE" 2>/dev/null || true
-}
-
-kv_get() {
-    local file="$1"
-    local key="$2"
-    local line
-
-    [[ -r "$file" ]] || return 1
-    line="$(grep -m1 -E "^${key}=" -- "$file" 2>/dev/null || true)"
-    [[ -n "$line" ]] || return 1
-    printf '%s\n' "${line#*=}"
-}
-
-flag_files() {
-    [[ -d "$FLAGS_DIR" ]] || return 0
-    find "$FLAGS_DIR" -maxdepth 1 -type f -name '*.env' -printf '%p\n' 2>/dev/null | sort
 }
 
 add_row() {
@@ -311,9 +320,8 @@ print_json() {
     fi
 }
 
-# Print the result for runs that end before the normal check/apply flow.
-# Default check mode still writes status and notifies via finalize.
-emit_early_output() {
+# Write status/report files and print them according to the selected mode.
+write_and_print_result() {
     case "$MODE" in
         list)
             write_status_files
@@ -369,6 +377,21 @@ build_updater_script() {
     chmod +x "$UPDATER_SCRIPT" 2>/dev/null || true
 }
 
+launch_floating_command() {
+    local cmd="$1"
+
+    # shellcheck disable=SC1090
+    source "$HOME/.config/abstractions/wm.sh" 2>/dev/null || true
+
+    if ! command -v WM_exec_floating >/dev/null 2>&1; then
+        log "WM API unavailable; cannot open floating window"
+        return 0
+    fi
+
+    WM_exec_floating "$cmd" true 0.50 0.40 >>"$LOG_FILE" 2>&1 \
+        || log "WM_exec_floating failed"
+}
+
 launch_update_terminal() {
     local cmd
 
@@ -376,21 +399,12 @@ launch_update_terminal() {
 
     log "launching update terminal"
 
-    # shellcheck disable=SC1090
-    source "$HOME/.config/abstractions/wm.sh" 2>/dev/null || true
-
-    if ! command -v WM_exec_floating >/dev/null 2>&1; then
-        log "WM API unavailable; cannot open update terminal"
-        return 0
-    fi
-
     cmd="$(printf '%q ' env \
         "UPDATE_CHECK_CACHE_DIR=$CACHE_DIR" \
         foot --app-id=UpdateCheckPopup --title=UpdateCheckPopup \
         -w 900x420 -e bash "$UPDATER_SCRIPT")"
 
-    WM_exec_floating "$cmd" true 0.50 0.40 >>"$LOG_FILE" 2>&1 \
-        || log "WM_exec_floating failed"
+    launch_floating_command "$cmd"
 }
 
 print_managed_apps() {
@@ -491,21 +505,12 @@ show_popup_fallback() {
         return 0
     }
 
-    # shellcheck disable=SC1090
-    source "$HOME/.config/abstractions/wm.sh" 2>/dev/null || true
-
-    if ! command -v WM_exec_floating >/dev/null 2>&1; then
-        log "WM API unavailable; cannot open popup"
-        return 0
-    fi
-
     cmd="$(printf '%q ' env \
         "UPDATE_CHECK_CACHE_DIR=$CACHE_DIR" \
         foot --app-id=UpdateCheckPopup --title=UpdateCheckPopup \
         -w 900x420 -e bash "$POPUP_SCRIPT")"
 
-    WM_exec_floating "$cmd" true 0.50 0.40 >>"$LOG_FILE" 2>&1 \
-        || log "WM_exec_floating failed"
+    launch_floating_command "$cmd"
 }
 
 finalize() {
@@ -562,15 +567,20 @@ mark_all_failed() {
     local reason="$1"
     local f kind id name
 
-    # Only network-backed flags; OTHER_FLAGS have already been recorded.
-    for f in "${AI_FLAGS[@]}" "${ZED_FLAGS[@]}" "${ZEN_FLAGS[@]}"; do
+    for f in "${FLAG_FILES[@]}"; do
         kind="$(kv_get "$f" kind || true)"
+        case "$kind" in
+            appimage|zed|zen) ;;
+            *) continue ;;
+        esac
+
         id="$(kv_get "$f" id || true)"
         name="$(kv_get "$f" name || true)"
         [[ -n "$id" ]] || id="$(basename "$f" .env)"
         [[ -n "$name" ]] || name="$id"
+
         record_error "$name: $reason"
-        add_row "${kind:-unknown}" "$id" "$name" "-" "-" "error" "$reason"
+        add_row "$kind" "$id" "$name" "-" "-" "error" "$reason"
     done
 }
 
@@ -893,17 +903,6 @@ classify() {
     fi
 }
 
-theme_icon_name() {
-    case "$1" in
-        updates) printf 'software-update-available' ;;
-        ok)      printf 'emblem-ok-symbolic' ;;
-        warning) printf 'dialog-warning' ;;
-        error)   printf 'dialog-error' ;;
-        offline) printf 'network-error' ;;
-        info|*)  printf 'dialog-information' ;;
-    esac
-}
-
 # Prefer the bundled 64px SVGs. Passing an absolute path bypasses icon-theme
 # lookup, which otherwise upscales Papirus-Dark's 16-24px status icons to
 # swaync's 64px notification size and makes them look blurry.
@@ -913,9 +912,18 @@ icon_path() {
 
     if [[ -r "$path" ]]; then
         printf '%s' "$path"
-    else
-        theme_icon_name "$key"
+        return 0
     fi
+
+    # Legacy fallback for a missing bundled icon.
+    case "$key" in
+        updates) printf 'software-update-available' ;;
+        ok)      printf 'emblem-ok-symbolic' ;;
+        warning) printf 'dialog-warning' ;;
+        error)   printf 'dialog-error' ;;
+        offline) printf 'network-error' ;;
+        info|*)  printf 'dialog-information' ;;
+    esac
 }
 
 set_icon_and_urgency() {
@@ -1043,7 +1051,7 @@ if ! flock -n 9; then
     set_icon_and_urgency
     build_messages
     log "another update check is already running"
-    emit_early_output
+    write_and_print_result
     exit 0
 fi
 
@@ -1086,7 +1094,7 @@ if (( MANAGED == 0 )); then
     set_icon_and_urgency
     build_messages
     log "no installation flags found in $FLAGS_DIR"
-    emit_early_output
+    write_and_print_result
     exit 0
 fi
 
