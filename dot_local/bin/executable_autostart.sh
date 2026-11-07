@@ -10,6 +10,10 @@ TIMER_FAST_TO_MEDIUM="${TIMER_FAST_TO_MEDIUM:-3}"
 TIMER_FAST_TO_COMPLEX="${TIMER_FAST_TO_COMPLEX:-5}"
 AUTO_CLOSE_AFTER="${AUTO_CLOSE_AFTER:-5}"
 
+# One-shot login update check. Detached; never blocks the autostart popup.
+UPDATE_CHECK_ENABLED="${UPDATE_CHECK_ENABLED:-1}"
+UPDATE_CHECK_CMD="${UPDATE_CHECK_CMD:-$HOME/.local/bin/update-check.sh}"
+
 # --- START ARTWORK PADDING ---
 START_ART_PADDING_TOP=4
 START_ART_PADDING_BOTTOM=0
@@ -107,6 +111,21 @@ start_user_service() {
     }
 }
 
+update_check_startup() {
+    [[ "$UPDATE_CHECK_ENABLED" == "1" ]] || {
+        log "update check: disabled"
+        return 0
+    }
+
+    [[ -x "$UPDATE_CHECK_CMD" ]] || {
+        log "warning: update checker not found: $UPDATE_CHECK_CMD"
+        return 0
+    }
+
+    log "start detached: update check"
+    detach_run "$UPDATE_CHECK_CMD" --force || true
+}
+
 fast_startup() {
     log "========== fast_startup =========="
 
@@ -159,6 +178,8 @@ complex_startup() {
     # Buffer window to let waybar's tray module bind to DBus completely
     sleep 0.5
     run_once_name "keepassxc" keepassxc --minimized
+
+    update_check_startup
 }
 
 print_centered() {

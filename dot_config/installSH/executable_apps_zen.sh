@@ -1,28 +1,59 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/state.sh
+source "$SCRIPT_DIR/lib/state.sh"
+
+# Optional GitHub token support (avoids anonymous API rate limits). The helper
+# checks exported GITHUB_TOKEN/GH_TOKEN first, then token files, so login-time
+# checks do not depend on shell exports.
+GITHUB_TOKEN="$(installsh_github_token 2>/dev/null || true)"
+export GITHUB_TOKEN
+
+usage() {
+    echo "Usage: sudo $0 --install | --update | --uninstall"
+    echo "       $0 --check | --register"
+    echo ""
+    echo "Options:"
+    echo "  --install      Install Zen Browser (root)"
+    echo "  --update       Check for and install an update (root)"
+    echo "  --uninstall    Remove Zen Browser and its update-check flag (root)"
+    echo "  --check        Print current/latest version without changing anything"
+    echo "  --register     Register an existing install with update-check"
+    echo "  -h, --help     Show this help"
+}
+
 # ---- ARGUMENT PARSING ----
 if [[ $# -eq 0 ]]; then
     echo "❌ Missing argument."
-    echo "👉 Usage: sudo $0 --install | --update | --uninstall"
+    echo "👉 Run: $0 --help"
     exit 1
 fi
 
 MODE=""
-if [[ "$1" == "--install" ]]; then
-    MODE="install"
-elif [[ "$1" == "--update" ]]; then
-    MODE="update"
-elif [[ "$1" == "--uninstall" ]]; then
-    MODE="uninstall"
-else
-    echo "❌ Invalid flag: $1"
-    echo "👉 Usage: sudo $0 --install | --update | --uninstall"
-    exit 1
+case "$1" in
+    --install)   MODE="install" ;;
+    --update)    MODE="update" ;;
+    --uninstall) MODE="uninstall" ;;
+    --check)     MODE="check" ;;
+    --register)  MODE="register" ;;
+    -h|--help)   MODE="help" ;;
+    *)
+        echo "❌ Invalid flag: $1"
+        echo "👉 Run: $0 --help"
+        exit 1
+        ;;
+esac
+
+if [[ "$MODE" == "help" ]]; then
+    usage
+    exit 0
 fi
 
 # ---- ROOT PRIVILEGE CHECK ----
-if [[ $EUID -ne 0 ]]; then
+# --check and --register must work as the desktop user.
+if [[ "$MODE" =~ ^(install|update|uninstall)$ ]] && [[ $EUID -ne 0 ]]; then
    echo "❌ This script must be run as root." >&2
    echo "👉 Please run again using: sudo $0 $1" >&2
    exit 1
@@ -35,6 +66,8 @@ DESKTOP_FILE="/usr/share/applications/zen.desktop"
 GLOBAL_BIN="/usr/local/bin/zen"
 BIN_PATH="$INSTALL_DIR/zen"
 ICON_PATH="$INSTALL_DIR/browser/chrome/icons/default/default64.png"
+REPO="zen-browser/desktop"
+PATTERN="linux-x86_64\\.tar\\.xz$"
 
 # Install-level Config Backup Variables (For Updates)
 INPUT_PREFIX="/mnt/sda2"
@@ -52,23 +85,147 @@ cleanup() {
 trap cleanup EXIT
 
 # ---- DEPENDENCY CHECK ----
-if [[ "$MODE" != "uninstall" ]]; then
-    for cmd in curl jq tar awk; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "❌ Error: '$cmd' is required but not installed." >&2
-            exit 1
+case "$MODE" in
+    install|update) DEPS=(curl jq tar awk) ;;
+    check)          DEPS=(curl jq awk) ;;
+    *)              DEPS=() ;;
+esac
+
+for cmd in "${DEPS[@]}"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "❌ Error: '$cmd' is required but not installed." >&2
+        exit 1
+    fi
+done
+
+zen_current_version() {
+    if [[ -x "$GLOBAL_BIN" ]]; then
+        "$GLOBAL_BIN" --version 2>/dev/null | awk 'NR == 1 { print $NF }'
+    fi
+}
+
+# Populate ZEN_LATEST_TAG, ZEN_LATEST_URL, and ZEN_FETCH_ERROR.
+zen_fetch_latest() {
+    local response info
+    local -a auth=()
+
+    ZEN_LATEST_TAG=""
+    ZEN_LATEST_URL=""
+    ZEN_FETCH_ERROR=""
+
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+
+    if ! response="$(curl -fsSL --connect-timeout 5 --max-time 20 \
+            "${auth[@]}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/releases?per_page=100" \
+            2>/dev/null)"; then
+        ZEN_FETCH_ERROR="repository check failed"
+        return 1
+    fi
+
+    if grep -qi 'API rate limit exceeded' <<< "$response"; then
+        ZEN_FETCH_ERROR="GitHub rate limit reached"
+        return 1
+    fi
+
+    info="$(jq -r --arg pat "$PATTERN" '
+        .[]
+        | select(.draft == false and .prerelease == false)
+        | . as $release
+        | $release.assets[]
+        | select(.name | test($pat; "i"))
+        | select(.name | test("arm64"; "i") | not)
+        | [$release.tag_name, .browser_download_url]
+        | @tsv
+    ' <<< "$response" 2>/dev/null | head -n 1 || true)"
+
+    if [[ -z "$info" ]]; then
+        ZEN_FETCH_ERROR="no matching release asset"
+        return 1
+    fi
+
+    IFS=$'\t' read -r ZEN_LATEST_TAG ZEN_LATEST_URL <<< "$info"
+    ZEN_LATEST_TAG="${ZEN_LATEST_TAG#v}"
+    return 0
+}
+
+# Print one TSV row: tag, current, latest, state, detail.
+zen_check() {
+    local current latest state detail
+
+    current="$(zen_current_version || true)"
+    latest="unknown"
+    state="error"
+    detail=""
+
+    if [[ -z "$current" ]]; then
+        state="not-installed"
+        detail="zen not installed"
+    elif ! zen_fetch_latest; then
+        detail="${ZEN_FETCH_ERROR:-repository check failed}"
+    else
+        latest="$ZEN_LATEST_TAG"
+
+        if [[ "$current" == "$latest" ]]; then
+            state="current"
+        elif [[ "$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n 1)" == "$latest" ]]; then
+            state="update"
+        else
+            state="newer"
+            detail="installed version is newer"
         fi
-    done
+    fi
+
+    printf 'zen\t%s\t%s\t%s\t%s\n' \
+        "${current:-unknown}" "$latest" "$state" "$detail"
+    return 0
+}
+
+zen_register() {
+    local current
+
+    current="$(zen_current_version || true)"
+    if [[ -z "$current" ]]; then
+        echo "❌ Zen Browser is not installed at $GLOBAL_BIN." >&2
+        return 1
+    fi
+
+    installsh_flag_write zen \
+        "name=Zen Browser" \
+        "kind=zen" \
+        "source=apps_zen.sh" \
+        "install_dir=$INSTALL_DIR" \
+        "binary=$GLOBAL_BIN" \
+        "installed_version=$current" \
+        "updated_at=$(date -Is)"
+}
+
+# Keep --check output machine-readable for update-check.sh.
+if [[ "$MODE" != "check" ]]; then
+    echo "========================================"
+    echo "      Zen Browser System Manager        "
+    echo "========================================"
 fi
 
-echo "========================================"
-echo "      Zen Browser System Manager        "
-echo "========================================"
+# ---- MODE: CHECK / REGISTER (no root required) ----
+if [[ "$MODE" == "check" ]]; then
+    zen_check
+    exit 0
+fi
+
+if [[ "$MODE" == "register" ]]; then
+    zen_register
+    exit 0
+fi
 
 # ---- MODE: INSTALL CHECK ----
 if [[ "$MODE" == "install" ]]; then
     if [[ -x "$GLOBAL_BIN" ]] || [[ -d "$INSTALL_DIR" ]]; then
         echo "⚠️ Zen browser already installed, use flag --update to check and install new updates"
+        zen_register || true
         exit 0
     fi
     echo "🚀 Starting fresh installation..."
@@ -147,6 +304,9 @@ if [[ "$MODE" == "uninstall" ]]; then
         gtk-update-icon-cache -f -t "/usr/share/icons/hicolor" >/dev/null 2>&1 || true
     fi
 
+    # 5) Stop tracking this install in update-check
+    installsh_flag_remove zen || true
+
     echo ""
     echo "✅ Uninstall complete. Zen Browser has been removed."
     exit 0
@@ -154,19 +314,13 @@ fi
 
 # ---- FETCH LATEST VERSION DATA ----
 echo "🔍 Checking latest release from GitHub..."
-REPO="zen-browser/desktop"
-PATTERN="linux-x86_64\\.tar\\.xz$"
-
-API_RESPONSE=$(curl -s "https://api.github.com/repos/${REPO}/releases")
-RELEASE_JSON=$(echo "$API_RESPONSE" | jq -r --arg pat "$PATTERN" 'map(select(.assets[]?.name | test($pat; "i"))) | .[0]')
-
-if [[ -z "$RELEASE_JSON" || "$RELEASE_JSON" == "null" ]]; then
-    echo "❌ Error: Could not fetch release data from GitHub." >&2
+if ! zen_fetch_latest; then
+    echo "❌ Error: Could not fetch release data from GitHub (${ZEN_FETCH_ERROR:-unknown})." >&2
     exit 1
 fi
 
-LATEST_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
-DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r --arg pat "$PATTERN" '.assets[]? | select(.name | test($pat; "i")) | .browser_download_url' | head -n 1)
+LATEST_VERSION="$ZEN_LATEST_TAG"
+DOWNLOAD_URL="$ZEN_LATEST_URL"
 
 # ---- MODE: UPDATE CHECK ----
 if [[ "$MODE" == "update" ]]; then
@@ -176,18 +330,26 @@ if [[ "$MODE" == "update" ]]; then
         exit 1
     fi
 
-    CURRENT_VERSION=$("$GLOBAL_BIN" --version 2>/dev/null | awk '{print $NF}' || echo "unknown")
+    CURRENT_VERSION="$(zen_current_version || true)"
+    CURRENT_VERSION="${CURRENT_VERSION:-unknown}"
 
     echo "📦 Current version: $CURRENT_VERSION"
     echo "🌟 Latest version:  $LATEST_VERSION"
 
     if [[ "$CURRENT_VERSION" == "$LATEST_VERSION" ]]; then
         echo "✅ You are already up to date! No action required."
+        zen_register || true
         exit 0
     fi
-    
+
+    if [[ "$(printf '%s\n%s\n' "$CURRENT_VERSION" "$LATEST_VERSION" | sort -V | tail -n 1)" != "$LATEST_VERSION" ]]; then
+        echo "✅ Installed version is newer than the latest release. No action required."
+        zen_register || true
+        exit 0
+    fi
+
     echo "🚀 Update available! ($CURRENT_VERSION -> $LATEST_VERSION)"
-    
+
     read -r -p "❓ Do you want to download and install this update? [y/N] " response
     if [[ ! "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
         echo "❌ Update cancelled by user."
@@ -298,3 +460,6 @@ else
         echo "❌ OUTPUT_INSTALL not found in $INIT_OUTPUT_INSTALL. Skipping config restore."
     fi
 fi
+
+# Keep update-check's flag in sync with the installed version.
+zen_register || true

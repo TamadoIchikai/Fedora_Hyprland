@@ -7,8 +7,8 @@
       "clear-all",
       "title"
   ],
-  "timeout-low": 1,
-  "timeout": 2,
+  "timeout-low": 5,
+  "timeout": 8,
   "timeout-critical": 0
 }
 

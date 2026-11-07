@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=System Update Check
+Comment=One-shot login update checker
+Exec=/home/tamadoichikai/.local/bin/update-check.sh
+Icon=/home/tamadoichikai/.local/share/update-check/icons/updates.svg
+Terminal=true
+NoDisplay=true
+Categories=System;

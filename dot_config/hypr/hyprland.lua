@@ -509,6 +509,15 @@ hl.window_rule({
     move  = { "cursor_x-(window_w*0.2)", "cursor_y-(window_h*0.5)" },
     float = true
 })
+-- Update check fallback popup (foot, used only when notify-send fails)
+hl.window_rule({
+    name   = "update-check-popup-floating",
+    match  = { class = "UpdateCheckPopup" },
+    size   = { "monitor_w*0.50", "monitor_h*0.40" },
+    float  = true,
+    center = true,
+})
+
 -- Ignore maximize requests from floating windows.
 hl.window_rule({
     name           = "suppress-maximize-floating",

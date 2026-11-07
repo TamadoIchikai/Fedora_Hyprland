@@ -21,6 +21,53 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/state.sh
+source "$SCRIPT_DIR/lib/state.sh"
+
+# Optional GitHub token support (avoids anonymous API rate limits). The helper
+# checks exported GITHUB_TOKEN/GH_TOKEN first, then token files, so login-time
+# checks do not depend on shell exports.
+GITHUB_TOKEN="$(installsh_github_token 2>/dev/null || true)"
+export GITHUB_TOKEN
+
+# ============================================================
+# Argument parsing
+# ============================================================
+
+MODE="install"
+
+case "${1:-}" in
+    ""|--install)
+        MODE="install"
+        ;;
+    --check)
+        MODE="check"
+        ;;
+    --update)
+        MODE="update"
+        ;;
+    --register)
+        MODE="register"
+        ;;
+    -h|--help)
+        cat <<'EOF'
+Usage:
+  apps_zed.sh                 Install Zed and configure symlinks
+  apps_zed.sh --install       Same as above
+  apps_zed.sh --check         Show installed/latest version (no changes)
+  apps_zed.sh --update        Run the official installer and refresh state
+  apps_zed.sh --register      Write update-checker flag for an existing install
+  apps_zed.sh --help          Show this help
+EOF
+        exit 0
+        ;;
+    *)
+        printf '❌ Unknown option: %s\n' "$1" >&2
+        exit 1
+        ;;
+esac
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -51,6 +98,117 @@ warning() {
 error() {
     printf '[ERROR] %s\n' "$*" >&2
 }
+
+# ============================================================
+# Check / update helpers
+# ============================================================
+
+if [[ -d "${HOME}/.local/bin" ]]; then
+    export PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+zed_current_version() {
+    if command -v zed >/dev/null 2>&1; then
+        zed --version 2>/dev/null | awk 'NR == 1 { print $2 }'
+    fi
+}
+
+zed_latest_version() {
+    local response
+    local -a auth=()
+
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+
+    response="$(curl -fsSL --connect-timeout 5 --max-time 15 \
+        "${auth[@]}" \
+        -H "Accept: application/vnd.github+json" \
+        https://api.github.com/repos/zed-industries/zed/releases/latest \
+        2>/dev/null || true)"
+
+    [[ -n "${response}" ]] || return 1
+
+    jq -r '.tag_name // empty' <<< "${response}" 2>/dev/null | sed 's/^v//'
+}
+
+if [[ "${MODE}" == "check" ]]; then
+    current_version="$(zed_current_version || true)"
+    latest_version="$(zed_latest_version || true)"
+    state="error"
+    detail=""
+
+    if [[ -z "${current_version}" ]]; then
+        detail="zed not installed"
+    elif [[ -z "${latest_version}" ]]; then
+        detail="latest version unavailable"
+    elif [[ "${current_version}" == "${latest_version}" ]]; then
+        state="current"
+    elif [[ "$(printf '%s\n%s\n' "${current_version}" "${latest_version}" | sort -V | tail -n 1)" == "${latest_version}" ]]; then
+        state="update"
+    else
+        state="newer"
+        detail="installed version is newer"
+    fi
+
+    printf 'zed\t%s\t%s\t%s\t%s\n' \
+        "${current_version:-unknown}" \
+        "${latest_version:-unknown}" \
+        "${state}" \
+        "${detail}"
+
+    [[ "${state}" != "error" ]] || exit 1
+    exit 0
+fi
+
+if [[ "${MODE}" == "update" ]]; then
+    info "Updating Zed Editor..."
+
+    if ! curl -f --connect-timeout 10 --max-time 60 https://zed.dev/install.sh | sh; then
+        error "Zed update failed."
+        exit 1
+    fi
+
+    export PATH="${HOME}/.local/bin:${PATH}"
+
+    if ! command -v zed >/dev/null 2>&1; then
+        error "Zed update completed, but 'zed' was not found in PATH."
+        exit 1
+    fi
+
+    current_version="$(zed_current_version || true)"
+
+    installsh_flag_write "zed" \
+        "name=Zed" \
+        "kind=zed" \
+        "source=apps_zed.sh" \
+        "binary=$(command -v zed)" \
+        "installed_version=${current_version:-unknown}" \
+        "updated_at=$(date -Is)" || true
+
+    success "Zed updated to ${current_version:-unknown}."
+    exit 0
+fi
+
+if [[ "${MODE}" == "register" ]]; then
+    current_version="$(zed_current_version || true)"
+
+    if [[ -z "${current_version}" ]]; then
+        error "Zed is not installed; cannot register it."
+        exit 1
+    fi
+
+    installsh_flag_write "zed" \
+        "name=Zed" \
+        "kind=zed" \
+        "source=apps_zed.sh" \
+        "binary=$(command -v zed)" \
+        "installed_version=${current_version}" \
+        "updated_at=$(date -Is)" || true
+
+    success "Registered Zed ${current_version}."
+    exit 0
+fi
 
 # ============================================================
 # Check dependencies
@@ -314,6 +472,20 @@ else
     error "Agent skills link verification failed."
     exit 1
 fi
+
+# ============================================================
+# Register installation for the login update checker
+# ============================================================
+
+zed_installed_version="$(zed_current_version || true)"
+
+installsh_flag_write "zed" \
+    "name=Zed" \
+    "kind=zed" \
+    "source=apps_zed.sh" \
+    "binary=$(command -v zed 2>/dev/null || true)" \
+    "installed_version=${zed_installed_version:-unknown}" \
+    "updated_at=$(date -Is)" || true
 
 # ============================================================
 # Done

@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/state.sh
+source "$SCRIPT_DIR/lib/state.sh"
+
+# Optional GitHub token support (avoids anonymous API rate limits). The helper
+# checks exported GITHUB_TOKEN/GH_TOKEN first, then token files, so login-time
+# checks do not depend on shell exports.
+GITHUB_TOKEN="$(installsh_github_token 2>/dev/null || true)"
+export GITHUB_TOKEN
+CURL_AUTH=()
+WGET_AUTH=()
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    CURL_AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    WGET_AUTH=(--header="Authorization: Bearer ${GITHUB_TOKEN}")
+fi
+
 # ---- CONFIGURATION ----
 # Create a secure, auto-cleaning temporary directory in /tmp
 TMP_DIR="$(mktemp -d /tmp/appimage_installer.XXXXXX)"
@@ -53,6 +69,8 @@ print_usage() {
     echo "  --install --explicit-range <rng> Install a range of indices (e.g., \"0, 2\" or \"1, BOT\")"
     echo "  --delete <index>                 Delete the AppImage folder and unregister it from the system"
     echo "  --update <index|all>             Update one AppImage, or all installed AppImages"
+    echo "  --check <index|all>              Report installed/latest versions without downloading"
+    echo "  --register                       Write update-checker flags for already-installed apps"
 }
 
 get_github_release_info() {
@@ -66,12 +84,19 @@ get_github_release_info() {
     # GitHub can make the newest release mobile-only (e.g. .apk),
     # while the newest release containing an AppImage is an older one.
     while :; do
+        # Bound pagination so a one-shot update check cannot run forever.
+        if (( page > 5 )); then
+            break
+        fi
+
         if command -v curl >/dev/null 2>&1; then
-            response=$(curl -fsSL \
+            response=$(curl -fsSL --connect-timeout 5 --max-time 20 \
+                "${CURL_AUTH[@]}" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/repos/${repo}/releases?per_page=100&page=${page}") || return 1
         else
-            response=$(wget -qO- \
+            response=$(wget -qO- --timeout=20 \
+                "${WGET_AUTH[@]}" \
                 --header="Accept: application/vnd.github+json" \
                 "https://api.github.com/repos/${repo}/releases?per_page=100&page=${page}") || return 1
         fi
@@ -159,9 +184,23 @@ get_local_appimage_version() {
     fi
 
     # If the filename has no version, ask AppImage itself.
+    # NOTE: some AppImages print --appimage-version to stderr, and the runtime
+    # version is not the application version. Only accept a dotted version.
     if [[ -z "$version" ]]; then
-        version=$("$appimage_path" --appimage-version 2>/dev/null | head -n 1 || true)
-        version="$(normalize_version "$version")"
+        local raw
+        raw=$(timeout 5 "$appimage_path" --appimage-version 2>&1 | head -n 1 || true)
+        if [[ "$raw" =~ ([0-9]+([.][0-9]+)+) ]]; then
+            version="${BASH_REMATCH[1]}"
+        fi
+    fi
+
+    # Last resort: ask the application itself (bounded so it cannot hang).
+    if [[ -z "$version" ]]; then
+        local raw
+        raw=$(timeout 5 "$appimage_path" --version 2>/dev/null | head -n 1 || true)
+        if [[ "$raw" =~ ([0-9]+([.][0-9]+)+) ]]; then
+            version="${BASH_REMATCH[1]}"
+        fi
     fi
 
     [[ -n "$version" ]] && echo "$version"
@@ -180,6 +219,110 @@ version_is_newer() {
     # sort -V handles normal dotted versions such as 1.10.0 > 1.9.12.
     [[ "$(printf '%s\n' "$current" "$latest" | sort -V | tail -n 1)" == "$latest" \
         && "$current" != "$latest" ]]
+}
+
+check_app() {
+    local i="$1"
+
+    if [[ -z "${APPS[$i]:-}" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "?" "unknown" "unknown" "unknown" "error" "invalid index"
+        return 1
+    fi
+
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+
+    local old_appimage current_version latest_version state detail release_info
+    old_appimage="$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
+
+    if [[ -z "$old_appimage" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$i" "$APP_NAME" "unknown" "unknown" "not-installed" "no AppImage found"
+        return 0
+    fi
+
+    current_version="$(get_local_appimage_version "$old_appimage" || true)"
+
+    release_info="$(get_github_release_info "$REPO" "$PATTERN" 2>/dev/null || true)"
+    if [[ -z "$release_info" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$i" "$APP_NAME" "${current_version:-unknown}" "unknown" "error" "repository check failed"
+        return 0
+    fi
+
+    latest_version="$(cut -f1 <<< "$release_info")"
+    state="error"
+    detail=""
+
+    if [[ -z "$current_version" ]]; then
+        detail="installed version unknown"
+    elif [[ -z "$latest_version" ]]; then
+        detail="latest version unknown"
+    elif [[ "$(normalize_version "$current_version")" == "$(normalize_version "$latest_version")" ]]; then
+        state="current"
+    elif version_is_newer "$current_version" "$latest_version"; then
+        state="update"
+    else
+        state="newer"
+        detail="installed version is newer"
+    fi
+
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$i" "$APP_NAME" "${current_version:-unknown}" "${latest_version:-unknown}" "$state" "$detail"
+}
+
+do_check() {
+    local target="$1"
+    local i
+
+    printf 'index\tname\tcurrent\tlatest\tstate\tdetail\n'
+
+    if [[ "$target" == "all" ]]; then
+        for i in "${!APPS[@]}"; do
+            check_app "$i" || true
+        done
+        return 0
+    fi
+
+    if [[ ! "$target" =~ ^[0-9]+$ ]] || [[ -z "${APPS[$target]:-}" ]]; then
+        echo "❌ Invalid index: $target" >&2
+        return 1
+    fi
+
+    check_app "$target"
+}
+
+# Write flags for AppImages that are already installed, without downloading.
+do_register() {
+    local i repo pattern app_name install_dir
+    local appimage_path app_name_lower installed_version binary
+
+    for i in "${!APPS[@]}"; do
+        IFS='|' read -r repo pattern app_name install_dir <<< "${APPS[$i]}"
+
+        appimage_path="$(find "$install_dir" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
+        if [[ -z "$appimage_path" ]]; then
+            printf 'skip: %s not installed (%s)\n' "$app_name" "$install_dir" >&2
+            continue
+        fi
+
+        app_name_lower="${app_name,,}"
+        installed_version="$(get_local_appimage_version "$appimage_path" || true)"
+        binary="$HOME/.local/bin/${app_name}.AppImage"
+
+        installsh_flag_write "appimage-${app_name_lower}" \
+            "name=$app_name" \
+            "kind=appimage" \
+            "source=apps_AppImages.sh" \
+            "source_index=$i" \
+            "repo=$repo" \
+            "pattern=$pattern" \
+            "install_dir=$install_dir" \
+            "binary=$binary" \
+            "installed_version=${installed_version:-unknown}" \
+            "updated_at=$(date -Is)" || true
+
+        printf 'registered: %s %s\n' "$app_name" "${installed_version:-unknown}"
+    done
 }
 
 
@@ -367,7 +510,22 @@ EOF
         echo "MimeType=$MIMETYPES" >> "$DESKTOP_FILE"
     fi
     chmod +x "$DESKTOP_FILE"
-    
+
+    # Register this installation so the login update checker can find it.
+    local INSTALLED_VERSION
+    INSTALLED_VERSION="$(get_local_appimage_version "$APPIMAGE_PATH" || true)"
+    installsh_flag_write "appimage-${APP_NAME_LOWER}" \
+        "name=$APP_NAME" \
+        "kind=appimage" \
+        "source=apps_AppImages.sh" \
+        "source_index=$i" \
+        "repo=$REPO" \
+        "pattern=$PATTERN" \
+        "install_dir=$INSTALL_DIR" \
+        "binary=$APPIMAGE_BIN" \
+        "installed_version=${INSTALLED_VERSION:-unknown}" \
+        "updated_at=$(date -Is)" || true
+
     NEEDS_DESKTOP_REFRESH=true
 }
 
@@ -485,6 +643,21 @@ update_app() {
     fi
 
     echo "✅ Update complete for $APP_NAME: ${current_version:-unknown} → ${latest_version:-unknown}"
+
+    # Refresh the installation flag with the new version.
+    local INSTALLED_VERSION
+    INSTALLED_VERSION="$(get_local_appimage_version "$APPIMAGE_PATH" || true)"
+    installsh_flag_write "appimage-${APP_NAME_LOWER}" \
+        "name=$APP_NAME" \
+        "kind=appimage" \
+        "source=apps_AppImages.sh" \
+        "source_index=$i" \
+        "repo=$REPO" \
+        "pattern=$PATTERN" \
+        "install_dir=$INSTALL_DIR" \
+        "binary=$APPIMAGE_BIN" \
+        "installed_version=${INSTALLED_VERSION:-${latest_version:-unknown}}" \
+        "updated_at=$(date -Is)" || true
 }
 
 
@@ -505,7 +678,11 @@ delete_app() {
         echo "Removing installation directory: $INSTALL_DIR"
         rm -rf "$INSTALL_DIR"
     fi
-    
+
+    # Remove the installation flag so the update checker stops reporting it.
+    local APP_NAME_LOWER="${APP_NAME,,}"
+    installsh_flag_remove "appimage-${APP_NAME_LOWER}" || true
+
     # 2. Call the external AppImageManager to clean up system symlinks/icons/desktop
     local manager_script="$HOME/.local/bin/AppImageManager.sh"
     if command -v "$manager_script" >/dev/null 2>&1 || [[ -x "$manager_script" ]]; then
@@ -536,6 +713,16 @@ while [[ $# -gt 0 ]]; do
             ;;
         --list-check)
             do_list "true"
+            exit 0
+            ;;
+        --check)
+            shift
+            if [[ $# -eq 0 ]]; then echo "❌ Missing arguments for --check"; exit 1; fi
+            do_check "$1"
+            exit 0
+            ;;
+        --register)
+            do_register
             exit 0
             ;;
         --install)

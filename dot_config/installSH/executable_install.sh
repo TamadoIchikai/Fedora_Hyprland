@@ -139,6 +139,18 @@ echo -e "${CYAN}==========================================${NC}"
 # Create base directories
 mkdir -p ~/Downloads/Systems/tmp ~/.local/bin/ ~/.local/share/fonts/ ~/.local/share/applications/
 
+# Installation flags used by the login update checker
+INSTALLSH_TARGET_USER="${SUDO_USER:-${USER:-$(id -un)}}"
+INSTALLSH_TARGET_HOME="$(getent passwd "$INSTALLSH_TARGET_USER" 2>/dev/null | cut -d: -f6 || true)"
+[[ -n "$INSTALLSH_TARGET_HOME" ]] || INSTALLSH_TARGET_HOME="$HOME"
+
+export INSTALLSH_TARGET_USER
+export INSTALLSH_TARGET_HOME
+export INSTALLSH_FLAGS_DIR="$INSTALLSH_TARGET_HOME/.config/installSH/flags"
+
+mkdir -p "$INSTALLSH_FLAGS_DIR"
+chmod 0700 "$INSTALLSH_FLAGS_DIR" 2>/dev/null || true
+
 # --- BUILD EXECUTION LIST ---
 declare -a EXEC_INDICES=()
 
