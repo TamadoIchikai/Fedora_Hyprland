@@ -36,6 +36,7 @@ REPORT_TXT="$CACHE_DIR/report.txt"
 LOG_FILE="$CACHE_DIR/update-check.log"
 LOCK_FILE="$CACHE_DIR/lock"
 POPUP_SCRIPT="$HOME/.local/bin/update-check-popup.sh"
+UPDATER_SCRIPT="$CACHE_DIR/update-now.sh"
 ICON_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/update-check/icons"
 
 CACHE_SECONDS="${UPDATE_CHECK_CACHE_SECONDS:-300}"
@@ -87,6 +88,7 @@ Options:
   --json             Print machine-readable JSON
   --status           Print ~/.cache/update-check/status.env
   --status --short   Print a one-line status summary
+  --update-list      Print all apps registered with update-check
   --apply            Interactively apply available updates
   --no-notify        Write report/status/log only
   -h, --help         Show this help
@@ -334,8 +336,98 @@ emit_early_output() {
     esac
 }
 
+build_updater_script() {
+    local idx
+
+    {
+        printf '#!/usr/bin/env bash\n'
+        printf 'set +e\n'
+        printf 'echo "Applying updates..."\n'
+        printf 'echo\n'
+
+        for idx in "${AI_UPDATE_INDICES[@]}"; do
+            printf 'printf "\\n=== Updating AppImage index %s ===\\n"\n' "$idx"
+            printf '%q --update %q\n' "$APPS_APPIMAGES" "$idx"
+        done
+
+        if (( ZED_NEEDS_UPDATE == 1 )); then
+            printf 'printf "\\n=== Updating Zed ===\\n"\n'
+            printf '%q --update\n' "$APPS_ZED"
+        fi
+
+        if (( ZEN_NEEDS_UPDATE == 1 )); then
+            printf 'printf "\\n=== Updating Zen Browser ===\\n"\n'
+            printf 'if command -v sudo >/dev/null 2>&1; then sudo %q --update; else echo "sudo not found; run manually: sudo %s --update"; fi\n' \
+                "$APPS_ZEN" "$APPS_ZEN"
+        fi
+
+        printf 'echo\n'
+        printf 'echo "Done. Press Enter to close."\n'
+        printf 'read -r _ || true\n'
+    } >"$UPDATER_SCRIPT" 2>/dev/null
+
+    chmod +x "$UPDATER_SCRIPT" 2>/dev/null || true
+}
+
+launch_update_terminal() {
+    local cmd
+
+    [[ -x "$UPDATER_SCRIPT" ]] || return 0
+
+    log "launching update terminal"
+
+    # shellcheck disable=SC1090
+    source "$HOME/.config/abstractions/wm.sh" 2>/dev/null || true
+
+    if ! command -v WM_exec_floating >/dev/null 2>&1; then
+        log "WM API unavailable; cannot open update terminal"
+        return 0
+    fi
+
+    cmd="$(printf '%q ' env \
+        "UPDATE_CHECK_CACHE_DIR=$CACHE_DIR" \
+        foot --app-id=UpdateCheckPopup --title=UpdateCheckPopup \
+        -w 900x420 -e bash "$UPDATER_SCRIPT")"
+
+    WM_exec_floating "$cmd" true 0.50 0.40 >>"$LOG_FILE" 2>&1 \
+        || log "WM_exec_floating failed"
+}
+
+print_managed_apps() {
+    local -a files=()
+    local f id kind name version idx
+
+    mapfile -t files < <(flag_files)
+
+    if (( ${#files[@]} == 0 )); then
+        printf 'No managed apps found in %s.\n' "$FLAGS_DIR"
+        return 0
+    fi
+
+    printf '%-24s %-10s %-24s %-16s %s\n' \
+        "ID" "KIND" "NAME" "INSTALLED" "SOURCE INDEX"
+    printf '%s\n' "--------------------------------------------------------------------------------"
+
+    for f in "${files[@]}"; do
+        id="$(kv_get "$f" id || true)"
+        kind="$(kv_get "$f" kind || true)"
+        name="$(kv_get "$f" name || true)"
+        version="$(kv_get "$f" installed_version || true)"
+        idx="$(kv_get "$f" source_index || true)"
+
+        [[ -n "$id" ]] || id="$(basename "$f" .env)"
+        [[ -n "$kind" ]] || kind="unknown"
+        [[ -n "$name" ]] || name="$id"
+        [[ -n "$version" ]] || version="-"
+        [[ -n "$idx" ]] || idx="-"
+
+        printf '%-24s %-10s %-24s %-16s %s\n' \
+            "$id" "$kind" "$name" "$version" "$idx"
+    done
+}
 send_notification() {
-    local i
+    local i action rc
+    local -a notify_args=()
 
     command -v notify-send >/dev/null 2>&1 || {
         log "notify-send not found"
@@ -356,13 +448,33 @@ send_notification() {
         done
     fi
 
-    timeout 5 notify-send \
-        --app-name="System Update Check" \
-        --hint=string:desktop-entry:system-update-check \
-        --icon="$NOTIFY_ICON" \
-        --urgency="$NOTIFY_URGENCY" \
-        --expire-time="$NOTIFY_EXPIRE_MS" \
-        "$TITLE" "$BODY" >>"$LOG_FILE" 2>&1
+    notify_args=(
+        --app-name="System Update Check"
+        --hint=string:desktop-entry:system-update-check
+        --icon="$NOTIFY_ICON"
+        --urgency="$NOTIFY_URGENCY"
+        --expire-time="$NOTIFY_EXPIRE_MS"
+    )
+
+    # Offer an action button only when updates are available and an updater
+    # script has been prepared.
+    if [[ "$STATUS" == "updates" && -x "$UPDATER_SCRIPT" ]]; then
+        notify_args+=(-A "update=Update" -A "ok=OK")
+    fi
+
+    rc=0
+    action="$(timeout 20 notify-send -w "${notify_args[@]}" "$TITLE" "$BODY" 2>>"$LOG_FILE")" || rc=$?
+
+    if (( rc != 0 )); then
+        log "notify-send failed (rc=$rc)"
+        return 1
+    fi
+
+    if [[ "$action" == "update" ]]; then
+        launch_update_terminal
+    fi
+
+    return 0
 }
 
 show_popup_fallback() {
@@ -409,6 +521,11 @@ finalize() {
 
     [[ -n "$STATUS" ]] || STATUS="error"
     [[ -n "$TITLE" ]] || build_messages
+
+    if [[ "$STATUS" == "updates" ]]; then
+        build_updater_script
+    fi
+
     write_status_files
 
     if (( NO_NOTIFY == 0 )); then
@@ -854,6 +971,11 @@ while (( $# > 0 )); do
             MODE="status"
             shift
             ;;
+        --update-list)
+            MODE="update-list"
+            NO_NOTIFY=1
+            shift
+            ;;
         --short)
             SHORT=1
             shift
@@ -897,7 +1019,10 @@ if [[ "$MODE" == "status" ]]; then
     exit 0
 fi
 
-mkdir -p -- "$CACHE_DIR" 2>/dev/null || true
+if [[ "$MODE" == "update-list" ]]; then
+    print_managed_apps
+    exit 0
+fi
 trap finalize EXIT
 trap 'exit 143' TERM INT
 
