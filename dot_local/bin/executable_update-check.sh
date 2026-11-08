@@ -68,7 +68,12 @@ CACHE_SECONDS="${UPDATE_CHECK_CACHE_SECONDS:-300}"
 APPIMAGE_TIMEOUT="${UPDATE_CHECK_APPIMAGE_TIMEOUT:-90}"
 ZED_TIMEOUT="${UPDATE_CHECK_ZED_TIMEOUT:-25}"
 ZEN_TIMEOUT="${UPDATE_CHECK_ZEN_TIMEOUT:-25}"
+DNF_TIMEOUT="${UPDATE_CHECK_DNF_TIMEOUT:-60}"
+FLATPAK_TIMEOUT="${UPDATE_CHECK_FLATPAK_TIMEOUT:-60}"
 NOTIFY_EXPIRE_MS="${UPDATE_CHECK_NOTIFY_EXPIRE_MS:-15000}"
+UPDATE_CHECK_POPUP_TIMEOUT="${UPDATE_CHECK_POPUP_TIMEOUT:-5}"
+[[ "$UPDATE_CHECK_POPUP_TIMEOUT" =~ ^[0-9]+$ ]] || UPDATE_CHECK_POPUP_TIMEOUT=5
+(( UPDATE_CHECK_POPUP_TIMEOUT > 0 )) || UPDATE_CHECK_POPUP_TIMEOUT=5
 
 MODE="check"
 NO_NOTIFY=0
@@ -102,6 +107,14 @@ OTHER_FLAGS=()
 AI_UPDATE_INDICES=()
 ZED_NEEDS_UPDATE=0
 ZEN_NEEDS_UPDATE=0
+DNF_NEEDS_UPDATE=0
+FLATPAK_NEEDS_UPDATE=0
+DNF_ENABLED="${UPDATE_CHECK_DNF:-1}"
+FLATPAK_ENABLED="${UPDATE_CHECK_FLATPAK:-1}"
+
+# Disable system checkers when their commands are unavailable.
+command -v dnf >/dev/null 2>&1 || DNF_ENABLED=0
+command -v flatpak >/dev/null 2>&1 || FLATPAK_ENABLED=0
 
 usage() {
     cat <<'EOF'
@@ -350,28 +363,52 @@ build_updater_script() {
     {
         printf '#!/usr/bin/env bash\n'
         printf 'set +e\n'
+        printf 'failed=0\n'
+        printf 'close_timeout="${UPDATE_CHECK_POPUP_TIMEOUT:-%s}"\n' "$UPDATE_CHECK_POPUP_TIMEOUT"
+        printf '[[ "$close_timeout" =~ ^[0-9]+$ ]] || close_timeout=%s\n' "$UPDATE_CHECK_POPUP_TIMEOUT"
+        printf '(( close_timeout > 0 )) || close_timeout=%s\n' "$UPDATE_CHECK_POPUP_TIMEOUT"
         printf 'echo "Applying updates..."\n'
         printf 'echo\n'
 
         for idx in "${AI_UPDATE_INDICES[@]}"; do
             printf 'printf "\\n=== Updating AppImage index %s ===\\n"\n' "$idx"
             printf '%q --update %q\n' "$APPS_APPIMAGES" "$idx"
+            printf '(( $? == 0 )) || failed=1\n'
         done
 
         if (( ZED_NEEDS_UPDATE == 1 )); then
             printf 'printf "\\n=== Updating Zed ===\\n"\n'
             printf '%q --update\n' "$APPS_ZED"
+            printf '(( $? == 0 )) || failed=1\n'
         fi
 
         if (( ZEN_NEEDS_UPDATE == 1 )); then
             printf 'printf "\\n=== Updating Zen Browser ===\\n"\n'
-            printf 'if command -v sudo >/dev/null 2>&1; then sudo %q --update; else echo "sudo not found; run manually: sudo %s --update"; fi\n' \
+            printf 'if command -v sudo >/dev/null 2>&1; then sudo %q --update; else echo "sudo not found; run manually: sudo %s --update"; failed=1; fi\n' \
                 "$APPS_ZEN" "$APPS_ZEN"
+            printf '(( $? == 0 )) || failed=1\n'
+        fi
+
+        if (( DNF_NEEDS_UPDATE == 1 )); then
+            printf 'printf "\\n=== Updating system packages (dnf) ===\\n"\n'
+            printf 'if command -v sudo >/dev/null 2>&1; then sudo dnf update -y; else echo "sudo not found; run manually: sudo dnf update -y"; failed=1; fi\n'
+            printf '(( $? == 0 )) || failed=1\n'
+        fi
+
+        if (( FLATPAK_NEEDS_UPDATE == 1 )); then
+            printf 'printf "\\n=== Updating Flatpak apps ===\\n"\n'
+            printf 'flatpak update -y\n'
+            printf '(( $? == 0 )) || failed=1\n'
         fi
 
         printf 'echo\n'
-        printf 'echo "Done. Press Enter to close."\n'
-        printf 'read -r _ || true\n'
+        printf 'if (( failed == 0 )); then\n'
+        printf '    printf "All updates completed. Closing in %%s seconds...\\n" "$close_timeout"\n'
+        printf '    IFS= read -r -t "$close_timeout" -n 1 _ 2>/dev/null || true\n'
+        printf 'else\n'
+        printf '    printf "One or more updates failed. Press Enter to close.\\n"\n'
+        printf '    IFS= read -r _ 2>/dev/null || true\n'
+        printf 'fi\n'
     } >"$UPDATER_SCRIPT" 2>/dev/null
 
     chmod +x "$UPDATER_SCRIPT" 2>/dev/null || true
@@ -401,6 +438,7 @@ launch_update_terminal() {
 
     cmd="$(printf '%q ' env \
         "UPDATE_CHECK_CACHE_DIR=$CACHE_DIR" \
+        "UPDATE_CHECK_POPUP_TIMEOUT=$UPDATE_CHECK_POPUP_TIMEOUT" \
         foot --app-id=UpdateCheckPopup --title=UpdateCheckPopup \
         -w 900x420 -e bash "$UPDATER_SCRIPT")"
 
@@ -413,7 +451,7 @@ print_managed_apps() {
 
     mapfile -t files < <(flag_files)
 
-    if (( ${#files[@]} == 0 )); then
+    if (( ${#files[@]} == 0 )) && (( SYSTEM_ENABLED == 0 )); then
         printf 'No managed apps found in %s.\n' "$FLAGS_DIR"
         return 0
     fi
@@ -438,6 +476,16 @@ print_managed_apps() {
         printf '%-24s %-10s %-24s %-16s %s\n' \
             "$id" "$kind" "$name" "$version" "$idx"
     done
+
+    if (( DNF_ENABLED == 1 )); then
+        printf '%-24s %-10s %-24s %-16s %s\n' \
+            "dnf" "dnf" "System packages" "-" "-"
+    fi
+
+    if (( FLATPAK_ENABLED == 1 )); then
+        printf '%-24s %-10s %-24s %-16s %s\n' \
+            "flatpak" "flatpak" "Flatpak apps" "-" "-"
+    fi
 }
 send_notification() {
     local i action rc
@@ -507,6 +555,7 @@ show_popup_fallback() {
 
     cmd="$(printf '%q ' env \
         "UPDATE_CHECK_CACHE_DIR=$CACHE_DIR" \
+        "UPDATE_CHECK_POPUP_TIMEOUT=$UPDATE_CHECK_POPUP_TIMEOUT" \
         foot --app-id=UpdateCheckPopup --title=UpdateCheckPopup \
         -w 900x420 -e bash "$POPUP_SCRIPT")"
 
@@ -882,8 +931,96 @@ run_zen_checks() {
     done
 }
 
+run_dnf_checks() {
+    local out rc count reason response
+
+    (( DNF_ENABLED == 1 )) || return 0
+
+    MANAGED=$((MANAGED + 1))
+
+    out="$CACHE_DIR/dnf-check.json"
+
+    set +e
+    timeout "$DNF_TIMEOUT" dnf check-update --json >"$out" 2>>"$LOG_FILE"
+    rc=$?
+    set -e
+
+    response="$(cat "$out" 2>/dev/null || true)"
+
+    if (( rc == 0 )); then
+        [[ -n "$response" ]] || response='{}'
+        count="$(jq -r '.upgrades | length' <<<"$response" 2>/dev/null || echo 0)"
+        if (( count > 0 )); then
+            record_update "System packages: $count update(s) available"
+            add_row dnf system "System packages" "-" "$count" "update" "dnf check-update"
+            DNF_NEEDS_UPDATE=1
+        else
+            add_row dnf system "System packages" "-" "0" "current" ""
+        fi
+    elif (( rc == 100 )); then
+        [[ -n "$response" ]] || response='{}'
+        count="$(jq -r '.upgrades | length' <<<"$response" 2>/dev/null || echo 0)"
+        if (( count > 0 )); then
+            record_update "System packages: $count update(s) available"
+            add_row dnf system "System packages" "-" "$count" "update" "dnf check-update"
+            DNF_NEEDS_UPDATE=1
+        else
+            add_row dnf system "System packages" "-" "0" "current" ""
+        fi
+    else
+        if (( rc == 124 )); then
+            TIMED_OUT=1
+            reason="checker timed out"
+        else
+            reason="checker failed (rc=$rc)"
+        fi
+        record_error "System packages: $reason"
+        add_row dnf system "System packages" "-" "-" "error" "$reason"
+    fi
+}
+
+run_flatpak_checks() {
+    local out rc count reason response
+
+    (( FLATPAK_ENABLED == 1 )) || return 0
+
+    MANAGED=$((MANAGED + 1))
+
+    out="$CACHE_DIR/flatpak-check.json"
+
+    set +e
+    timeout "$FLATPAK_TIMEOUT" flatpak remote-ls --updates --json >"$out" 2>>"$LOG_FILE"
+    rc=$?
+    set -e
+
+    response="$(cat "$out" 2>/dev/null || true)"
+
+    if (( rc != 0 )); then
+        if (( rc == 124 )); then
+            TIMED_OUT=1
+            reason="checker timed out"
+        else
+            reason="checker failed (rc=$rc)"
+        fi
+        record_error "Flatpak apps: $reason"
+        add_row flatpak system "Flatpak apps" "-" "-" "error" "$reason"
+        return 0
+    fi
+
+    [[ -n "$response" ]] || response='[]'
+    count="$(jq 'length' <<<"$response" 2>/dev/null || echo 0)"
+
+    if (( count > 0 )); then
+        record_update "Flatpak apps: $count update(s) available"
+        add_row flatpak system "Flatpak apps" "-" "$count" "update" "flatpak remote-ls --updates"
+        FLATPAK_NEEDS_UPDATE=1
+    else
+        add_row flatpak system "Flatpak apps" "-" "0" "current" ""
+    fi
+}
+
 classify() {
-    if [[ -n "$PRECHECK_STATUS" ]]; then
+    if [[ -n "$PRECHECK_STATUS" && "$UPDATES" -eq 0 ]]; then
         STATUS="$PRECHECK_STATUS"
         return 0
     fi
@@ -1089,7 +1226,11 @@ fi
 mapfile -t FLAG_FILES < <(flag_files)
 MANAGED=${#FLAG_FILES[@]}
 
-if (( MANAGED == 0 )); then
+SYSTEM_ENABLED=0
+(( DNF_ENABLED == 1 )) && SYSTEM_ENABLED=1
+(( FLATPAK_ENABLED == 1 )) && SYSTEM_ENABLED=1
+
+if (( MANAGED == 0 && SYSTEM_ENABLED == 0 )); then
     STATUS="no-flags"
     set_icon_and_urgency
     build_messages
@@ -1141,13 +1282,16 @@ if (( PREFLIGHT_FAILED == 0 )); then
     run_appimage_checks
     run_zed_checks
     run_zen_checks
-
-    classify
-    set_icon_and_urgency
-    build_messages
-
-    log "result: status=$STATUS updates=$UPDATES errors=$ERRORS managed=$MANAGED"
 fi
+
+run_dnf_checks
+run_flatpak_checks
+
+classify
+set_icon_and_urgency
+build_messages
+
+log "result: status=$STATUS updates=$UPDATES errors=$ERRORS managed=$MANAGED"
 
 # ------------------------------------------------------------
 # Mode output
@@ -1210,6 +1354,27 @@ case "$MODE" in
                 printf 'sudo is not available. Run manually: sudo %s --update\n' "$APPS_ZEN"
                 fail=$((fail + 1))
             elif sudo "$APPS_ZEN" --update; then
+                ok=$((ok + 1))
+            else
+                fail=$((fail + 1))
+            fi
+        fi
+
+        if (( DNF_NEEDS_UPDATE == 1 )); then
+            printf '\n=== Updating system packages (dnf) ===\n'
+            if ! command -v sudo >/dev/null 2>&1; then
+                printf 'sudo is not available. Run manually: sudo dnf update -y\n'
+                fail=$((fail + 1))
+            elif sudo dnf update -y; then
+                ok=$((ok + 1))
+            else
+                fail=$((fail + 1))
+            fi
+        fi
+
+        if (( FLATPAK_NEEDS_UPDATE == 1 )); then
+            printf '\n=== Updating Flatpak apps ===\n'
+            if flatpak update -y; then
                 ok=$((ok + 1))
             else
                 fail=$((fail + 1))

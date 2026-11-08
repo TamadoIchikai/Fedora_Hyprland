@@ -8,6 +8,9 @@
 set -euo pipefail
 
 CACHE_DIR="${UPDATE_CHECK_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/update-check}"
+POPUP_TIMEOUT="${UPDATE_CHECK_POPUP_TIMEOUT:-5}"
+[[ "$POPUP_TIMEOUT" =~ ^[0-9]+$ ]] || POPUP_TIMEOUT=5
+(( POPUP_TIMEOUT > 0 )) || POPUP_TIMEOUT=5
 STATUS_FILE="$CACHE_DIR/status.env"
 REPORT_TXT="$CACHE_DIR/report.txt"
 LOG_FILE="$CACHE_DIR/update-check.log"
@@ -43,8 +46,8 @@ else
 fi
 
 printf '\n  Log: %s\n' "$LOG_FILE"
-printf '\n  Press any key to close (auto-closes in 60s)...'
+printf '\n  Press any key to close (auto-closes in %ss)...' "$POPUP_TIMEOUT"
 
-IFS= read -r -t 60 -n 1 _ 2>/dev/null || true
+IFS= read -r -t "$POPUP_TIMEOUT" -n 1 _ 2>/dev/null || true
 
 printf '\n'
