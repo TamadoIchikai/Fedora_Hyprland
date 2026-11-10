@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/versions.env"
 
 sudo dnf copr enable -y lionheartp/Hyprland
-sudo dnf install -y hyprlock wlsunset swaybg hyprland-guiutils vim neovim fastfetch meson cmake flatpak
+sudo dnf install -y hyprlock hyprshutdown wlsunset swaybg hyprland-guiutils vim neovim fastfetch meson cmake flatpak
 
 # Install hyprland at the pinned EVR; fall back to latest when the COPR has
 # dropped the old build (it only keeps the newest in its repodata).
