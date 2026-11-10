@@ -754,3 +754,15 @@ hl.window_rule({
     monitor = laptop_output,
     workspace = "12",
 })
+
+-- AI Limit Bar
+hl.window_rule({
+    name  = "ai-limit-bar-floating",
+    match = {
+        class = "__main__.py",
+        title = "AI Limit Bar",
+    },
+    size  = { "monitor_w*0.2755", "monitor_h*0.5044" },
+    move  = { "monitor_w*0.63", "monitor_h*0.45" },
+    float = true,
+})
