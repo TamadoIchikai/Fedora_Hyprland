@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Switch fcitx5 input methods in most-recently-used order.
+#   Single tap: switch to the previously used IM.
+#   Double tap (<= DOUBLE_TAP_MS): switch to the least-recently-used IM.
+# The MRU order lives in $STATE only; the fcitx5 profile is never modified.
+set -uo pipefail
+umask 077
 
 LAYOUTS=(keyboard-us unikey mozc)
 declare -A LAYOUT_LABEL=([keyboard-us]="keyboard" [unikey]="keyboard" [mozc]="keyboard")
@@ -8,9 +13,25 @@ declare -A LAYOUT_ICON=([keyboard-us]="$ICON_BASE/indicator-keyboard-En.svg" [un
 STATE="$HOME/.cache/fcitx5_keyboard_state"
 PROFILE="$HOME/.config/fcitx5/profile"
 DOUBLE_TAP_MS="${DOUBLE_TAP_MS:-300}"
+[[ "$DOUBLE_TAP_MS" =~ ^[0-9]+$ ]] || DOUBLE_TAP_MS=300
+
+notify() { # notify <icon> <summary> [body]
+    command -v notify-send >/dev/null 2>&1 || return 0
+    local icon="$1"
+    [[ -r "$icon" ]] || icon="input-keyboard"
+    notify-send -e -a fcitx5 -t 700 -i "$icon" \
+        -h string:x-canonical-private-synchronous:fcitx5-ime \
+        "$2" ${3:+"$3"} >/dev/null 2>&1 &
+}
+
+die() {
+    notify "dialog-error" "fcitx5" "$1"
+    printf '%s: %s\n' "${0##*/}" "$1" >&2
+    exit 1
+}
 
 get_im_order() {
-    [[ -f "$PROFILE" ]] || return 1
+    [[ -r "$PROFILE" ]] || return 1
     awk '
         /^\[Groups\/0\/Items\// { in_item = 1; next }
         /^\[/ { in_item = 0 }
@@ -18,123 +39,92 @@ get_im_order() {
     ' "$PROFILE"
 }
 
-reorder_profile() {
-    local target="$1"
+has() { # has <needle> <haystack...>
+    local n="$1" x
     shift
-    local tmp start end
-    local -a base_order=("$@") new_order=()
-    local x i found=0
-
-    [[ -f "$PROFILE" ]] || return 0
-
-    if (( ${#base_order[@]} == 0 )); then
-        mapfile -t base_order < <(get_im_order)
-    fi
-    (( ${#base_order[@]} > 1 )) || return 0
-
-    for x in "${base_order[@]}"; do
-        [[ "$x" == "$target" ]] && found=1
-    done
-    (( found == 1 )) || return 0
-    [[ "${base_order[0]}" != "$target" ]] || return 0
-
-    new_order=("$target")
-    for x in "${base_order[@]}"; do
-        [[ "$x" == "$target" ]] || new_order+=("$x")
-    done
-    (( ${#new_order[@]} == ${#base_order[@]} )) || return 0
-
-    start="$(grep -n '^\[Groups/0/Items/0\]' "$PROFILE" | head -n 1 | cut -d: -f1)"
-    end="$(grep -n '^\[GroupOrder\]' "$PROFILE" | head -n 1 | cut -d: -f1)"
-    [[ -n "$start" && -n "$end" && "$start" -lt "$end" ]] || return 0
-
-    tmp="$(mktemp "${PROFILE}.XXXXXX")" || return 0
-    chmod --reference="$PROFILE" "$tmp" 2>/dev/null || chmod 600 "$tmp"
-
-    head -n "$((start - 1))" "$PROFILE" > "$tmp"
-    for i in "${!new_order[@]}"; do
-        {
-            printf '[Groups/0/Items/%d]\n' "$i"
-            printf '# Name\n'
-            printf 'Name=%s\n' "${new_order[$i]}"
-            printf '# Layout\n'
-            printf '# Layout=\n'
-            printf '\n'
-        } >> "$tmp"
-    done
-    tail -n +"$end" "$PROFILE" >> "$tmp"
-
-    if ! mv -f "$tmp" "$PROFILE"; then
-        rm -f "$tmp"
-        return 0
-    fi
+    for x in "$@"; do [[ "$x" == "$n" ]] && return 0; done
+    return 1
 }
 
-cur=$(fcitx5-remote -n)
-now=$(date +%s%3N)
-cur_order=()
-mapfile -t cur_order < <(get_im_order)
-(( ${#cur_order[@]} > 0 )) || cur_order=("${LAYOUTS[@]}")
-
-last_ms=0
-prev=""
-last_order=()
-if [[ -f "$STATE" ]]; then
-    marker=""
-    order_str=""
-    read -r last_ms marker order_str < "$STATE" || true
-    if [[ "$marker" == "order" && -n "$order_str" ]]; then
-        read -r -a last_order <<< "$order_str"
-    fi
-else
-    mkdir -p "$(dirname "$STATE")"
-    : > "$STATE"
-fi
-# The state file records user activity (last-used layout + timing); keep it
-# owner-only so other local users cannot read it, even when ~/.cache is 755.
-chmod 600 "$STATE"
-
-target=""
-if (( last_ms > 0 && now - last_ms <= DOUBLE_TAP_MS )); then
-    base_order=()
-    if (( ${#last_order[@]} > 0 )); then
-        base_order=("${last_order[@]}")
-    else
-        mapfile -t base_order < <(get_im_order)
-        (( ${#base_order[@]} > 0 )) || base_order=("${LAYOUTS[@]}")
-    fi
-
-    target="${base_order[${#base_order[@]}-1]}"
-    if [[ -n "$target" && "$target" != "$cur" ]]; then
-        reorder_profile "$target" "${base_order[@]}"
-        fcitx5-remote -r >/dev/null 2>&1 || true
-    else
-        target=""
-    fi
-else
-    # Single tap: move the next layout in the current order to the front.
-    cur_order=()
-    mapfile -t cur_order < <(get_im_order)
-    if (( ${#cur_order[@]} == 0 )); then
-        cur_order=("${LAYOUTS[@]}")
-    fi
-    idx=-1
-    for i in "${!cur_order[@]}"; do
-        [[ "${cur_order[$i]}" == "$cur" ]] && { idx=$i; break; }
+# sanitize <space-separated list>: print a valid MRU (one per line) containing
+# exactly the entries of avail, keeping the given order where valid.
+sanitize() {
+    local -a in=() out=()
+    local x
+    read -r -a in <<< "${1:-}"
+    for x in "${in[@]}"; do
+        has "$x" "${avail[@]}" && ! has "$x" "${out[@]}" && out+=("$x")
     done
-    if (( idx >= 0 )); then
-        target="${cur_order[(( (idx + 1) % ${#cur_order[@]} ))]}"
-    else
-        target="${cur_order[0]}"
-    fi
-    reorder_profile "$target" "${cur_order[@]}"
-    fcitx5-remote -r >/dev/null 2>&1 || true
+    for x in "${avail[@]}"; do
+        has "$x" "${out[@]}" || out+=("$x")
+    done
+    printf '%s\n' "${out[@]}"
+}
+
+# to_front <item> <list...>: print item followed by list without item.
+to_front() {
+    local t="$1" x
+    shift
+    printf '%s\n' "$t"
+    for x in "$@"; do [[ "$x" == "$t" ]] || printf '%s\n' "$x"; done
+}
+
+# --- setup & lock -----------------------------------------------------------
+mkdir -p "${STATE%/*}" || die "cannot create ${STATE%/*}"
+exec 9>"$STATE.lock" || die "cannot open lock file"
+flock -w 1 9 || exit 0
+
+# --- dependencies -----------------------------------------------------------
+command -v fcitx5-remote >/dev/null 2>&1 || die "fcitx5-remote not found"
+cur=$(fcitx5-remote -n 2>/dev/null) && [[ -n "$cur" ]] || die "fcitx5 is not running"
+
+# --- available IMs ----------------------------------------------------------
+avail=()
+mapfile -t avail < <(get_im_order 2>/dev/null)
+(( ${#avail[@]} > 0 )) || avail=("${LAYOUTS[@]}")
+
+now=$(( ${EPOCHREALTIME//[!0-9]/} / 1000 ))
+
+# --- state ------------------------------------------------------------------
+st=()
+[[ -r "$STATE" ]] && mapfile -t -n 3 st < "$STATE"
+last_ms="${st[0]:-0}"
+[[ "$last_ms" =~ ^[0-9]+$ ]] || last_ms=0
+mapfile -t mru < <(sanitize "${st[1]:-}")
+prev=()
+[[ -n "${st[2]:-}" ]] && mapfile -t prev < <(sanitize "${st[2]}")
+
+# Reflect switches made elsewhere (trigger key, tray, ...).
+has "$cur" "${avail[@]}" && mapfile -t mru < <(to_front "$cur" "${mru[@]}")
+
+# --- pick target ------------------------------------------------------------
+if (( last_ms > 0 && now >= last_ms && now - last_ms <= DOUBLE_TAP_MS && ${#prev[@]} > 0 )); then
+    base=("${prev[@]}")
+    target="${base[-1]}"
+    mapfile -t mru < <(to_front "$target" "${base[@]}")
+    prev=("${base[@]}")
+else
+    prev=("${mru[@]}")
+    if (( ${#mru[@]} > 1 )); then target="${mru[1]}"; else target="${mru[0]}"; fi
+    mapfile -t mru < <(to_front "$target" "${mru[@]}")
 fi
 
-if [[ -n "$target" ]]; then
-    fcitx5-remote -s "$target"
-    label="${LAYOUT_LABEL[$target]:-$target}"
-    icon="${LAYOUT_ICON[$target]:-/usr/share/icons/Adwaita/scalable/devices/input-keyboard.svg}"
-    command -v notify-send >/dev/null 2>&1 && notify-send -e -i "$icon" -a fcitx5 -t 700 "$label" &
+# --- switch -----------------------------------------------------------------
+if [[ "$target" != "$cur" ]]; then
+    fcitx5-remote -s "$target" >/dev/null 2>&1 || die "failed to switch to $target"
+    switched=1
+else
+    switched=0
 fi
-printf '%s order %s\n' "$now" "${cur_order[*]}" > "$STATE"
+
+# --- save state (atomic) ----------------------------------------------------
+tmp=$(mktemp "$STATE.XXXXXX") || die "cannot write state"
+if printf '%s\n%s\n%s\n' "$now" "${mru[*]}" "${prev[*]}" > "$tmp" && mv -f "$tmp" "$STATE"; then
+    :
+else
+    rm -f "$tmp"
+fi
+
+# --- notify -----------------------------------------------------------------
+(( switched )) && notify "${LAYOUT_ICON[$target]:-}" "${LAYOUT_LABEL[$target]:-$target}"
+exit 0
