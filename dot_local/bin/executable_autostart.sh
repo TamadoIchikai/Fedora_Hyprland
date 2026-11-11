@@ -125,11 +125,12 @@ update_check_startup() {
 
     if (( UPDATE_CHECK_DELAY > 0 )); then
         log "schedule update check in ${UPDATE_CHECK_DELAY}s"
-        detach_run bash -c 'sleep "$1"; exec "$2" --force' \
+        # The "_" fills $0 so the delay and command land in $1 and $2.
+        detach_run bash -c 'sleep "$1"; exec "$2" --daily' _ \
             "$UPDATE_CHECK_DELAY" "$UPDATE_CHECK_CMD" || true
     else
         log "start detached: update check"
-        detach_run "$UPDATE_CHECK_CMD" --force || true
+        detach_run "$UPDATE_CHECK_CMD" --daily || true
     fi
 }
 
@@ -151,7 +152,7 @@ medium_startup() {
     exec_park "pavucontrol"
     exec_park "blueman-manager"
     exec_park "LocalSend.AppImage"
-    exec_park "thunar --window"
+    # exec_park "thunar --window"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
     # MonitorWatcher is started by its systemd user service
@@ -179,7 +180,7 @@ complex_startup() {
             break
         fi
         sleep 0.5
-        ((tray_attempts++))
+        tray_attempts=$((tray_attempts + 1))
     done
 
     # Buffer window to let waybar's tray module bind to DBus completely

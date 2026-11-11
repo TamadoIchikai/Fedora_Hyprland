@@ -2,7 +2,8 @@
 #
 # update-check.sh - one-shot login update checker.
 #
-# Runs once per login from autostart.sh, checks only apps that registered
+# Runs from autostart.sh with --daily (at most one successful check per day),
+# checks only apps that registered
 # themselves in ~/.config/installSH/flags/*.env, always produces a result, and
 # exits. It never starts a daemon and never applies updates automatically.
 #
@@ -79,6 +80,7 @@ UPDATE_CHECK_POPUP_TIMEOUT="${UPDATE_CHECK_POPUP_TIMEOUT:-5}"
 MODE="check"
 NO_NOTIFY=0
 FORCE=0
+DAILY=0
 SHORT=0
 CACHE_HIT=0
 
@@ -122,7 +124,8 @@ usage() {
 Usage: update-check.sh [OPTIONS]
 
 Options:
-  --force            Ignore the short cache window (used by autostart)
+  --force            Ignore the short cache window and the daily limit
+  --daily            Skip if a successful check already ran today (autostart)
   --list             Print the human-readable report
   --json             Print machine-readable JSON
   --status           Print ~/.cache/update-check/status.env
@@ -258,6 +261,11 @@ build_messages() {
         skipped)
             TITLE="Update check skipped"
             BODY="Another update check is already running."
+            ;;
+        already-checked)
+            TITLE="Update check already run today"
+            last="$(last_successful_summary || true)"
+            BODY="${last:+Last result: $last}"
             ;;
         no-flags)
             TITLE="Update check skipped"
@@ -1107,7 +1115,7 @@ set_icon_and_urgency() {
             NOTIFY_ICON="$(icon_path offline)"
             NOTIFY_URGENCY="normal"
             ;;
-        rate-limited|skipped|no-flags)
+        rate-limited|skipped|no-flags|already-checked)
             NOTIFY_ICON="$(icon_path info)"
             NOTIFY_URGENCY="low"
             ;;
@@ -1126,6 +1134,10 @@ while (( $# > 0 )); do
     case "$1" in
         --force)
             FORCE=1
+            shift
+            ;;
+        --daily)
+            DAILY=1
             shift
             ;;
         --list)
@@ -1216,6 +1228,32 @@ if ! flock -n 9; then
     log "another update check is already running"
     write_and_print_result
     exit 0
+fi
+
+# ------------------------------------------------------------
+# Daily limit: skip if a successful check already ran today.
+# Failed checks (offline, rate-limited, timeout, error) don't count, so the
+# next login on the same day retries.
+# ------------------------------------------------------------
+
+if (( DAILY == 1 && FORCE == 0 )) && [[ "$MODE" == "check" ]]; then
+    last_status="$(kv_get "$STATUS_FILE" status || true)"
+    last_epoch="$(kv_get "$STATUS_FILE" checked_at_epoch || true)"
+
+    if [[ "$last_status" =~ ^(updates|ok|partial)$ && "$last_epoch" =~ ^[0-9]+$ ]] \
+        && [[ "$(date -d "@$last_epoch" +%F)" == "$(date +%F)" ]]; then
+        # CACHE_HIT makes finalize() exit without rewriting status or notifying.
+        CACHE_HIT=1
+        log "daily: already checked today ($(date -d "@$last_epoch" -Is)); skipping"
+        # Still notify so every login shows the checker ran. status.env is not
+        # rewritten; the message comes from the saved result.
+        STATUS="already-checked"
+        NOTIFY_EXPIRE_MS="${UPDATE_CHECK_DAILY_NOTIFY_EXPIRE_MS:-3000}"
+        set_icon_and_urgency
+        build_messages
+        (( NO_NOTIFY == 1 )) || send_notification || true
+        exit 0
+    fi
 fi
 
 # ------------------------------------------------------------
