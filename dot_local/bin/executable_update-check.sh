@@ -65,12 +65,13 @@ UPDATER_SCRIPT="$CACHE_DIR/update-now.sh"
 ICON_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/update-check/icons"
 
 CACHE_SECONDS="${UPDATE_CHECK_CACHE_SECONDS:-300}"
-APPIMAGE_TIMEOUT="${UPDATE_CHECK_APPIMAGE_TIMEOUT:-90}"
-ZED_TIMEOUT="${UPDATE_CHECK_ZED_TIMEOUT:-25}"
-ZEN_TIMEOUT="${UPDATE_CHECK_ZEN_TIMEOUT:-25}"
-DNF_TIMEOUT="${UPDATE_CHECK_DNF_TIMEOUT:-60}"
-FLATPAK_TIMEOUT="${UPDATE_CHECK_FLATPAK_TIMEOUT:-60}"
+APPIMAGE_TIMEOUT="${UPDATE_CHECK_APPIMAGE_TIMEOUT:-45}"
+ZED_TIMEOUT="${UPDATE_CHECK_ZED_TIMEOUT:-20}"
+ZEN_TIMEOUT="${UPDATE_CHECK_ZEN_TIMEOUT:-20}"
+DNF_TIMEOUT="${UPDATE_CHECK_DNF_TIMEOUT:-30}"
+FLATPAK_TIMEOUT="${UPDATE_CHECK_FLATPAK_TIMEOUT:-30}"
 NOTIFY_EXPIRE_MS="${UPDATE_CHECK_NOTIFY_EXPIRE_MS:-15000}"
+UPDATE_CHECK_NETWORK_TIMEOUT="${UPDATE_CHECK_NETWORK_TIMEOUT:-30}"
 UPDATE_CHECK_POPUP_TIMEOUT="${UPDATE_CHECK_POPUP_TIMEOUT:-5}"
 [[ "$UPDATE_CHECK_POPUP_TIMEOUT" =~ ^[0-9]+$ ]] || UPDATE_CHECK_POPUP_TIMEOUT=5
 (( UPDATE_CHECK_POPUP_TIMEOUT > 0 )) || UPDATE_CHECK_POPUP_TIMEOUT=5
@@ -502,7 +503,7 @@ send_notification() {
 
     # Wait briefly for the notification daemon to come up after login.
     if command -v busctl >/dev/null 2>&1; then
-        for ((i = 0; i < 20; i++)); do
+        for ((i = 0; i < 60; i++)); do
             if busctl --user status org.freedesktop.Notifications >/dev/null 2>&1; then
                 break
             fi
@@ -633,6 +634,26 @@ mark_all_failed() {
     done
 }
 
+wait_for_network() {
+    local timeout="${UPDATE_CHECK_NETWORK_TIMEOUT:-30}"
+    local i
+
+    [[ "$timeout" =~ ^[0-9]+$ ]] || timeout=30
+    (( timeout > 0 )) || timeout=30
+
+    for ((i = 0; i < timeout; i++)); do
+        if curl -fsS --connect-timeout 2 --max-time 3 \
+            https://api.github.com/rate_limit >/dev/null 2>&1; then
+            log "network ready after ${i}s"
+            return 0
+        fi
+        sleep 1
+    done
+
+    log "network not ready after ${timeout}s"
+    return 1
+}
+
 preflight_network() {
     local response remaining reset
     local -a auth=()
@@ -698,6 +719,7 @@ run_appimage_checks() {
         if (( rc == 124 )); then
             TIMED_OUT=1
             reason="checker timed out"
+            log "a checker timed out"
         else
             reason="checker failed (rc=$rc)"
         fi
@@ -796,6 +818,7 @@ run_zed_checks() {
         if (( rc == 124 )); then
             TIMED_OUT=1
             reason="checker timed out"
+            log "a checker timed out"
         else
             reason="checker failed (rc=$rc)"
         fi
@@ -876,6 +899,7 @@ run_zen_checks() {
         if (( rc == 124 )); then
             TIMED_OUT=1
             reason="checker timed out"
+            log "a checker timed out"
         else
             reason="checker failed (rc=$rc)"
         fi
@@ -971,6 +995,7 @@ run_dnf_checks() {
         if (( rc == 124 )); then
             TIMED_OUT=1
             reason="checker timed out"
+            log "a checker timed out"
         else
             reason="checker failed (rc=$rc)"
         fi
@@ -999,6 +1024,7 @@ run_flatpak_checks() {
         if (( rc == 124 )); then
             TIMED_OUT=1
             reason="checker timed out"
+            log "a checker timed out"
         else
             reason="checker failed (rc=$rc)"
         fi
@@ -1260,8 +1286,10 @@ for f in "${OTHER_FLAGS[@]}"; do
 done
 
 # ------------------------------------------------------------
-# Network preflight
+# Wait for network and run preflight
 # ------------------------------------------------------------
+
+wait_for_network || true
 
 if (( ${#AI_FLAGS[@]} > 0 || ${#ZED_FLAGS[@]} > 0 || ${#ZEN_FLAGS[@]} > 0 )); then
     if ! preflight_network; then

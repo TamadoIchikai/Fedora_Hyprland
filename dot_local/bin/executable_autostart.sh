@@ -13,6 +13,7 @@ AUTO_CLOSE_AFTER="${AUTO_CLOSE_AFTER:-5}"
 # One-shot login update check. Detached; never blocks the autostart popup.
 UPDATE_CHECK_ENABLED="${UPDATE_CHECK_ENABLED:-1}"
 UPDATE_CHECK_CMD="${UPDATE_CHECK_CMD:-$HOME/.local/bin/update-check.sh}"
+UPDATE_CHECK_DELAY="${UPDATE_CHECK_DELAY:-20}"
 
 # --- START ARTWORK PADDING ---
 START_ART_PADDING_TOP=4
@@ -122,8 +123,14 @@ update_check_startup() {
         return 0
     }
 
-    log "start detached: update check"
-    detach_run "$UPDATE_CHECK_CMD" --force || true
+    if (( UPDATE_CHECK_DELAY > 0 )); then
+        log "schedule update check in ${UPDATE_CHECK_DELAY}s"
+        detach_run bash -c 'sleep "$1"; exec "$2" --force' \
+            "$UPDATE_CHECK_DELAY" "$UPDATE_CHECK_CMD" || true
+    else
+        log "start detached: update check"
+        detach_run "$UPDATE_CHECK_CMD" --force || true
+    fi
 }
 
 fast_startup() {
