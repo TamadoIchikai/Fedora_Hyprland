@@ -8,7 +8,7 @@ peazip-qt6 unzip unrar 7zip \
 dconf gsettings-desktop-schemas \
 papirus-icon-theme adw-gtk3-theme \
 shared-mime-info xdg-utils desktop-file-utils \
-evince-thumbnailer ffmpegthumbnailer \
+evince-thumbnailer ffmpegthumbnailer f3d \
 polkit mate-polkit \
 xdg-desktop-portal xdg-desktop-portal-gtk
 
@@ -50,6 +50,50 @@ EOF
 echo "Creating xterm symlink to foot (you may be prompted for your password)..."
 # Using -sf to force overwrite if it already exists
 sudo ln -sf $(which foot) /usr/local/bin/xterm
+
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/thumbnailers" "$HOME/.local/share/mime/packages"
+
+# STL/STEP thumbnails come from f3d. Its stock thumbnailers fail under tumbler
+# (X/DRI3 connection breaks), so override them with offscreen EGL rendering.
+# Same file names in ~/.local/share/thumbnailers take priority over /usr/share/thumbnailers.
+echo "Setting up f3d (STL/STEP) thumbnailers with EGL backend..."
+for p in native occt; do
+    sed 's/^Exec=f3d /Exec=f3d --rendering-backend=egl /' \
+        "/usr/share/thumbnailers/f3d-plugin-$p.thumbnailer" \
+        > "$HOME/.local/share/thumbnailers/f3d-plugin-$p.thumbnailer"
+done
+
+echo "Setting up FreeCAD (.FCStd) thumbnailer..."
+
+cat << 'EOF' > "$HOME/.local/bin/fcstd-thumbnailer"
+#!/bin/sh
+# Usage: fcstd-thumbnailer <size> <input.FCStd> <output.png>
+unzip -p "$2" thumbnails/Thumbnail.png > "$3" && [ -s "$3" ]
+EOF
+chmod +x "$HOME/.local/bin/fcstd-thumbnailer"
+
+# Unquoted heredoc so $HOME expands (tumbler needs an absolute path)
+cat << EOF > "$HOME/.local/share/thumbnailers/fcstd.thumbnailer"
+[Thumbnailer Entry]
+TryExec=unzip
+Exec=$HOME/.local/bin/fcstd-thumbnailer %s %i %o
+MimeType=application/x-extension-fcstd;
+EOF
+
+cat << 'EOF' > "$HOME/.local/share/mime/packages/freecad.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-extension-fcstd">
+    <comment>FreeCAD document</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.FCStd" case-sensitive="false"/>
+  </mime-type>
+</mime-info>
+EOF
+update-mime-database "$HOME/.local/share/mime"
+
+# Have Thunar always request thumbnails
+xfconf-query -c thunar -p /misc-thumbnail-mode -n -t string -s THUNAR_THUMBNAIL_MODE_ALWAYS || true
 
 sleep 1
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
@@ -97,3 +141,8 @@ xdg-mime default zen.desktop application/xhtml+xml
 
 sudo update-desktop-database
 sudo update-mime-database /usr/share/mime
+
+# Have tumbler pick up the new thumbnailers and drop cached failures
+rm -rf "$HOME/.cache/thumbnails/fail"
+pkill -x tumblerd || true
+thunar -q 2>/dev/null || true
