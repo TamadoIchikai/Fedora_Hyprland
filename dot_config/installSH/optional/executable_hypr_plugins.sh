@@ -20,8 +20,8 @@ PLUGIN_NAME="hyprexpo"          # also the build output (hyprexpo.so)
 # Shared version pins (HYPREXPO_REV, ...). Env vars win over the file defaults;
 # see versions.env for semantics and the Hyprland/hyprexpo bump workflow.
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=versions.env
-source "$SCRIPT_DIR/versions.env"
+# shellcheck source=../versions.env
+source "$SCRIPT_DIR/../versions.env"
 
 # --- Package sets -----------------------------------------------------------
 # Meta package that pulls the whole hyprpm/Hyprland-header build closure.

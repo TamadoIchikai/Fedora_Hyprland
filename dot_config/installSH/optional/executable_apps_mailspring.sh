@@ -40,7 +40,7 @@ if [ -f "$SYSTEM_DESKTOP" ]; then
   "$USER_DESKTOP"
   echo "✅ Desktop file updated!"
 else
-  echo "⚠️  Warning: Desktop file not found at $DESKTOP_FILE"
+  echo "⚠️  Warning: Desktop file not found at $SYSTEM_DESKTOP"
 fi
 
 echo "✅ Mailspring installed successfully!"

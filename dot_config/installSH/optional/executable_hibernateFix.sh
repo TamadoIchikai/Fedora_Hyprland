@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+# Hibernate with zram: swap to the disk partition before hibernating, restore zram after.
+# NOTE: the disk swap partition is hard-coded below (/dev/nvme0n1p7) - check `swapon --show` first.
+set -euo pipefail
+
 sudo mkdir -p /etc/systemd/system/systemd-hibernate.service.d
 
 sudo tee /etc/systemd/system/hibernate-prepare.service >/dev/null <<'EOF'

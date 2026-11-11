@@ -1,90 +1,52 @@
 #!/usr/bin/env bash
+# System fonts (Font Awesome, Noto CJK) + user fonts (Nerd Fonts, Libron).
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
+
 FONT_DIR="$HOME/.local/share/fonts"
+NERD_FONTS_VERSION="v3.2.1"
+LIBRON_VERSION="v0.25"
 
-# Ensure required packages exist
-if ! command -v wget &>/dev/null; then
-    sudo dnf install -y wget
-fi
+dnf_install fontawesome-fonts \
+  google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts
+require_cmd wget unzip fc-cache
 
-if ! command -v unzip &>/dev/null; then
-    sudo dnf install -y unzip
-fi
-
-# Install Font Awesome and japanese and korean font (system-wide)
-sudo dnf install -y fontawesome-fonts
-sudo dnf install -y google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts 
-
-# Create fonts directory if missing
 mkdir -p "$FONT_DIR"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+NEEDS_CACHE_REFRESH=false
 
-# --- CHECK FOR EXISTING NERD FONTS ---
-NEED_JETBRAINS=true
-NEED_SYMBOLS=true
+# install_font_zip <name> <glob-inside-FONT_DIR> <url>
+# Skips the download when a file matching the glob already exists.
+install_font_zip() {
+  local name="$1" glob="$2" url="$3"
+  local -a existing
+  shopt -s nullglob
+  # shellcheck disable=SC2206 # intentional glob expansion
+  existing=($FONT_DIR/$glob)
+  shopt -u nullglob
 
-# Safely check for matching font files in the directory without breaking the script if empty
-shopt -s nullglob
-jetbrains_files=("$FONT_DIR"/*JetBrainsMono*Nerd*.ttf)
-symbols_files=("$FONT_DIR"/*SymbolsNerdFont*.ttf)
-shopt -u nullglob
+  if ((${#existing[@]} > 0)); then
+    echo "$name already installed. Skipping."
+    return 0
+  fi
 
-if ((${#jetbrains_files[@]} > 0)); then
-    echo -e "JetBrainsMono Nerd Font already exists. Skipping."
-    NEED_JETBRAINS=false
-fi
+  info "Installing $name..."
+  wget -q -O "$TMP_DIR/$name.zip" "$url"
+  unzip -o -qq "$TMP_DIR/$name.zip" -d "$FONT_DIR"
+  NEEDS_CACHE_REFRESH=true
+}
 
-if ((${#symbols_files[@]} > 0)); then
-    echo "Nerd Fonts Symbols Only already exists. Skipping."
-    NEED_SYMBOLS=false
-fi
+install_font_zip "JetBrainsMono Nerd Font" "*JetBrainsMono*Nerd*.ttf" \
+  "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}/JetBrainsMono.zip"
+install_font_zip "Nerd Fonts Symbols Only" "*SymbolsNerdFont*.ttf" \
+  "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}/NerdFontsSymbolsOnly.zip"
+install_font_zip "Libron" "*Libron*.ttf" \
+  "https://github.com/nicoverbruggen/libron/releases/download/${LIBRON_VERSION}/Libron.zip"
 
-# --- DOWNLOAD AND EXTRACT (ONLY IF NEEDED) ---
-if $NEED_JETBRAINS || $NEED_SYMBOLS; then
-    TMP_DIR="$(mktemp -d)"
-    # Ensure cleanup happens automatically upon script exit or error
-    trap 'rm -rf "$TMP_DIR"' EXIT 
-
-    if $NEED_JETBRAINS; then
-        wget -q -O "$TMP_DIR/JetBrainsMono.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
-        unzip -o -qq "$TMP_DIR/JetBrainsMono.zip" -d "$FONT_DIR"
-    fi
-
-    if $NEED_SYMBOLS; then
-        wget -q -O "$TMP_DIR/NerdFontsSymbolsOnly.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip"
-        unzip -o -qq "$TMP_DIR/NerdFontsSymbolsOnly.zip" -d "$FONT_DIR"
-    fi
-
-    # Refresh font cache since we added new fonts
-    fc-cache -fv > /dev/null
-else
-    echo "Nerd Fonts are installed."
-fi
-
-# --- CHECK FOR EXISTING LIBRON FONT ---
-NEED_LIBRON=true
-
-# Safely check for matching font files in the directory without breaking the script if empty
-shopt -s nullglob
-libron_files=("$FONT_DIR"/*Libron*.ttf)
-shopt -u nullglob
-
-if ((${#libron_files[@]} > 0)); then
-    echo "Libron font already exists. Skipping."
-    NEED_LIBRON=false
-fi
-
-# --- DOWNLOAD AND EXTRACT (ONLY IF NEEDED) ---
-if $NEED_LIBRON; then
-    TMP_DIR="$(mktemp -d)"
-    # Ensure cleanup happens automatically upon script exit or error
-    trap 'rm -rf "$TMP_DIR"' EXIT
-
-    wget -q -O "$TMP_DIR/Libron.zip" "https://github.com/nicoverbruggen/libron/releases/download/v0.25/Libron.zip"
-    unzip -o -qq "$TMP_DIR/Libron.zip" -d "$FONT_DIR"
-
-    # Refresh font cache since we added new fonts
-    fc-cache -fv > /dev/null
-else
-    echo "Libron font is installed."
+if $NEEDS_CACHE_REFRESH; then
+  fc-cache -f >/dev/null
 fi

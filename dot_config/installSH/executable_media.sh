@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+# Bar, notifications, audio/bluetooth controls and media playback.
 set -euo pipefail
 
-sudo dnf copr enable -y erikreider/SwayNotificationCenter
-sudo dnf install -y waybar blueman pavucontrol zenity SwayNotificationCenter mpv mpv-mpris playerctl
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
-sudo firewall-cmd --add-port=53317/tcp --add-port=53317/udp --permanent
-sudo firewall-cmd --reload
-sudo firewall-cmd --list-ports
+copr_enable erikreider/SwayNotificationCenter
+dnf_install waybar SwayNotificationCenter blueman pavucontrol zenity mpv mpv-mpris playerctl
