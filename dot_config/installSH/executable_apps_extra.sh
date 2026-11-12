@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/lib/common.sh"
 # Shared NTFS drive (see the post-install notes in install.sh).
 SHARED_DRIVE="${SHARED_DRIVE:-/mnt/sda2}"
 
-dnf_install keepassxc
+dnf_install keepassxc openssh-askpass
 
 flatpak_install \
   com.obsproject.Studio \
