@@ -739,7 +739,7 @@ hl.window_rule({
     size = { 430, 180 }
 })
 
--- Ensure workspace 12 belongs to the laptop monitor
+-- Ensure workspace 12 belongs to laptop monitor
 hl.workspace_rule({
     workspace = "12",
     monitor = laptop_output,
