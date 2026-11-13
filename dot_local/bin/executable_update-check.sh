@@ -69,7 +69,8 @@ CACHE_SECONDS="${UPDATE_CHECK_CACHE_SECONDS:-300}"
 APPIMAGE_TIMEOUT="${UPDATE_CHECK_APPIMAGE_TIMEOUT:-45}"
 ZED_TIMEOUT="${UPDATE_CHECK_ZED_TIMEOUT:-20}"
 ZEN_TIMEOUT="${UPDATE_CHECK_ZEN_TIMEOUT:-20}"
-DNF_TIMEOUT="${UPDATE_CHECK_DNF_TIMEOUT:-30}"
+DNF_TIMEOUT="${UPDATE_CHECK_DNF_TIMEOUT:-90}"
+DNF_CACHE_TIMEOUT="${UPDATE_CHECK_DNF_CACHE_TIMEOUT:-15}"
 FLATPAK_TIMEOUT="${UPDATE_CHECK_FLATPAK_TIMEOUT:-30}"
 NOTIFY_EXPIRE_MS="${UPDATE_CHECK_NOTIFY_EXPIRE_MS:-15000}"
 UPDATE_CHECK_NETWORK_TIMEOUT="${UPDATE_CHECK_NETWORK_TIMEOUT:-30}"
@@ -963,8 +964,16 @@ run_zen_checks() {
     done
 }
 
+# Run "dnf check-update --json" with extra options. stdin is /dev/null so a
+# repo key prompt is refused immediately instead of hanging.
+dnf_query() {
+    local secs="$1" out="$2"
+    shift 2
+    timeout "$secs" dnf check-update --json "$@" </dev/null >"$out" 2>>"$LOG_FILE"
+}
+
 run_dnf_checks() {
-    local out rc count reason response
+    local out rc count reason detail="dnf check-update" cached=""
 
     (( DNF_ENABLED == 1 )) || return 0
 
@@ -972,44 +981,48 @@ run_dnf_checks() {
 
     out="$CACHE_DIR/dnf-check.json"
 
+    # Live check against the repos. skip_if_unavailable lets a repo that can't
+    # be verified as non-root (NetBird's repo_gpgcheck prompts every run) be
+    # skipped instead of failing the whole check.
     set +e
-    timeout "$DNF_TIMEOUT" dnf check-update --json >"$out" 2>>"$LOG_FILE"
+    dnf_query "$DNF_TIMEOUT" "$out" --setopt=skip_if_unavailable=1
     rc=$?
     set -e
 
-    response="$(cat "$out" 2>/dev/null || true)"
-
-    if (( rc == 0 )); then
-        [[ -n "$response" ]] || response='{}'
-        count="$(jq -r '.upgrades | length' <<<"$response" 2>/dev/null || echo 0)"
-        if (( count > 0 )); then
-            record_update "System packages: $count update(s) available"
-            add_row dnf system "System packages" "-" "$count" "update" "dnf check-update"
-            DNF_NEEDS_UPDATE=1
-        else
-            add_row dnf system "System packages" "-" "0" "current" ""
-        fi
-    elif (( rc == 100 )); then
-        [[ -n "$response" ]] || response='{}'
-        count="$(jq -r '.upgrades | length' <<<"$response" 2>/dev/null || echo 0)"
-        if (( count > 0 )); then
-            record_update "System packages: $count update(s) available"
-            add_row dnf system "System packages" "-" "$count" "update" "dnf check-update"
-            DNF_NEEDS_UPDATE=1
-        else
-            add_row dnf system "System packages" "-" "0" "current" ""
-        fi
-    else
-        if (( rc == 124 )); then
-            TIMED_OUT=1
-            reason="checker timed out"
-            log "a checker timed out"
-        else
-            reason="checker failed (rc=$rc)"
-        fi
-        record_error "System packages: $reason"
-        add_row dnf system "System packages" "-" "-" "error" "$reason"
+    # Fall back to the system cache (refreshed by root's dnf-makecache.timer).
+    # It may be old, so the report says so.
+    if (( rc != 0 && rc != 100 )); then
+        log "dnf: live check failed (rc=$rc); using system cache"
+        set +e
+        dnf_query "$DNF_CACHE_TIMEOUT" "$out" --cacheonly
+        rc=$?
+        set -e
+        detail="dnf (cached)"
+        cached="dnf (cached)"
     fi
+
+    if (( rc == 0 || rc == 100 )); then
+        count="$(jq -r '.upgrades | length' "$out" 2>/dev/null || true)"
+        [[ "$count" =~ ^[0-9]+$ ]] || count=0
+        if (( count > 0 )); then
+            record_update "System packages: $count update(s) available"
+            add_row dnf system "System packages" "-" "$count" "update" "$detail"
+            DNF_NEEDS_UPDATE=1
+        else
+            add_row dnf system "System packages" "-" "0" "current" "$cached"
+        fi
+        return 0
+    fi
+
+    if (( rc == 124 )); then
+        TIMED_OUT=1
+        reason="checker timed out"
+        log "a checker timed out"
+    else
+        reason="checker failed (rc=$rc)"
+    fi
+    record_error "System packages: $reason"
+    add_row dnf system "System packages" "-" "-" "error" "$reason"
 }
 
 run_flatpak_checks() {
