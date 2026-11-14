@@ -65,6 +65,7 @@ optional_task "Hyprland plugins (needs Hyprland session)" optional/hypr_plugins.
 optional_task "MangoWC window manager"                 optional/wm_mangowm.sh                  sudo --install
 optional_task "Restore Zen profile from shared drive"  optional/applyFirefoxConfig.sh          user
 optional_task "Move Zen profile/cache to SSD (/var/home)" apps_zen.sh                          sudo --setup-ssd
+optional_task "Restore SSD folders (cache_To_SSD.sh --restore)" cache_To_SSD.sh                 user --restore
 
 TOTAL_TASKS=${#TASK_SCRIPTS[@]}
 
