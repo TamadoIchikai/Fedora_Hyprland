@@ -50,7 +50,7 @@ task "Zed editor"                              apps_zed.sh        user --install
 task "OpenTabletDriver"                        apps_opentablet.sh user
 task "AppImages (LocalSend, Sioyek, Helium)"   apps_AppImages.sh  user --install all
 task "Zotero"                                  apps_zotero.sh     user
-task "Zen browser"                             apps_zen.sh        sudo --install
+task "Zen browser (profile + cache on SSD)"    apps_zen.sh        sudo --install
 task "Cloudflare WARP"                         cloudflare.sh      user
 # --- 4. Optional (never run by --all) ---
 optional_task "Dev tools (uv, gcc, clangd)"            optional/apps_DevTools.sh               user
@@ -64,6 +64,7 @@ optional_task "TLP battery thresholds (ASUS laptop)"   optional/tlp_change.sh   
 optional_task "Hyprland plugins (needs Hyprland session)" optional/hypr_plugins.sh             user --install
 optional_task "MangoWC window manager"                 optional/wm_mangowm.sh                  sudo --install
 optional_task "Restore Zen profile from shared drive"  optional/applyFirefoxConfig.sh          user
+optional_task "Move Zen profile/cache to SSD (/var/home)" apps_zen.sh                          sudo --setup-ssd
 
 TOTAL_TASKS=${#TASK_SCRIPTS[@]}
 
@@ -261,5 +262,10 @@ Manual steps after installation:
 
 6. Optional tasks (see --list), e.g. TLP battery thresholds on the ASUS laptop
    or restoring the Zen profile from the shared drive.
+
+7. Zen profile + cache live on the SSD in /var/home/<user>/zen-config and
+   /var/home/<user>/zen-cache (symlinked from ~/.config/zen and ~/.cache/zen).
+   Re-run the setup any time (safe, prompts before moving anything):
+     sudo ~/.config/installSH/apps_zen.sh --setup-ssd
 EOF
 echo -en "${NC}"

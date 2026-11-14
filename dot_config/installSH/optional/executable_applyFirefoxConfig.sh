@@ -11,7 +11,9 @@ INPUT_INSTALL="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/instal
 
 # ---- OUTPUT TEST BOUNDARIES ----
 # The script will ONLY search for the target folders inside these directories.
-INIT_OUTPUT_PROFILE="$HOME/.config/${OUTPUT_BROWSER}"
+# Resolve the symlink: the profile lives on the SSD (/var/home/<user>/zen-config,
+# set up by apps_zen.sh) and `find` below does not follow a symlinked start path.
+INIT_OUTPUT_PROFILE="$(readlink -f "$HOME/.config/${OUTPUT_BROWSER}")"
 INIT_OUTPUT_INSTALL="/opt/zen"
 
 # =====================================================================

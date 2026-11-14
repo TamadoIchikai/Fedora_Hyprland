@@ -12,13 +12,14 @@ GITHUB_TOKEN="$(installsh_github_token 2>/dev/null || true)"
 export GITHUB_TOKEN
 
 usage() {
-    echo "Usage: sudo $0 --install | --update | --uninstall"
+    echo "Usage: sudo $0 --install | --update | --uninstall | --setup-ssd"
     echo "       $0 --check | --register"
     echo ""
     echo "Options:"
-    echo "  --install      Install Zen Browser (root)"
+    echo "  --install      Install Zen Browser + put its profile/cache on the SSD (root)"
     echo "  --update       Check for and install an update (root)"
     echo "  --uninstall    Remove Zen Browser and its update-check flag (root)"
+    echo "  --setup-ssd    Move/link the Zen profile + cache to ${ZEN_SSD_BASE:-/var/home}/<user> (root, re-runnable)"
     echo "  --check        Print current/latest version without changing anything"
     echo "  --register     Register an existing install with update-check"
     echo "  -h, --help     Show this help"
@@ -38,6 +39,7 @@ case "$1" in
     --uninstall) MODE="uninstall" ;;
     --check)     MODE="check" ;;
     --register)  MODE="register" ;;
+    --setup-ssd) MODE="setup-ssd" ;;
     -h|--help)   MODE="help" ;;
     *)
         echo "❌ Invalid flag: $1"
@@ -53,7 +55,7 @@ fi
 
 # ---- ROOT PRIVILEGE CHECK ----
 # --check and --register must work as the desktop user.
-if [[ "$MODE" =~ ^(install|update|uninstall)$ ]] && [[ $EUID -ne 0 ]]; then
+if [[ "$MODE" =~ ^(install|update|uninstall|setup-ssd)$ ]] && [[ $EUID -ne 0 ]]; then
    echo "❌ This script must be run as root." >&2
    echo "👉 Please run again using: sudo $0 $1" >&2
    exit 1
@@ -75,6 +77,14 @@ INPUT_BROWSER="AA_Zen"
 INPUT_INSTALL="${INPUT_PREFIX}/Customization/AA_Browsers/${INPUT_BROWSER}/installation folder"
 INIT_OUTPUT_INSTALL="/opt/zen"
 
+# Profile/cache location on the root SSD. ~/.config/zen and ~/.cache/zen become
+# symlinks to $ZEN_SSD_BASE/<user>/zen-config and .../zen-cache. Fedora's SELinux
+# policy treats /var/home like /home (file_contexts.subs_dist), so labels match
+# a normal home dir. The env override exists for testing only.
+ZEN_SSD_BASE="${ZEN_SSD_BASE:-/var/home}"
+ZEN_SSD_USER=""
+ZEN_SSD_BACKUPS=()
+
 # ---- SAFETY CLEANUP ----
 cleanup() {
     if [[ -z "${TMP_DIR:-}" ]]; then return; fi
@@ -86,7 +96,9 @@ trap cleanup EXIT
 
 # ---- DEPENDENCY CHECK ----
 case "$MODE" in
-    install|update) DEPS=(curl jq tar awk) ;;
+    install)        DEPS=(curl jq tar awk rsync runuser) ;;
+    update)         DEPS=(curl jq tar awk) ;;
+    setup-ssd)      DEPS=(rsync runuser) ;;
     check)          DEPS=(curl jq awk) ;;
     *)              DEPS=() ;;
 esac
@@ -203,6 +215,156 @@ zen_register() {
         "updated_at=$(date -Is)"
 }
 
+# ---- SSD PROFILE/CACHE SETUP ----
+# Run a command as the desktop user (keeps file ownership correct).
+zen_as_user() {
+    runuser -u "$ZEN_SSD_USER" -- "$@"
+}
+
+zen_is_running() {
+    pgrep -u "$ZEN_SSD_USER" -x 'zen|zen-bin' >/dev/null 2>&1
+}
+
+# zen_link_to_ssd <link> <target> <copy|discard> <label>
+# Make <link> a symlink to <target>. Real directories are migrated first
+# (copy = rsync + checksum verify, discard = start empty). Never overwrites:
+# the old directory is kept as <link>.hdd-bak-<timestamp>.
+# NOTE: callers use `|| rc=1`, which disables errexit here, so every
+# critical command is checked explicitly.
+zen_link_to_ssd() {
+    local link="$1" target="$2" mode="$3" label="$4"
+    local resolved backup diff_out answer size
+
+    # 1) Already a symlink
+    if [[ -L "$link" ]]; then
+        resolved="$(readlink -f "$link" 2>/dev/null || true)"
+        if [[ -n "$resolved" && "$resolved" == "$(readlink -f "$target" 2>/dev/null || true)" ]]; then
+            echo "✅ Zen $label already on SSD: $link -> $target"
+        else
+            echo "⚠️  Skipped Zen $label: $link points to '${resolved:-?}', not $target. Fix it manually." >&2
+        fi
+        return 0
+    fi
+
+    # 2) Something that is not a directory
+    if [[ -e "$link" && ! -d "$link" ]]; then
+        echo "⚠️  Skipped Zen $label: $link exists but is not a directory." >&2
+        return 0
+    fi
+
+    # 3) Missing (fresh install): create target + link before Zen's first start
+    if [[ ! -e "$link" ]]; then
+        if ! zen_as_user mkdir -p "$(dirname "$link")" "$target" \
+           || ! zen_as_user ln -s "$target" "$link"; then
+            echo "❌ Could not create $link -> $target" >&2
+            return 1
+        fi
+        echo "✅ Zen $label created on SSD: $link -> $target"
+        return 0
+    fi
+
+    # 4) Real directory on the old disk: migrate it
+    if zen_is_running; then
+        echo "❌ Zen is running for $ZEN_SSD_USER. Close it completely, then run: sudo $0 --setup-ssd" >&2
+        return 1
+    fi
+    if [[ -d "$target" && -n "$(ls -A "$target" 2>/dev/null)" ]]; then
+        echo "❌ $target already exists and is not empty. Resolve it manually before migrating $link." >&2
+        return 1
+    fi
+
+    size="$(du -sh "$link" 2>/dev/null | cut -f1 || true)"
+    read -r -p "❓ Move Zen $label ($link, ${size:-?}) to $target? [y/N] " answer || answer=""
+    if [[ ! "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+        echo "⏭️  Left Zen $label where it is."
+        return 0
+    fi
+
+    if ! zen_as_user mkdir -p "$target"; then
+        echo "❌ Could not create $target" >&2
+        return 1
+    fi
+
+    if [[ "$mode" == "copy" ]]; then
+        echo "📦 Copying Zen $label to SSD..."
+        if ! zen_as_user rsync -aH "$link/" "$target/"; then
+            echo "❌ Copy failed. Original left untouched: $link" >&2
+            return 1
+        fi
+        if ! diff_out="$(zen_as_user rsync -rcn --itemize-changes "$link/" "$target/")" \
+           || [[ -n "$diff_out" ]]; then
+            echo "❌ Verification failed. Original left untouched: $link" >&2
+            [[ -n "${diff_out:-}" ]] && head -n 20 <<< "$diff_out" >&2
+            return 1
+        fi
+    fi
+
+    backup="$link.hdd-bak-$(date +%Y%m%d-%H%M%S)"
+    if ! mv -- "$link" "$backup"; then
+        echo "❌ Could not rename $link" >&2
+        return 1
+    fi
+    if ! zen_as_user ln -s "$target" "$link"; then
+        echo "❌ Could not create symlink. Restoring $link" >&2
+        mv -- "$backup" "$link" || true
+        return 1
+    fi
+    ZEN_SSD_BACKUPS+=("$backup")
+    echo "✅ Zen $label moved: $link -> $target"
+    return 0
+}
+
+# Put ~/.config/zen and ~/.cache/zen of the desktop user on the SSD.
+zen_setup_ssd() {
+    local home group ssd_dir b rc=0
+
+    ZEN_SSD_USER="$(installsh_target_user)"
+    ZEN_SSD_BACKUPS=()
+
+    if [[ -z "$ZEN_SSD_USER" || "$ZEN_SSD_USER" == "root" ]]; then
+        echo "❌ SSD setup needs a desktop user. Run it with sudo from your own account." >&2
+        return 1
+    fi
+    if ! home="$(installsh_target_home)" || [[ -z "$home" || ! -d "$home" ]]; then
+        echo "❌ Home directory of $ZEN_SSD_USER not found." >&2
+        return 1
+    fi
+    if ! group="$(id -gn "$ZEN_SSD_USER" 2>/dev/null)"; then
+        echo "❌ Unknown user: $ZEN_SSD_USER" >&2
+        return 1
+    fi
+
+    ssd_dir="$ZEN_SSD_BASE/$ZEN_SSD_USER"
+    echo ""
+    echo "💾 Zen profile/cache location: $ssd_dir"
+
+    if ! mkdir -p "$ssd_dir" \
+       || ! chown "$ZEN_SSD_USER:$group" "$ssd_dir" \
+       || ! chmod 700 "$ssd_dir"; then
+        echo "❌ Could not prepare $ssd_dir" >&2
+        return 1
+    fi
+    if command -v restorecon >/dev/null 2>&1; then
+        restorecon "$ZEN_SSD_BASE" "$ssd_dir" || true
+    fi
+
+    zen_link_to_ssd "$home/.config/zen" "$ssd_dir/zen-config" copy    "profile" || rc=1
+    zen_link_to_ssd "$home/.cache/zen"  "$ssd_dir/zen-cache"  discard "cache"   || rc=1
+
+    if command -v restorecon >/dev/null 2>&1; then
+        restorecon -R "$ssd_dir" || true
+    fi
+
+    if ((${#ZEN_SSD_BACKUPS[@]} > 0)); then
+        echo ""
+        echo "🧹 Old copies kept on the previous disk. After checking Zen works, delete them with:"
+        for b in "${ZEN_SSD_BACKUPS[@]}"; do
+            printf "     rm -rf %q\n" "$b"
+        done
+    fi
+    return "$rc"
+}
+
 # Keep --check output machine-readable for update-check.sh.
 if [[ "$MODE" != "check" ]]; then
     echo "========================================"
@@ -221,11 +383,20 @@ if [[ "$MODE" == "register" ]]; then
     exit 0
 fi
 
+# ---- MODE: SETUP-SSD (root) ----
+if [[ "$MODE" == "setup-ssd" ]]; then
+    if zen_setup_ssd; then
+        exit 0
+    fi
+    exit 1
+fi
+
 # ---- MODE: INSTALL CHECK ----
 if [[ "$MODE" == "install" ]]; then
     if [[ -x "$GLOBAL_BIN" ]] || [[ -d "$INSTALL_DIR" ]]; then
         echo "⚠️ Zen browser already installed, use flag --update to check and install new updates"
         zen_register || true
+        zen_setup_ssd || echo "⚠️  SSD profile setup incomplete. Fix the issue above, then run: sudo $0 --setup-ssd"
         exit 0
     fi
     echo "🚀 Starting fresh installation..."
@@ -241,7 +412,8 @@ if [[ "$MODE" == "uninstall" ]]; then
     echo "  - $GLOBAL_BIN     (launcher binary)"
     echo "  - $DESKTOP_FILE   (desktop entry)"
     echo "Your browser profile, downloads, and input files under '$INPUT_INSTALL'"
-    echo "will NOT be touched."
+    echo "will NOT be touched. This includes the SSD profile/cache in"
+    echo "'$ZEN_SSD_BASE/<user>/zen-config' and 'zen-cache' (and their ~/.config/zen, ~/.cache/zen links)."
     echo ""
 
     read -r -p "❓ Are you sure you want to permanently uninstall Zen Browser? [y/N] " confirm
@@ -405,6 +577,8 @@ fi
 
 # ---- POST-ACTION ROUTING ----
 if [[ "$MODE" == "install" ]]; then
+    # Create the profile/cache links on the SSD before Zen's first start.
+    zen_setup_ssd || echo "⚠️  SSD profile setup incomplete. Fix the issue above, then run: sudo $0 --setup-ssd"
     echo ""
     echo "✅ Installation complete! You can now launch Zen Browser."
     echo "👉 Remember to manually run your apply script to configure your profile."
