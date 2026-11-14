@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # work_related.sh - one-shot personal setup for the company training server
-# (Ubuntu 24.04, sudo available). Self-contained: does NOT source lib/.
+# (Ubuntu 24.04). Never prompts for a password: runs as root directly, or
+# uses passwordless sudo (sudo -n). Self-contained: does NOT source lib/.
 #
 #   * apt:            zsh git curl duf gdu trash-cli ripgrep ...
 #   * ~/.local/bin:   fzf zoxide lazygit nvim chezmoi (latest GitHub releases;
@@ -117,7 +118,16 @@ install_gh_release() {
 }
 
 # ------------------------------------------------------------- preflight ----
-[[ $EUID -ne 0 ]] || die "Run as your normal user (the script uses sudo where needed)."
+# Root-level commands: run directly when already root, otherwise passwordless
+# sudo (-n = never prompt; fails fast instead of asking for a password).
+ME="$(id -un)"
+if [[ $EUID -eq 0 ]]; then
+    AS_ROOT=()
+else
+    command -v sudo >/dev/null 2>&1 || die "Not root and sudo is not installed."
+    sudo -n true 2>/dev/null || die "Passwordless sudo is not available for $ME."
+    AS_ROOT=(sudo -n)
+fi
 
 if [[ -r /etc/os-release ]]; then
     # shellcheck disable=SC1091
@@ -135,13 +145,11 @@ esac
 mkdir -p "$BIN_DIR" "$OPT_DIR"
 export PATH="$BIN_DIR:$PATH"
 
-info "Asking for sudo once up front"
-sudo -v
 
 # ------------------------------------------------------------------- apt ----
 info "Installing apt packages: ${APT_PACKAGES[*]}"
-sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${APT_PACKAGES[@]}"
+"${AS_ROOT[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update -qq
+"${AS_ROOT[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${APT_PACKAGES[@]}"
 ok "apt packages installed"
 
 # --------------------------------------------------- GitHub-release tools ----
@@ -213,10 +221,10 @@ fi
 
 # ------------------------------------------------------------ login shell ----
 ZSH_BIN="$(command -v zsh)"
-LOGIN_SHELL="$(getent passwd "$USER" | cut -d: -f7)"
+LOGIN_SHELL="$(getent passwd "$ME" | cut -d: -f7)"
 if [[ "$LOGIN_SHELL" == "$ZSH_BIN" || "$LOGIN_SHELL" == */zsh ]]; then
     ok "Login shell is already zsh"
-elif sudo chsh -s "$ZSH_BIN" "$USER" 2>/dev/null; then
+elif "${AS_ROOT[@]}" chsh -s "$ZSH_BIN" "$ME" 2>/dev/null; then
     ok "Login shell changed to $ZSH_BIN (takes effect on next login)"
 else
     warn "Could not change login shell (LDAP/SSSD account?). Fallback - add to ~/.bashrc:"
