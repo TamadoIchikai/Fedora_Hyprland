@@ -112,6 +112,29 @@ start_user_service() {
     }
 }
 
+# Started here (not in ~/.zprofile) so the agent inherits WAYLAND_DISPLAY and
+# can pop up the askpass dialog for keys added with confirmation (ssh-add -c).
+start_ssh_agent() {
+    local sock="${SSH_AUTH_SOCK:-${XDG_RUNTIME_DIR}/ssh-agent.sock}"
+    local rc=0
+    SSH_AUTH_SOCK="$sock" ssh-add -l >/dev/null 2>&1 || rc=$?
+
+    # ssh-add: 0 = has keys, 1 = no keys, 2 = no agent
+    if (( rc != 2 )); then
+        log "skip: ssh-agent already running on $sock"
+    else
+        rm -f "$sock"
+        log "start ssh-agent on $sock"
+        detach_run env SSH_ASKPASS=/usr/libexec/openssh/gnome-ssh-askpass \
+            ssh-agent -a "$sock"
+    fi
+
+    export SSH_AUTH_SOCK="$sock"
+    systemctl --user import-environment SSH_AUTH_SOCK >>"$BG_LOG" 2>&1 || true
+    dbus-update-activation-environment --systemd SSH_AUTH_SOCK WAYLAND_DISPLAY DISPLAY \
+        >>"$BG_LOG" 2>&1 || true
+}
+
 update_check_startup() {
     [[ "$UPDATE_CHECK_ENABLED" == "1" ]] || {
         log "update check: disabled"
@@ -137,6 +160,7 @@ update_check_startup() {
 fast_startup() {
     log "========== fast_startup =========="
 
+    start_ssh_agent
     run_once_name "waybar" waybar
     run_once_name "fcitx5" fcitx5 -d
     run_once_pattern "wl-paste --type text" wl-paste --type text --watch cliphist store

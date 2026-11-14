@@ -25,23 +25,9 @@ export ADW_DEBUG_COLOR_SCHEME=prefer-dark
 # SSH agent for KeePassXC
 # -----------------------------
 
+# The agent itself is started by ~/.local/bin/autostart.sh inside the
+# graphical session, so it can show the KeePassXC "confirm" askpass dialog.
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.sock"
-
-ssh-add -l >/dev/null 2>&1
-ssh_agent_status=$?
-
-# ssh-add exit codes:
-# 0 = agent works and has keys
-# 1 = agent works but has no keys
-# 2 = no working agent
-if [[ "$ssh_agent_status" -eq 2 ]]; then
-    rm -f "$SSH_AUTH_SOCK"
-    eval "$(ssh-agent -a "$SSH_AUTH_SOCK" -s)" >/dev/null
-fi
-
-# Export this environment to systemd/DBus-launched GUI apps
-systemctl --user import-environment SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
-dbus-update-activation-environment --systemd SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
 
 # Detect current Wayland compositor
 case "$XDG_CURRENT_DESKTOP" in
