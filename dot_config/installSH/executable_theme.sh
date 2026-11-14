@@ -52,7 +52,7 @@ cat >~/.config/qt6ct/qt6ct.conf <<'CONF'
 color_scheme_path=/usr/share/color-schemes/BreezeDark.colors
 custom_palette=true
 icon_theme=breeze-dark
-standard_dialogs=default
+standard_dialogs=xdgdesktopportal
 style=kvantum-dark
 
 [Fonts]

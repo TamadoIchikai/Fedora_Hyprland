@@ -482,6 +482,9 @@ print_managed_apps() {
         [[ -n "$name" ]] || name="$id"
         [[ -n "$version" ]] || version="-"
         [[ -n "$idx" ]] || idx="-"
+        if [[ -n "$(kv_get "$f" pinned || true)" ]]; then
+            idx="$idx (pinned, not checked)"
+        fi
 
         printf '%-24s %-10s %-24s %-16s %s\n' \
             "$id" "$kind" "$name" "$version" "$idx"
@@ -1301,6 +1304,19 @@ fi
 # ------------------------------------------------------------
 
 mapfile -t FLAG_FILES < <(flag_files)
+
+# Drop apps that opted out of update checks (e.g. AppImages pinned to a
+# specific release via the PinnedTag field in apps_AppImages.sh).
+CHECKED_FLAGS=()
+for f in "${FLAG_FILES[@]}"; do
+    if [[ "$(kv_get "$f" update_check || true)" == "0" \
+        || -n "$(kv_get "$f" pinned || true)" ]]; then
+        log "skip $(basename "$f" .env): pinned/excluded from update checks"
+        continue
+    fi
+    CHECKED_FLAGS+=("$f")
+done
+FLAG_FILES=("${CHECKED_FLAGS[@]}")
 MANAGED=${#FLAG_FILES[@]}
 
 SYSTEM_ENABLED=0

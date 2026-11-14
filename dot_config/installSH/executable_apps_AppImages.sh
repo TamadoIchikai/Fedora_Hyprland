@@ -30,27 +30,42 @@ TMP_DIR="$(mktemp -d /tmp/appimage_installer.XXXXXX)"
 #                     into InstallPath/unpacked with the bundled Qt/libs removed,
 #                     so the binary runs on the system Qt (qt6ct/Kvantum/Wayland).
 #                     The ~/.local/bin/<AppName>.AppImage link points at that binary.
+#
+# PinnedTag (optional 6th field, empty = follow the newest stable release):
+#   A GitHub release tag to install exactly (prereleases allowed). Pinned apps
+#   are never updated by --update, report "pinned" in --check, and their flag
+#   carries pinned=<tag> / update_check=0 so update-check.sh skips them.
+#   To change version: edit the tag, then run --install --explicit <index>.
 APPS=(
     "localsend/localsend|linux-x86-64\.AppImage$|LocalSend|$HOME/Downloads/Systems/LocalSend"
     "ahrm/sioyek|sioyek-release-linux\.zip$|Sioyek|$HOME/Downloads/Studies/Sioyek"
     "imputnet/helium-linux|x86_64\.AppImage$|Helium|$HOME/Downloads/Systems/Helium"
     "benapetr/TuxManager|x86_64\.AppImage$|TuxManager|$HOME/Downloads/Systems/TuxManager|unpack-system-qt"
+    "FreeCAD/FreeCAD|Linux-x86_64\.AppImage$|FreeCAD|$HOME/Downloads/Studies/FreeCAD||26.3rc2"
 )
 
 # Define Desktop configurations strictly matching the APPS array indices above.
-# Format: "Comment | ExecArgs | Categories | Keywords | MimeType"
+# Format: "Comment | ExecArgs | Categories | Keywords | MimeType | ExecEnv(optional)"
+# ExecEnv: space-separated VAR=value pairs; the launcher runs `env <ExecEnv> <app>`.
 DESKTOP_FILES=(
     # 0: LocalSend
     "Share files to nearby devices|%u|Network;Utility;|share;files;network;transfer;|"
-    
-    # 2: Sioyek
+
+    # 1: Sioyek
     "PDF viewer designed for research papers|%F|Office;Utility;Application;|pdf;viewer;|application/pdf;"
-    
-    # 3: Helium
+
+    # 2: Helium
     "Private, fast, and honest web browser|%u|Network;WebBrowser;|browser;helium;web;privacy;|text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;"
 
     # 3: TuxManager
     "Linux system monitor inspired by Windows Task Manager||System;Monitor;|task;manager;process;cpu;memory;|"
+
+    # 4: FreeCAD
+    # The AppImage bundles only the xdgdesktopportal Qt theme (no qt6ct), and its
+    # AppRun only defaults to it when QT_QPA_PLATFORMTHEME is unset. Force it so
+    # file dialogs go through xdg-desktop-portal (GTK picker) instead of Qt's
+    # unthemed built-in dialog.
+    "Parametric 3D CAD modeler|%F|Graphics;3DGraphics;Engineering;|cad;3d;modeling;freecad;|application/x-extension-fcstd;|QT_QPA_PLATFORMTHEME=xdgdesktopportal"
 )
 
 # Track if we need to refresh the desktop database at the end
@@ -145,21 +160,68 @@ get_github_release_info() {
     return 1
 }
 
-get_github_url() {
+# Same output as get_github_release_info, but for one exact tag. Prereleases
+# are allowed here because pinning to a tag is an explicit choice.
+get_github_release_info_tag() {
     local repo="$1"
     local pattern="$2"
+    local tag="$3"
+    local response result
+
+    if command -v curl >/dev/null 2>&1; then
+        response=$(curl -fsSL --connect-timeout 5 --max-time 20 \
+            "${CURL_AUTH[@]}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/releases/tags/${tag}") || return 1
+    else
+        response=$(wget -qO- --timeout=20 \
+            "${WGET_AUTH[@]}" \
+            --header="Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/releases/tags/${tag}") || return 1
+    fi
+
+    result=$(jq -r --arg pat "$pattern" '
+        . as $release
+        | $release.assets[]
+        | select(.name | test($pat; "i"))
+        | select(.name | test("arm64"; "i") | not)
+        | [$release.tag_name, .name, .browser_download_url]
+        | @tsv
+    ' <<< "$response" | head -n 1)
+
+    if [[ -n "$result" ]]; then
+        echo "$result"
+        return 0
+    fi
+
+    echo "❌ Error: No asset matching '$pattern' in $repo release '$tag'" >&2
+    return 1
+}
+
+# Dispatch: pinned tag (3rd arg) or newest stable release.
+get_release_info() {
+    local repo="$1"
+    local pattern="$2"
+    local pin="${3:-}"
+
+    if [[ -n "$pin" ]]; then
+        get_github_release_info_tag "$repo" "$pattern" "$pin"
+    else
+        get_github_release_info "$repo" "$pattern"
+    fi
+}
+
+get_github_url() {
     local info
 
-    info=$(get_github_release_info "$repo" "$pattern") || return 1
+    info=$(get_release_info "$@") || return 1
     cut -f3 <<< "$info"
 }
 
 get_github_version() {
-    local repo="$1"
-    local pattern="$2"
     local info
 
-    info=$(get_github_release_info "$repo" "$pattern") || return 1
+    info=$(get_release_info "$@") || return 1
     cut -f1 <<< "$info"
 }
 
@@ -241,7 +303,7 @@ check_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
 
     local old_appimage current_version latest_version state detail release_info
     old_appimage="$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
@@ -253,6 +315,13 @@ check_app() {
     fi
 
     current_version="$(get_local_appimage_version "$old_appimage" || true)"
+
+    # Pinned apps are never compared against upstream.
+    if [[ -n "${PIN:-}" ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$i" "$APP_NAME" "${current_version:-unknown}" "$PIN" "pinned" "pinned to $PIN"
+        return 0
+    fi
 
     release_info="$(get_github_release_info "$REPO" "$PATTERN" 2>/dev/null || true)"
     if [[ -z "$release_info" ]]; then
@@ -305,11 +374,14 @@ do_check() {
 
 # Write flags for AppImages that are already installed, without downloading.
 do_register() {
-    local i repo pattern app_name install_dir
+    local i repo pattern app_name install_dir mode pin
     local appimage_path app_name_lower installed_version binary
+    local -a pin_fields
 
     for i in "${!APPS[@]}"; do
-        IFS='|' read -r repo pattern app_name install_dir mode <<< "${APPS[$i]}"
+        IFS='|' read -r repo pattern app_name install_dir mode pin <<< "${APPS[$i]}"
+        pin_fields=()
+        [[ -n "$pin" ]] && pin_fields=("pinned=$pin" "update_check=0")
 
         appimage_path="$(find "$install_dir" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
         if [[ -z "$appimage_path" ]]; then
@@ -331,6 +403,7 @@ do_register() {
             "install_dir=$install_dir" \
             "binary=$binary" \
             "installed_version=${installed_version:-unknown}" \
+            "${pin_fields[@]}" \
             "updated_at=$(date -Is)" || true
 
         printf 'registered: %s %s\n' "$app_name" "${installed_version:-unknown}"
@@ -491,12 +564,12 @@ do_list() {
     echo "--------------------------------------------------------------------------------"
     
     for i in "${!APPS[@]}"; do
-        IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
+        IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
         local status="-"
         
         if [[ "$check_status" == "true" ]]; then
             # Supress the error output to keep the list UI clean
-            if get_github_url "$REPO" "$PATTERN" >/dev/null 2>&1; then
+            if get_github_url "$REPO" "$PATTERN" "$PIN" >/dev/null 2>&1; then
                 status="Available"
             else
                 status="Unavailable"
@@ -515,9 +588,9 @@ install_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
-    desktop_info="${DESKTOP_FILES[$i]:-||||}"
-    IFS='|' read -r COMMENT EXEC_ARGS CATEGORIES KEYWORDS MIMETYPES <<< "$desktop_info"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
+    desktop_info="${DESKTOP_FILES[$i]:-|||||}"
+    IFS='|' read -r COMMENT EXEC_ARGS CATEGORIES KEYWORDS MIMETYPES EXEC_ENV <<< "$desktop_info"
     
     echo ""
     echo "========================================"
@@ -525,7 +598,8 @@ install_app() {
     echo "========================================"
     
     # 1. Get URL (Fail gracefully if unavailable so `--install all` skips properly)
-    DOWNLOAD_URL=$(get_github_url "$REPO" "$PATTERN" || true)
+    [[ -n "${PIN:-}" ]] && echo "📌 Pinned to release $PIN"
+    DOWNLOAD_URL=$(get_github_url "$REPO" "$PATTERN" "$PIN" || true)
     if [[ -z "$DOWNLOAD_URL" ]]; then
         echo "⚠️ Skipping $APP_NAME: Download URL unavailable."
         return 1
@@ -575,13 +649,16 @@ install_app() {
     mkdir -p "$DESKTOP_DIR"
     DESKTOP_FILE="$DESKTOP_DIR/${APP_NAME_LOWER}.desktop"
     
+    local EXEC_PREFIX=""
+    [[ -n "${EXEC_ENV:-}" ]] && EXEC_PREFIX="env $EXEC_ENV "
+
     echo "📝 Generating desktop shortcut: $DESKTOP_FILE"
     cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
 Name=$APP_NAME
 Comment=$COMMENT
-Exec="$APPIMAGE_BIN" $EXEC_ARGS
+Exec=${EXEC_PREFIX}"$APPIMAGE_BIN" $EXEC_ARGS
 TryExec=$APPIMAGE_BIN
 Icon=$ICON_DEST
 Terminal=false
@@ -597,6 +674,8 @@ EOF
 
     # Register this installation so the login update checker can find it.
     local INSTALLED_VERSION
+    local -a PIN_FIELDS=()
+    [[ -n "${PIN:-}" ]] && PIN_FIELDS=("pinned=$PIN" "update_check=0")
     INSTALLED_VERSION="$(get_local_appimage_version "$APPIMAGE_PATH" || true)"
     installsh_flag_write "appimage-${APP_NAME_LOWER}" \
         "name=$APP_NAME" \
@@ -608,6 +687,7 @@ EOF
         "install_dir=$INSTALL_DIR" \
         "binary=$APPIMAGE_BIN" \
         "installed_version=${INSTALLED_VERSION:-unknown}" \
+        "${PIN_FIELDS[@]}" \
         "updated_at=$(date -Is)" || true
 
     NEEDS_DESKTOP_REFRESH=true
@@ -620,12 +700,18 @@ update_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
 
     echo ""
     echo "========================================"
     echo "Updating [$i] $APP_NAME..."
     echo "========================================"
+
+    if [[ -n "${PIN:-}" ]]; then
+        echo "📌 $APP_NAME is pinned to $PIN; skipping update."
+        echo "   To change version, edit its tag in APPS and run --install --explicit $i."
+        return 0
+    fi
 
     # 1. Verify Local Installation Exists
     if [[ ! -d "$INSTALL_DIR" ]]; then
@@ -757,7 +843,7 @@ delete_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
     
     echo ""
     echo "🗑️  Deleting [$i] $APP_NAME..."
