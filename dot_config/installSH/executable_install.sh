@@ -48,7 +48,7 @@ task "Unified dark theme (GTK/Qt/Flatpak)"     theme.sh           user
 task "KeePassXC + Flatpak apps (Obsidian, Betterbird, Anki, ...)" apps_extra.sh user
 task "Zed editor"                              apps_zed.sh        user --install
 task "OpenTabletDriver"                        apps_opentablet.sh user
-task "AppImages (LocalSend, Sioyek, Helium)"   apps_AppImages.sh  user --install all
+task "AppImages (LocalSend, Sioyek, Helium, TuxManager)" apps_AppImages.sh  user --install all
 task "Zotero"                                  apps_zotero.sh     user
 task "Zen browser (profile + cache on SSD)"    apps_zen.sh        sudo --install
 task "Cloudflare WARP"                         cloudflare.sh      user

@@ -21,11 +21,20 @@ fi
 # Create a secure, auto-cleaning temporary directory in /tmp
 TMP_DIR="$(mktemp -d /tmp/appimage_installer.XXXXXX)"
 
-# Define our apps: "GitHubRepo | AssetRegexPattern | AppName | ExplicitInstallPath"
+# Define our apps: "GitHubRepo | AssetRegexPattern | AppName | ExplicitInstallPath | Mode(optional)"
+#
+# Mode (optional 5th field, empty = run the AppImage as-is):
+#   unpack-system-qt  For Qt AppImages that bundle their own Qt without theme
+#                     plugins (they always look light). The AppImage is kept in
+#                     InstallPath for version tracking, but it is also unpacked
+#                     into InstallPath/unpacked with the bundled Qt/libs removed,
+#                     so the binary runs on the system Qt (qt6ct/Kvantum/Wayland).
+#                     The ~/.local/bin/<AppName>.AppImage link points at that binary.
 APPS=(
     "localsend/localsend|linux-x86-64\.AppImage$|LocalSend|$HOME/Downloads/Systems/LocalSend"
     "ahrm/sioyek|sioyek-release-linux\.zip$|Sioyek|$HOME/Downloads/Studies/Sioyek"
     "imputnet/helium-linux|x86_64\.AppImage$|Helium|$HOME/Downloads/Systems/Helium"
+    "benapetr/TuxManager|x86_64\.AppImage$|TuxManager|$HOME/Downloads/Systems/TuxManager|unpack-system-qt"
 )
 
 # Define Desktop configurations strictly matching the APPS array indices above.
@@ -39,6 +48,9 @@ DESKTOP_FILES=(
     
     # 3: Helium
     "Private, fast, and honest web browser|%u|Network;WebBrowser;|browser;helium;web;privacy;|text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;"
+
+    # 3: TuxManager
+    "Linux system monitor inspired by Windows Task Manager||System;Monitor;|task;manager;process;cpu;memory;|"
 )
 
 # Track if we need to refresh the desktop database at the end
@@ -229,7 +241,7 @@ check_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
 
     local old_appimage current_version latest_version state detail release_info
     old_appimage="$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
@@ -297,7 +309,7 @@ do_register() {
     local appimage_path app_name_lower installed_version binary
 
     for i in "${!APPS[@]}"; do
-        IFS='|' read -r repo pattern app_name install_dir <<< "${APPS[$i]}"
+        IFS='|' read -r repo pattern app_name install_dir mode <<< "${APPS[$i]}"
 
         appimage_path="$(find "$install_dir" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
         if [[ -z "$appimage_path" ]]; then
@@ -358,6 +370,9 @@ extract_archive() {
 extract_icon() {
     local appimage_path="$1"
     local app_name_lower="$2"
+    # Optional: an already-unpacked AppImage tree to search instead of running
+    # --appimage-extract (used by the unpack-system-qt mode).
+    local src_root="${3:-}"
     local icon_dir="$HOME/.local/share/icons"
     mkdir -p "$icon_dir"
     
@@ -366,10 +381,16 @@ extract_icon() {
     local icon_dest=""
     
     pushd "$extract_tmp" >/dev/null || exit 1
-    if "$appimage_path" --appimage-extract >/dev/null 2>&1; then
-        if [[ -d "squashfs-root" ]]; then
+    local search_root="squashfs-root"
+    if [[ -n "$src_root" && -d "$src_root" ]]; then
+        search_root="$src_root"
+    elif ! "$appimage_path" --appimage-extract >/dev/null 2>&1; then
+        search_root=""
+    fi
+    if [[ -n "$search_root" ]]; then
+        if [[ -d "$search_root" ]]; then
             local icon_path
-            icon_path=$(find squashfs-root -type f \( -iname "*.png" -o -iname "*.svg" \) 2>/dev/null \
+            icon_path=$(find "$search_root" -type f \( -iname "*.png" -o -iname "*.svg" \) 2>/dev/null \
               | awk 'BEGIN { IGNORECASE=1 } {
                     p=$0; score=0
                     if (p ~ /\.svg$/) score+=2000
@@ -403,6 +424,64 @@ extract_icon() {
     echo "$icon_dest"
 }
 
+# Unpack an AppImage (without executing it) into <install_dir>/unpacked and
+# strip its bundled Qt + libraries so the binary runs on the system Qt and
+# picks up the system Qt theme (qt6ct, Kvantum, Wayland, ...).
+# Prints the path of the main binary on stdout; messages go to stderr.
+unpack_system_qt() {
+    local appimage_path="$1"
+    local install_dir="$2"
+    local dest="$install_dir/unpacked"
+
+    if ! command -v 7z >/dev/null 2>&1; then
+        echo "❌ Error: 7z not found (install p7zip / 7zip)." >&2
+        return 1
+    fi
+    if ! ldconfig -p 2>/dev/null | grep -q 'libQt6Widgets\.so\.6'; then
+        echo "❌ Error: system Qt6 not found (install qt6-qtbase-gui)." >&2
+        return 1
+    fi
+
+    echo "📦 Unpacking $(basename "$appimage_path") to $dest (system Qt mode)..." >&2
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    if ! 7z x -y -o"$dest" "$appimage_path" >/dev/null; then
+        echo "❌ Error: failed to unpack $appimage_path" >&2
+        return 1
+    fi
+
+    # Drop the bundled Qt, its plugins/config and the libraries it pulled in.
+    rm -rf "$dest/usr/lib" "$dest/usr/plugins" "$dest/usr/translations" "$dest/usr/bin/qt.conf"
+
+    # Main binary: AppRun.wrapped (linuxdeploy) links to it; else use the
+    # top-level .desktop Exec= entry.
+    local bin=""
+    if [[ -L "$dest/AppRun.wrapped" ]]; then
+        bin="$dest/$(readlink "$dest/AppRun.wrapped")"
+    fi
+    if [[ ! -f "$bin" ]]; then
+        local desktop exec_name
+        desktop="$(find "$dest" -maxdepth 1 -name '*.desktop' | head -n 1)"
+        exec_name="$(sed -n 's/^Exec=\([^ ]*\).*/\1/p' "$desktop" 2>/dev/null | head -n 1)"
+        bin="$dest/usr/bin/$(basename "${exec_name:-missing}")"
+    fi
+    if [[ ! -f "$bin" ]]; then
+        echo "❌ Error: could not find the main binary in $dest" >&2
+        return 1
+    fi
+    chmod +x "$bin"
+
+    local missing
+    missing="$(ldd "$bin" 2>/dev/null | grep 'not found' || true)"
+    if [[ -n "$missing" ]]; then
+        echo "❌ Error: missing system libraries for $(basename "$bin"):" >&2
+        echo "$missing" >&2
+        return 1
+    fi
+
+    echo "$bin"
+}
+
 # ---- OPERATION HANDLERS ----
 
 do_list() {
@@ -412,7 +491,7 @@ do_list() {
     echo "--------------------------------------------------------------------------------"
     
     for i in "${!APPS[@]}"; do
-        IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+        IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
         local status="-"
         
         if [[ "$check_status" == "true" ]]; then
@@ -436,7 +515,7 @@ install_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
     desktop_info="${DESKTOP_FILES[$i]:-||||}"
     IFS='|' read -r COMMENT EXEC_ARGS CATEGORIES KEYWORDS MIMETYPES <<< "$desktop_info"
     
@@ -478,13 +557,18 @@ install_app() {
     BINARY_DIR="$HOME/.local/bin"
     mkdir -p "$BINARY_DIR"
     APPIMAGE_BIN="$BINARY_DIR/${APP_NAME}.AppImage"
+    local LINK_TARGET="$APPIMAGE_PATH" ICON_SRC=""
+    if [[ "${MODE:-}" == "unpack-system-qt" ]]; then
+        LINK_TARGET=$(unpack_system_qt "$APPIMAGE_PATH" "$INSTALL_DIR") || return 1
+        ICON_SRC="$INSTALL_DIR/unpacked"
+    fi
     echo "🔗 Linking to $APPIMAGE_BIN"
-    ln -sf "$APPIMAGE_PATH" "$APPIMAGE_BIN"
+    ln -sf "$LINK_TARGET" "$APPIMAGE_BIN"
     
     # 5. Extract Icon
     APP_NAME_LOWER="${APP_NAME,,}"
     echo "🖼️  Extracting application icon..."
-    ICON_DEST=$(extract_icon "$APPIMAGE_PATH" "$APP_NAME_LOWER")
+    ICON_DEST=$(extract_icon "$APPIMAGE_PATH" "$APP_NAME_LOWER" "$ICON_SRC")
     
     # 6. Generate Desktop File
     DESKTOP_DIR="$HOME/.local/share/applications"
@@ -536,7 +620,7 @@ update_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
 
     echo ""
     echo "========================================"
@@ -625,14 +709,19 @@ update_app() {
     BINARY_DIR="$HOME/.local/bin"
     mkdir -p "$BINARY_DIR"
     APPIMAGE_BIN="$BINARY_DIR/${APP_NAME}.AppImage"
+    local LINK_TARGET="$APPIMAGE_PATH" ICON_SRC=""
+    if [[ "${MODE:-}" == "unpack-system-qt" ]]; then
+        LINK_TARGET=$(unpack_system_qt "$APPIMAGE_PATH" "$INSTALL_DIR") || return 1
+        ICON_SRC="$INSTALL_DIR/unpacked"
+    fi
     echo "🔗 Updating symlink to $APPIMAGE_BIN"
-    ln -sf "$APPIMAGE_PATH" "$APPIMAGE_BIN"
+    ln -sf "$LINK_TARGET" "$APPIMAGE_BIN"
 
     # 8. Refresh icon as well, since an application update can change it.
     local APP_NAME_LOWER ICON_DEST
     APP_NAME_LOWER="${APP_NAME,,}"
     echo "🖼️  Updating application icon..."
-    ICON_DEST=$(extract_icon "$APPIMAGE_PATH" "$APP_NAME_LOWER")
+    ICON_DEST=$(extract_icon "$APPIMAGE_PATH" "$APP_NAME_LOWER" "$ICON_SRC")
 
     # Keep the existing desktop entry in sync with the new icon.
     local DESKTOP_FILE
@@ -668,7 +757,7 @@ delete_app() {
         return 1
     fi
 
-    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR <<< "${APPS[$i]}"
+    IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE <<< "${APPS[$i]}"
     
     echo ""
     echo "🗑️  Deleting [$i] $APP_NAME..."

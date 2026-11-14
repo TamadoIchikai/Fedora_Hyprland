@@ -13,7 +13,6 @@ dnf_install keepassxc openssh-askpass
 
 flatpak_install \
   com.obsproject.Studio \
-  io.missioncenter.MissionCenter \
   eu.betterbird.Betterbird \
   com.github.tchx84.Flatseal \
   md.obsidian.Obsidian \
