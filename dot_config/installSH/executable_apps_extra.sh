@@ -17,7 +17,8 @@ flatpak_install \
   eu.betterbird.Betterbird \
   com.github.tchx84.Flatseal \
   md.obsidian.Obsidian \
-  net.ankiweb.Anki
+  net.ankiweb.Anki \
+  com.bambulab.BambuStudio
 
 flatpak override --user \
   --filesystem="$SHARED_DRIVE/BetterBird/" \
