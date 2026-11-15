@@ -65,7 +65,7 @@ DESKTOP_FILES=(
     # AppRun only defaults to it when QT_QPA_PLATFORMTHEME is unset. Force it so
     # file dialogs go through xdg-desktop-portal (GTK picker) instead of Qt's
     # unthemed built-in dialog.
-    "Parametric 3D CAD modeler|%F|Graphics;3DGraphics;Engineering;|cad;3d;modeling;freecad;|application/x-extension-fcstd;|QT_QPA_PLATFORMTHEME=xdgdesktopportal"
+    "Parametric 3D CAD modeler|-M $HOME/.local/share/FreeCAD-addons/MruTabs %F|Graphics;3DGraphics;Engineering;|cad;3d;modeling;freecad;|application/x-extension-fcstd;|QT_QPA_PLATFORMTHEME=xdgdesktopportal"
 )
 
 # Track if we need to refresh the desktop database at the end
