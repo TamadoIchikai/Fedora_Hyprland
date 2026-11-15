@@ -306,7 +306,7 @@ check_app() {
     IFS='|' read -r REPO PATTERN APP_NAME INSTALL_DIR MODE PIN <<< "${APPS[$i]}"
 
     local old_appimage current_version latest_version state detail release_info
-    old_appimage="$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
+    old_appimage="$(find "$INSTALL_DIR/" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
 
     if [[ -z "$old_appimage" ]]; then
         printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
@@ -383,7 +383,7 @@ do_register() {
         pin_fields=()
         [[ -n "$pin" ]] && pin_fields=("pinned=$pin" "update_check=0")
 
-        appimage_path="$(find "$install_dir" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
+        appimage_path="$(find "$install_dir/" -maxdepth 1 -type f -iname '*.AppImage' 2>/dev/null | head -n 1 || true)"
         if [[ -z "$appimage_path" ]]; then
             printf 'skip: %s not installed (%s)\n' "$app_name" "$install_dir" >&2
             continue
@@ -614,12 +614,12 @@ install_app() {
     # 3. Clean old directory and extract
     if [ -n "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
         echo "🗑️ Cleaning existing files in $INSTALL_DIR..."
-        find "$INSTALL_DIR" -mindepth 1 -exec rm -rf {} +
+        find "$INSTALL_DIR/" -mindepth 1 -exec rm -rf {} +
     fi
     extract_archive "$TMP_DOWNLOAD_PATH" "$INSTALL_DIR"
     
     # 4. Bind binary & Symlinks
-    APPIMAGE_PATH=$(find "$INSTALL_DIR" -type f -name "*.AppImage" | head -n 1)
+    APPIMAGE_PATH=$(find "$INSTALL_DIR/" -type f -name "*.AppImage" | head -n 1)
     if [[ -z "$APPIMAGE_PATH" ]]; then
         echo "❌ Error: No AppImage found in $INSTALL_DIR"
         return 1
@@ -720,7 +720,7 @@ update_app() {
     fi
 
     local old_appimage
-    old_appimage=$(find "$INSTALL_DIR" -maxdepth 1 -type f -iname "*.AppImage" | head -n 1)
+    old_appimage=$(find "$INSTALL_DIR/" -maxdepth 1 -type f -iname "*.AppImage" | head -n 1)
     if [[ -z "$old_appimage" ]]; then
         echo "⚠️ Skipping $APP_NAME: No existing .AppImage found in $INSTALL_DIR"
         return 0
@@ -775,13 +775,13 @@ update_app() {
 
     # 5. Remove old AppImage(s) and extract new one.
     echo "🗑️ Removing old AppImage file(s)..."
-    find "$INSTALL_DIR" -maxdepth 1 -type f -iname "*.AppImage" -exec rm -f {} +
+    find "$INSTALL_DIR/" -maxdepth 1 -type f -iname "*.AppImage" -exec rm -f {} +
 
     extract_archive "$TMP_DOWNLOAD_PATH" "$INSTALL_DIR"
 
     # 6. Find the new AppImage.
     local APPIMAGE_PATH
-    APPIMAGE_PATH=$(find "$INSTALL_DIR" -type f -iname "*.AppImage" | head -n 1)
+    APPIMAGE_PATH=$(find "$INSTALL_DIR/" -type f -iname "*.AppImage" | head -n 1)
     if [[ -z "$APPIMAGE_PATH" ]]; then
         echo "❌ Error: No AppImage found after extraction in $INSTALL_DIR"
         return 1
@@ -849,7 +849,18 @@ delete_app() {
     echo "🗑️  Deleting [$i] $APP_NAME..."
     
     # 1. Wipe the explicit installation folder
-    if [[ -d "$INSTALL_DIR" ]]; then
+    # If the folder was moved to the SSD by cache_To_SSD.sh, INSTALL_DIR is a
+    # symlink: remove the real target too, not just the link.
+    if [[ -L "$INSTALL_DIR" ]]; then
+        local real_dir
+        real_dir="$(readlink -f -- "$INSTALL_DIR" || true)"
+        if [[ -n "$real_dir" && -d "$real_dir" ]]; then
+            echo "Removing installation directory: $real_dir (via $INSTALL_DIR)"
+            rm -rf -- "$real_dir"
+        fi
+        rm -f -- "$INSTALL_DIR"
+        echo "Note: $INSTALL_DIR was moved by cache_To_SSD.sh; drop its registry entry (cache_To_SSD.sh --list / --revert)."
+    elif [[ -d "$INSTALL_DIR" ]]; then
         echo "Removing installation directory: $INSTALL_DIR"
         rm -rf "$INSTALL_DIR"
     fi
