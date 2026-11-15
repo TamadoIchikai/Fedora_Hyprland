@@ -176,9 +176,10 @@ medium_startup() {
     exec_park "pavucontrol"
     exec_park "blueman-manager"
     exec_park "LocalSend.AppImage"
-    # exec_park "thunar --window"
+    #exec_park "thunar -w"
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
+    run_once_pattern "thunar --daemon" thunar --daemon
     run_once_pattern "qs -c altTab -d" qs -c altTab -d
     # MonitorWatcher is started by its systemd user service
     # (MonitorWatcher.service, WantedBy=graphical-session.target) so that it is
