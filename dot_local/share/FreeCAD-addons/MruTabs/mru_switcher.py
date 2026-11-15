@@ -36,6 +36,9 @@ PANEL_BG = QtGui.QColor(32, 32, 32, 235)
 PANEL_BORDER = QtGui.QColor(255, 255, 255, 40)
 SEL_BORDER = QtGui.QColor(255, 255, 255, 230)
 TEXT = QtGui.QColor(240, 240, 240)
+CLOSE_SIZE = 20                 # close ("X") button size
+CLOSE_HOVER_BG = QtGui.QColor(196, 43, 28)      # Windows 11 close red
+CLOSE_FG = QtGui.QColor(220, 220, 220)
 
 _NO_THUMB = False               # cache sentinel: "looked, nothing found"
 
@@ -80,6 +83,21 @@ def _doc_for(sub):
     return None
 
 
+def _is_modified(sub):
+    """Unsaved changes? Same flag FreeCAD uses for the '*' in the tab bar."""
+    try:
+        if sub.isWindowModified():
+            return True
+        w = sub.widget()
+        if w is not None and w.isWindowModified():
+            return True
+        doc = _doc_for(sub)
+        gdoc = FreeCADGui.getDocument(doc.Name) if doc else None
+        return bool(getattr(gdoc, "Modified", False))
+    except Exception:
+        return False
+
+
 def _file_thumbnail(sub, dpr):
     doc = _doc_for(sub)
     path = getattr(doc, "FileName", "") if doc else ""
@@ -98,21 +116,25 @@ def _file_thumbnail(sub, dpr):
 # ---- popup ---------------------------------------------------------------
 class SwitcherPopup(QtGui.QWidget):
     clicked = QtCore.Signal(int)
+    close_clicked = QtCore.Signal(int)
 
     def __init__(self, parent):
         super().__init__(parent, Qt.ToolTip | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setMouseTracking(True)
-        self.items = []          # (title, QIcon, QPixmap | None) - only while shown
+        self.items = []          # (title, QIcon, QPixmap | None, modified) - only while shown
         self.rects = []
+        self.close_rects = []
         self.index = 0
         self.hover = -1
+        self.hover_close = -1
         self.title_font = QtGui.QFont(self.font())
         self.title_font.setPointSizeF(self.title_font.pointSizeF() * 1.05)
 
     def set_items(self, items, index):
-        self.items, self.index, self.hover = items, index, -1
+        self.items, self.index = items, index
+        self.hover = self.hover_close = -1
         self._layout()
         self.update()
 
@@ -120,11 +142,20 @@ class SwitcherPopup(QtGui.QWidget):
         self.index = index
         self.update()
 
+    def remove_item(self, i, new_index):
+        if 0 <= i < len(self.items):
+            del self.items[i]
+        self.index = new_index
+        self.hover = self.hover_close = -1
+        self._layout()
+        self.update()
+
     def clear(self):
         """Release all pixmaps/icons held by the popup."""
         self.items = []
         self.rects = []
-        self.hover = -1
+        self.close_rects = []
+        self.hover = self.hover_close = -1
 
     def hideEvent(self, ev):
         self.clear()
@@ -139,12 +170,18 @@ class SwitcherPopup(QtGui.QWidget):
         cols = max(1, min(n, MAX_COLS, fit))
         rows = (n + cols - 1) // cols
         self.rects = []
+        self.close_rects = []
         for i in range(n):
             r, c = divmod(i, cols)
             in_row = cols if r < rows - 1 else n - cols * (rows - 1)
             x0 = MARGIN + (cols - in_row) * (cw + SPACING) / 2.0
-            self.rects.append(QtCore.QRectF(x0 + c * (cw + SPACING),
-                                            MARGIN + r * (ch + SPACING), cw, ch))
+            rect = QtCore.QRectF(x0 + c * (cw + SPACING),
+                                 MARGIN + r * (ch + SPACING), cw, ch)
+            self.rects.append(rect)
+            self.close_rects.append(QtCore.QRectF(
+                rect.right() - CARD_PAD - CLOSE_SIZE,
+                rect.top() + CARD_PAD + (TITLE_H - 4 - CLOSE_SIZE) / 2.0,
+                CLOSE_SIZE, CLOSE_SIZE))
         self.resize(int(2 * MARGIN + cols * cw + (cols - 1) * SPACING),
                     int(2 * MARGIN + rows * ch + (rows - 1) * SPACING))
 
@@ -161,7 +198,7 @@ class SwitcherPopup(QtGui.QWidget):
 
         p.setFont(self.title_font)
         fm = p.fontMetrics()
-        for i, (title, icon, pix) in enumerate(self.items):
+        for i, (title, icon, pix, modified) in enumerate(self.items):
             r = self.rects[i]
             sel, hov = i == self.index, i == self.hover
             if sel or hov:
@@ -173,11 +210,18 @@ class SwitcherPopup(QtGui.QWidget):
             if icon is not None and not icon.isNull():
                 icon.paint(p, QtCore.QRect(int(tx), int(ty + (TITLE_H - 18) / 2 - 2), 18, 18))
                 tx += 24
-            avail = int(r.right() - CARD_PAD - tx)
+            avail = int(r.right() - CARD_PAD - CLOSE_SIZE - 6 - tx)
+            if modified:            # keep the '*' visible even when the name is elided
+                text = fm.elidedText(title, Qt.ElideRight,
+                                     max(0, avail - fm.horizontalAdvance("*"))) + "*"
+            else:
+                text = fm.elidedText(title, Qt.ElideRight, avail)
             p.setPen(TEXT)
             p.drawText(QtCore.QRectF(tx, ty, avail, TITLE_H - 4),
-                       int(Qt.AlignVCenter | Qt.AlignLeft),
-                       fm.elidedText(title, Qt.ElideRight, avail))
+                       int(Qt.AlignVCenter | Qt.AlignLeft), text)
+
+            if sel or hov:
+                self._paint_close(p, self.close_rects[i], i == self.hover_close)
 
             tr = QtCore.QRectF(r.left() + CARD_PAD, ty + TITLE_H, THUMB_W, THUMB_H)
             clip = QtGui.QPainterPath()
@@ -196,27 +240,44 @@ class SwitcherPopup(QtGui.QWidget):
             p.restore()
         p.end()
 
+    @staticmethod
+    def _paint_close(p, rect, hot):
+        p.save()
+        if hot:
+            p.setPen(Qt.NoPen)
+            p.setBrush(CLOSE_HOVER_BG)
+            p.drawRoundedRect(rect, 4, 4)
+        pen = QtGui.QPen(QtGui.QColor(255, 255, 255) if hot else CLOSE_FG, 1.6)
+        pen.setCapStyle(Qt.RoundCap)
+        p.setPen(pen)
+        g = rect.adjusted(6, 6, -6, -6)
+        p.drawLine(g.topLeft(), g.bottomRight())
+        p.drawLine(g.topRight(), g.bottomLeft())
+        p.restore()
+
     def _hit(self, ev):
+        """Return (card index or -1, True if on that card's close button)."""
         pos = ev.position() if hasattr(ev, "position") else QtCore.QPointF(ev.pos())
         for i, r in enumerate(self.rects):
             if r.contains(pos):
-                return i
-        return -1
+                return i, self.close_rects[i].contains(pos)
+        return -1, False
 
     def mouseMoveEvent(self, ev):
-        h = self._hit(ev)
-        if h != self.hover:
-            self.hover = h
+        h, on_close = self._hit(ev)
+        hc = h if on_close else -1
+        if h != self.hover or hc != self.hover_close:
+            self.hover, self.hover_close = h, hc
             self.update()
 
     def leaveEvent(self, ev):
-        self.hover = -1
+        self.hover = self.hover_close = -1
         self.update()
 
     def mousePressEvent(self, ev):
-        h = self._hit(ev)
+        h, on_close = self._hit(ev)
         if h >= 0:
-            self.clicked.emit(h)
+            (self.close_clicked if on_close else self.clicked).emit(h)
 
 
 # ---- switcher logic ------------------------------------------------------
@@ -234,6 +295,7 @@ class MruSwitcher(QtCore.QObject):
 
         self.popup = SwitcherPopup(mdi.window())
         self.popup.clicked.connect(self._on_click)
+        self.popup.close_clicked.connect(self._on_close_clicked)
 
         self.show_timer = QtCore.QTimer(self)
         self.show_timer.setSingleShot(True)
@@ -266,7 +328,26 @@ class MruSwitcher(QtCore.QObject):
         if self._capture_target is sub:
             self._capture_target = None
         if self.cycling and any(w is sub for w in self.snapshot):
+            # e.g. other views of a document that just closed: drop their cards,
+            # deferred so we don't re-layout from inside destroyed()
+            QtCore.QTimer.singleShot(0, lambda s=sub: self._drop_from_snapshot(s))
+
+    def _drop_from_snapshot(self, sub):
+        if self.dead or not self.cycling:
+            return
+        idx = next((k for k, w in enumerate(self.snapshot) if w is sub), -1)
+        if idx < 0:
+            return
+        del self.snapshot[idx]
+        if not self.snapshot:
             self._finish(commit=False)
+            return
+        if self.index > idx:
+            self.index -= 1
+        self.index = min(self.index, len(self.snapshot) - 1)
+        if self.popup.isVisible():
+            self.popup.remove_item(idx, self.index)
+            self._center_popup()
 
     def _prune(self):
         live = [w for w in self.mdi.subWindowList() if _alive(w)]
@@ -348,18 +429,39 @@ class MruSwitcher(QtCore.QObject):
                 return
             img = self._thumb_for(w, dpr)
             pix = QtGui.QPixmap.fromImage(img) if img is not None else None
-            items.append((w.windowTitle().replace("[*]", ""), w.windowIcon(), pix))
+            items.append((w.windowTitle().replace("[*]", ""), w.windowIcon(), pix,
+                          _is_modified(w)))
         self.popup.set_items(items, self.index)
+        self._center_popup()
+        self.popup.show()
+        self.popup.raise_()
+
+    def _center_popup(self):
         geo = self.popup.frameGeometry()
         geo.moveCenter(self.mdi.mapToGlobal(self.mdi.rect().center()))
         self.popup.move(geo.topLeft())
-        self.popup.show()
-        self.popup.raise_()
 
     def _on_click(self, i):
         if self.cycling:
             self.index = i
             self._finish(commit=True)
+
+    def _on_close_clicked(self, i):
+        """Close a view from its card - same behaviour as the tab bar's X."""
+        if not self.cycling or not 0 <= i < len(self.snapshot):
+            return
+        sub = self.snapshot[i]
+        if not _alive(sub):
+            self._drop_from_snapshot(sub)
+            return
+        if _is_modified(sub):
+            # FreeCAD will ask to save: get out of the way first, so releasing
+            # Ctrl while the dialog is open doesn't commit a switch.
+            self._finish(commit=False)
+            QtCore.QTimer.singleShot(0, lambda s=sub: _alive(s) and s.close())
+            return
+        if sub.close():
+            self._drop_from_snapshot(sub)
 
     def _finish(self, commit):
         if not self.cycling:
@@ -407,6 +509,9 @@ class MruSwitcher(QtCore.QObject):
                     return True
                 if key == Qt.Key_Right or key == Qt.Key_Left:
                     self._step(1 if key == Qt.Key_Right else -1)
+                    return True
+                if key == Qt.Key_Delete:
+                    self._on_close_clicked(self.index)
                     return True
             return False
 
