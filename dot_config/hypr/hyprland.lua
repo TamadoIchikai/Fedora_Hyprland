@@ -114,6 +114,8 @@ end)
 ]==]
 hl.on("hyprland.start", function()
     hl.exec_cmd("bash -lc 'exec " .. autostart_wrapper .. "'")
+    -- Alt+Tab switcher UI (see the ALT + TAB binds)
+    hl.exec_cmd("qs -c altTab -d")
 end)
 ---
 -------------------------------
@@ -297,7 +299,36 @@ hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(displayPicker))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(keyboardManager))
 hl.bind(mainAlt .. "+ CTRL + P", hl.dsp.exec_cmd("hyprctl reload"))
 hl.bind(secondMod .. " + O", hl.dsp.exec_cmd(calculator))
-hl.bind(secondMod .. " + TAB", hl.dsp.exec_cmd(appSwitcher))
+-- Alt+Tab switcher (~/.config/quickshell/altTab, started by `qs -c altTab -d`).
+-- Based on hypr-user.lua by ducduy9304, https://github.com/ducduy9304/hyprland-caelestia
+-- Hold ALT: Tab / Shift+Tab move the selection, releasing ALT focuses it,
+-- ALT + Escape cancels. The old fuzzel switcher is still in `appSwitcher`.
+local alttab_open = false
+local function alttab(action)
+    hl.dispatch(hl.dsp.global("alttab:" .. action))
+end
+hl.bind(secondMod .. " + TAB", function()
+    alttab_open = true
+    alttab("next")
+end, { repeating = true })
+hl.bind(secondMod .. " + SHIFT + TAB", function()
+    alttab_open = true
+    alttab("prev")
+end, { repeating = true })
+hl.bind(secondMod .. " + ESCAPE", function()
+    alttab_open = false
+    alttab("cancel")
+end)
+-- A release bind on ALT only fires after a lone tap of ALT, never after ALT + Tab,
+-- so watch the raw key events (xkb key codes: 64 = Left Alt, 108 = Right Alt).
+local KEY_LEFTALT = 64
+local KEY_RIGHTALT = 108
+hl.on("input.keyboard.key", function(key, _time, pressed)
+    if alttab_open and pressed == 0 and (key == KEY_LEFTALT or key == KEY_RIGHTALT) then
+        alttab_open = false
+        alttab("commit")
+    end
+end)
 hl.bind(mainMod .. " + CTRL + X", hl.dsp.exec_cmd("chezmoi apply"))
 hl.bind(mainAlt .. " + X", hl.dsp.exec_cmd("$HOME/.config/waybar/scripts/restartWaybar.sh"))
 hl.bind(mainAlt .. " + C", hl.dsp.exec_cmd("hyprctl reload > /dev/null 2>&1"))
@@ -408,6 +439,13 @@ hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
+
+-- Alt+Tab switcher (quickshell altTab): appear and disappear instantly
+hl.layer_rule({
+    name    = "alttab-no-anim",
+    match   = { namespace = "^alttab$" },
+    no_anim = true,
+})
 
 -- Pavucontrol
 hl.window_rule({
