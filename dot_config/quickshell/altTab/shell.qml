@@ -25,7 +25,10 @@ ShellRoot {
     // Parking workspace (WM_PARK_WORKSPACE in ~/.config/abstractions/hyprland/workspace.sh).
     readonly property int parkWorkspace: 11
     // A quick ALT+Tab tap switches without showing the UI, like Windows 11.
-    readonly property int showDelayMs: 120
+    // Previews start capturing immediately (hidden), so this overlaps the capture time.
+    readonly property int showDelayMs: 30
+    // Show anyway after this long if some window can't be captured (its card shows the icon).
+    readonly property int captureTimeoutMs: 100
     readonly property int previewWidth: 256
     readonly property int previewHeight: 144
 
@@ -41,6 +44,15 @@ ShellRoot {
     property list<HyprlandToplevel> windows
     property int selected
     property bool open: false
+    // Hidden UI is built on open so previews capture before it is shown.
+    property bool delayElapsed: false
+    property bool captureTimedOut: false
+    property int capturedCount: 0
+    // Latched: once visible, stays visible until closed.
+    property bool shown: false
+    readonly property bool readyToShow: open && delayElapsed
+        && (captureTimedOut || capturedCount >= windows.length)
+    onReadyToShowChanged: if (readyToShow) shown = true
 
     function recentWindows(): list<HyprlandToplevel> {
         const shown = Hyprland.toplevels.values.filter(t => {
@@ -62,8 +74,16 @@ ShellRoot {
             // On an empty workspace nothing is focused, so the first step lands on the newest window.
             const focusedIsFirst = windows[0].lastIpcObject.workspace.id === Hyprland.focusedWorkspace?.id;
             selected = focusedIsFirst ? 0 : -direction;
+            // Reset before `open`, so stale flags can't briefly satisfy readyToShow.
+            delayElapsed = false;
+            captureTimedOut = false;
+            capturedCount = 0;
+            shown = false;
             open = true;
+            // Build the (invisible) UI right away so the snapshots start now.
+            loader.active = true;
             showTimer.restart();
+            captureTimer.restart();
         }
         const count = windows.length;
         selected = ((selected + direction) % count + count) % count;
@@ -100,15 +120,23 @@ ShellRoot {
     // Destroying the UI also frees every preview buffer.
     function close(): void {
         showTimer.stop();
+        captureTimer.stop();
         loader.active = false;
         open = false;
+        shown = false;
         windows = [];
     }
 
     Timer {
         id: showTimer
         interval: root.showDelayMs
-        onTriggered: loader.active = root.open
+        onTriggered: root.delayElapsed = true
+    }
+
+    Timer {
+        id: captureTimer
+        interval: root.captureTimeoutMs
+        onTriggered: root.captureTimedOut = true
     }
 
     // Keep lastIpcObject (focus order, workspace, mapped) current. Only events
@@ -141,6 +169,9 @@ ShellRoot {
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             // Hyprland binds drive the switcher, so it never takes the keyboard.
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            // While hidden (waiting for previews) let the mouse pass through.
+            property Region hiddenMask: Region {}
+            mask: root.shown ? null : hiddenMask
 
             // No anchors: the compositor centres it.
             implicitWidth: grid.implicitWidth + 32
@@ -148,6 +179,8 @@ ShellRoot {
 
             Rectangle {
                 anchors.fill: parent
+                // opacity (not visible) so the previews still render while hidden.
+                opacity: root.shown ? 1 : 0
                 color: root.bgColor
                 radius: 16
                 border.width: 1
@@ -188,6 +221,7 @@ ShellRoot {
                                 id: mouse
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                enabled: root.shown
                                 onEntered: root.selected = card.index
                                 onClicked: {
                                     const target = card.modelData;
@@ -269,6 +303,7 @@ ShellRoot {
                                         live: false
                                         constraintSize.width: root.previewWidth
                                         constraintSize.height: root.previewHeight
+                                        onHasContentChanged: if (hasContent) root.capturedCount++
                                     }
                                 }
                             }
