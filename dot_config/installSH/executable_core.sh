@@ -36,9 +36,10 @@ fi
 
 # Lock the pair so routine upgrades cannot break the plugin ABI.
 if [[ "$VERSIONLOCK" == "1" ]]; then
-  sudo dnf versionlock add hyprland hyprland-devel
-  echo "🔒 hyprland + hyprland-devel locked to the installed EVR (dnf versionlock list)."
-  echo "👉 To bump later: sudo dnf versionlock delete hyprland hyprland-devel"
+  # shellcheck disable=SC2086  # intentional word splitting of the list
+  sudo dnf versionlock add $HYPR_LOCK_PKGS hyprland-devel
+  echo "🔒 $HYPR_LOCK_PKGS hyprland-devel locked to the installed EVR (dnf versionlock list)."
+  echo "👉 To bump later: see BUMP WORKFLOW in versions.env"
 fi
 
 Hyprland --version | head -n1
