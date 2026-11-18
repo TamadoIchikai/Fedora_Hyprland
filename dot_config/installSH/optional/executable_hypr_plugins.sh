@@ -4,15 +4,19 @@ set -euo pipefail
 # ============================================================================
 # hypr_plugins.sh - Build & install Hyprland plugins via hyprpm on Fedora
 # ----------------------------------------------------------------------------
-# 1. Installs the build closure (hyprland-devel at the INSTALLED Hyprland EVR)
+# 1. Installs the build deps (hyprland-devel at the INSTALLED Hyprland EVR)
 # 2. Builds + enables the plugin via hyprpm at a pinned git rev
 # 3. Locks Hyprland + its ABI libs with dnf versionlock (survives dnf update)
-# 4. Removes every package the run pulled in, except runtime libraries
+# 4. Verifies the plugin loads the way it will at login (`hyprpm reload`)
+#
+# Build deps are intentionally KEPT: `hyprpm reload` (run at every login to
+# load the plugin) validates its headers with `pkgconf --cflags hyprland`,
+# which needs the *-devel .pc files (aquamarine, hyprutils, cairo, ...).
+# Removing them makes every new session load no plugins at all.
 #
 # Run as your normal user (NOT root): hyprpm needs your Hyprland session and
 # its per-user cache (/var/cache/hyprpm/$USER), and calls sudo by itself.
-# You are asked for your password ONCE; a background keepalive refreshes the
-# sudo timestamp so the long Hyprland/plugin builds don't let it expire.
+# The password is asked ONCE (see sudo_setup).
 # ============================================================================
 
 # --- Plugin definition ------------------------------------------------------
@@ -25,49 +29,33 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../versions.env
 source "$SCRIPT_DIR/../versions.env"
 
-# --- Package sets -----------------------------------------------------------
-# Toolchain the rest of installSH keeps anyway (never removed).
-KEEP_BASE=(meson ninja-build gcc gcc-c++ make git git-core cmake
-  pkgconf pkgconf-pkg-config cpio)
-# Runtime libraries; never removed. Extended at runtime with whatever the
-# built .so actually links against (protect_plugin_runtime).
-RUNTIME=(hyprland lua-libs hyprlang hyprutils hyprcursor hyprgraphics
-  libwayland-server libxkbcommon libpixman-1 libdrm libinput)
+TOOLCHAIN=(meson ninja-build gcc gcc-c++ make git cmake pkgconf-pkg-config cpio)
 # hyprpm's header hash covers Hyprland's commit AND these libs' versions;
-# upgrading any of them makes hyprpm refuse to load the plugin at boot.
+# upgrading any of them makes hyprpm refuse to load the plugin at login.
 read -r -a LOCK_PKGS <<< "${HYPR_LOCK_PKGS:-hyprland}"
-
-# hyprpm build output: current hyprpm uses /var/cache/hyprpm/$USER, older
-# releases ~/.local/share/hyprpm.
+# hyprpm cache: /var/cache/hyprpm/$USER (current) or ~/.local/share/hyprpm (old)
 HYPRPM_DIRS=("/var/cache/hyprpm/${USER:-$(id -un)}" "$HOME/.local/share/hyprpm")
-
-# Packages pulled in by a run; persisted so --cleanup works after a failure.
-STATE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/hypr_plugins/deps.txt"
+HYPR_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hypr"
 
 FORCE=0
-KEEP_DEPS=0
 TMP_DIR=""
 KEEPALIVE_PID=""
 RESOLVED_REV=""
 
 # ---------------------------------------------------------------------------
-# Generic helpers
+# Helpers
 # ---------------------------------------------------------------------------
 usage() {
   cat <<EOF
 Usage: $0 <mode> [options]
 
 Modes:
-  --install     Install build deps, add + enable + load the plugin, lock
-                versions, then remove build-only deps (keeps runtime libs)
-  --update      Rebuild headers/plugins (e.g. after a version bump), re-lock,
-                clean up
-  --cleanup     Remove build-only deps recorded by a previous (failed) run
+  --install     Install build deps, add + enable + load the plugin, lock versions
+  --update      Rebuild headers/plugins (after a version bump), re-lock
   --uninstall   Disable + remove the plugin and its version locks
 
 Options:
   --force       Remove and re-add the plugin repository (clean rebuild)
-  --keep-deps   Skip the post-install dependency cleanup
   -h, --help    Show this help
 
 Version pinning (versions.env):
@@ -88,53 +76,44 @@ on_exit() {
 }
 trap on_exit EXIT
 
-in_list() {
-  local needle="$1" item; shift
-  for item in "$@"; do [[ "$needle" == "$item" ]] && return 0; done
-  return 1
-}
-
 in_session() { [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; }
 
-# Ask for the password once, then keep the sudo timestamp fresh until exit.
-# hyprpm's own sudo calls share this terminal's timestamp, so they won't
-# prompt again either.
-sudo_begin() {
-  [[ -n "$KEEPALIVE_PID" ]] && return 0
-  echo "🔑 Root is needed for dnf / versionlock / hyprpm installs (asked once)."
+# One password prompt for the whole run.
+#  - hyprpm wraps every privileged step as `sudo <cmd>; sudo echo hyprland;
+#    sudo -k`, and `-k` wipes the cached credential -> next sudo re-prompts.
+#    A `sudo` shim first in PATH (hyprpm resolves sudo via PATH) turns -k/-K
+#    into no-ops; everything else goes to the real sudo.
+#  - A background `sudo -v` loop stops the 5-min timeout expiring during the
+#    long Hyprland-header/plugin builds.
+sudo_setup() {
+  local real
+  real="$(command -v sudo)" || die "'sudo' is required."
+  mkdir -p "$TMP_DIR/bin"
+  cat > "$TMP_DIR/bin/sudo" <<SH
+#!/bin/sh
+case "\${1:-}" in
+  -K) exit 0 ;;
+  -k) shift; [ \$# -eq 0 ] && exit 0 ;;
+esac
+exec "$real" "\$@"
+SH
+  chmod +x "$TMP_DIR/bin/sudo"
+  export PATH="$TMP_DIR/bin:$PATH"
+
+  echo "🔑 Root is needed for dnf / versionlock / hyprpm (asked once)."
   sudo -v || die "sudo authentication failed."
-  ( while kill -0 "$$" 2>/dev/null; do sleep 45; sudo -n -v 2>/dev/null || exit 0; done ) &
+  ( while kill -0 "$$" 2>/dev/null; do sleep 45; "$real" -n -v 2>/dev/null || exit 0; done ) &
   KEEPALIVE_PID=$!
 }
 
 installed_evr() { rpm -q --qf '%{EVR}\n' "$1" 2>/dev/null | head -n1; }
 
-# Prints the subset of the given package names that are NOT installed.
-missing_pkgs() {
-  (( $# )) || return 0
-  rpm -q "$@" 2>/dev/null | sed -n 's/^package \(.*\) is not installed$/\1/p'
-}
-
 install_pkgs() {
   local -a missing=()
-  mapfile -t missing < <(missing_pkgs "$@")
+  mapfile -t missing < <(rpm -q "$@" 2>/dev/null | sed -n 's/^package \(.*\) is not installed$/\1/p')
   (( ${#missing[@]} )) || return 0
   echo "📦 Installing: ${missing[*]}"
   sudo dnf install -y --setopt=install_weak_deps=False "${missing[@]}"
-}
-
-pkg_snapshot() { rpm -qa --qf '%{NAME}\n' | sort -u; }
-
-load_state() { [[ -f "$STATE_FILE" ]] && sed '/^[[:space:]]*$/d' "$STATE_FILE"; return 0; }
-
-# Merge packages added since $TMP_DIR/pre.txt into the state file right away,
-# so a later failure (build error, Ctrl-C) stays recoverable with --cleanup.
-record_new_pkgs() {
-  local -a merged=()
-  mapfile -t merged < <( { load_state; comm -13 "$TMP_DIR/pre.txt" <(pkg_snapshot); } | sort -u )
-  (( ${#merged[@]} )) || return 0
-  mkdir -p "${STATE_FILE%/*}"
-  printf '%s\n' "${merged[@]}" > "$STATE_FILE"
 }
 
 # ---------------------------------------------------------------------------
@@ -182,18 +161,16 @@ resolve_hyprexpo_rev() {
   echo "✅ Matched hyprexpo tag: $RESOLVED_REV"
 }
 
-# Lock everything in LOCK_PKGS (plus hyprland-devel, which cleanup removes
-# but which must not be able to drag hyprland forward on a later reinstall)
-# to the exact EVR the plugin was just built against. One delete + one add.
+# Lock LOCK_PKGS + hyprland-devel to the exact EVR just built against.
 apply_versionlock() {
   if [[ "${VERSIONLOCK:-1}" != "1" ]]; then
-    warn "VERSIONLOCK=0: not locking; a dnf upgrade of ${LOCK_PKGS[*]} WILL break the plugin on next boot."
+    warn "VERSIONLOCK=0: not locking; a dnf upgrade of ${LOCK_PKGS[*]} WILL break the plugin at next login."
     return 0
   fi
   local -a names=() specs=()
   local p evr
   for p in "${LOCK_PKGS[@]}" hyprland-devel; do
-    evr="$(installed_evr "${p/#hyprland-devel/hyprland}")"
+    evr="$(installed_evr "$p")"
     [[ -n "$evr" ]] || { warn "$p not installed; not locking it."; continue; }
     names+=("$p"); specs+=("$p-$evr")
   done
@@ -201,11 +178,6 @@ apply_versionlock() {
   echo "🔒 Locking: ${specs[*]}"
   sudo dnf versionlock delete "${names[@]}" >/dev/null 2>&1 || true
   sudo dnf versionlock add "${specs[@]}" >/dev/null || warn "dnf versionlock add failed."
-}
-
-remove_versionlock() {
-  sudo dnf versionlock delete "${LOCK_PKGS[@]}" hyprland-devel >/dev/null 2>&1 || true
-  echo "🔓 Removed version locks for ${LOCK_PKGS[*]} hyprland-devel."
 }
 
 # ---------------------------------------------------------------------------
@@ -237,8 +209,7 @@ PC
 # ---------------------------------------------------------------------------
 plugin_present() { hyprpm list 2>/dev/null | grep -qi "$PLUGIN_NAME"; }
 plugin_loaded()  { hyprctl plugin list 2>/dev/null | grep -qi "$PLUGIN_NAME"; }
-
-hyprpm_remove() { hyprpm remove "$PLUGIN_NAME" || hyprpm remove "$PLUGIN_URL" || true; }
+hyprpm_remove()  { hyprpm remove "$PLUGIN_NAME" || hyprpm remove "$PLUGIN_URL" || true; }
 
 find_plugin_so() {
   local d
@@ -247,112 +218,62 @@ find_plugin_so() {
   done | head -n1
 }
 
+# Reproduce what happens at login: unload, then `hyprpm reload`. This catches
+# outdated headers / missing .pc files that a still-loaded plugin would hide.
 verify_plugin() {
-  local ok=0 so
+  local so
   so="$(find_plugin_so)"
-  if [[ -z "$so" ]]; then
-    warn "could not locate $PLUGIN_NAME.so under ${HYPRPM_DIRS[*]}"; ok=1
-  elif ldd "$so" 2>/dev/null | grep -q 'not found'; then
-    echo "  ❌ $so has missing shared libraries:"; ldd "$so" | grep 'not found'; ok=1
-  else
-    echo "  ✅ shared libraries resolve: $so"
+  [[ -n "$so" ]] || { warn "could not locate $PLUGIN_NAME.so under ${HYPRPM_DIRS[*]}"; return 1; }
+  if ldd "$so" 2>/dev/null | grep -q 'not found'; then
+    echo "  ❌ $so has missing shared libraries:"; ldd "$so" | grep 'not found'; return 1
   fi
-  if in_session; then
-    if plugin_loaded; then echo "  ✅ plugin loaded: $PLUGIN_NAME"
-    else echo "  ❌ plugin NOT shown by 'hyprctl plugin list'"; ok=1; fi
-  else
-    warn "Not inside a Hyprland session; skipping load check."
+  echo "  ✅ shared libraries resolve: $so"
+
+  if ! in_session; then
+    warn "Not inside a Hyprland session; skipping the login-load test."
+    return 0
   fi
-  return "$ok"
+  plugin_loaded && hyprctl plugin unload "$so" >/dev/null 2>&1 || true
+  hyprpm reload || true
+  if plugin_loaded; then
+    echo "  ✅ loads via 'hyprpm reload' (same as at login)"
+  else
+    echo "  ❌ 'hyprpm reload' did not load $PLUGIN_NAME; it will be missing next session"; return 1
+  fi
 }
 
-# Add the packages providing libs the built .so links against to RUNTIME.
-protect_plugin_runtime() {
-  local so; local -a libs=() pkgs=()
-  so="$(find_plugin_so)"
-  [[ -n "$so" ]] || return 0
-  mapfile -t libs < <(ldd "$so" 2>/dev/null | grep -oE '/[^ ]+\.so[^ ]*')
-  (( ${#libs[@]} )) || return 0
-  mapfile -t pkgs < <(rpm -qf --qf '%{NAME}\n' "${libs[@]}" 2>/dev/null | grep -v ' ' | sort -u)
-  RUNTIME+=("${pkgs[@]}")
-}
-
-# ---------------------------------------------------------------------------
-# Cleanup
-# ---------------------------------------------------------------------------
-# Remove recorded build-only packages, minus runtime/toolchain, minus anything
-# still required by a package outside the set. `rpm -e --test` checks the
-# whole set in one go; blockers are dropped and the check repeats.
-cleanup_deps() {
-  local -a targets=() caps=() keep=() next=()
-  local p out
-  protect_plugin_runtime
-  while IFS= read -r p; do
-    in_list "$p" "${RUNTIME[@]}" "${KEEP_BASE[@]}" || targets+=("$p")
-  done < <( { load_state; echo hyprland-devel; } | sort -u )
-  mapfile -t targets < <(comm -12 <(printf '%s\n' "${targets[@]}" | sort -u) <(pkg_snapshot))
-
-  while (( ${#targets[@]} )); do
-    out="$(LC_ALL=C rpm -e --test "${targets[@]}" 2>&1)" && break
-    mapfile -t caps < <(sed -n 's/^[[:space:]]*\(.*\) is needed by (installed) .*/\1/p' <<<"$out" | awk '{print $1}' | sort -u)
-    mapfile -t keep < <( (( ${#caps[@]} )) && rpm -q --whatprovides "${caps[@]}" --qf '%{NAME}\n' 2>/dev/null | grep -v ' ' | sort -u)
-    next=()
-    for p in "${targets[@]}"; do in_list "$p" "${keep[@]}" || next+=("$p"); done
-    if (( ${#next[@]} == ${#targets[@]} )); then
-      warn "Could not resolve removal blockers; leaving packages installed:"; echo "$out" >&2
-      return 0
-    fi
-    warn "Keeping (still required elsewhere): $(comm -23 <(printf '%s\n' "${targets[@]}" | sort) <(printf '%s\n' "${next[@]}" | sort) | tr '\n' ' ')"
-    targets=("${next[@]}")
-  done
-
-  if (( ${#targets[@]} )); then
-    echo "🗑️  Removing ${#targets[@]} build-only packages..."
-    sudo_begin
-    sudo dnf remove -y --no-autoremove "${targets[@]}"
+# Plugins are only loaded when something runs `hyprpm reload` at login.
+check_login_hook() {
+  if grep -rqs 'hyprpm reload' "$HYPR_CONFIG_DIR"; then
+    echo "  ✅ login hook found ('hyprpm reload' in $HYPR_CONFIG_DIR)"
   else
-    echo "🔎 No build-only packages to remove."
+    warn "Nothing runs 'hyprpm reload' at login, so the plugin won't load next session. Add to hyprland.lua:"
+    echo '      hl.on("hyprland.start", function() hl.exec_cmd("hyprpm reload") end)' >&2
   fi
-  rm -f -- "$STATE_FILE"
 }
 
 # ---------------------------------------------------------------------------
 # Modes
 # ---------------------------------------------------------------------------
-# Shared front half of install/update: deps, shim. Leaves sudo warm.
 prepare_build() {
-  TMP_DIR="$(mktemp -d /tmp/hypr_plugins.XXXXXX)"
-  pkg_snapshot > "$TMP_DIR/pre.txt"
-  sudo_begin
-
+  preflight_versions
+  sudo_setup
   echo "📦 Ensuring toolchain + build deps..."
-  # hyprland-devel pinned to the installed EVR: installing it can never
-  # upgrade hyprland itself mid-session.
-  install_pkgs "${KEEP_BASE[@]}" "hyprland-devel-$(installed_evr hyprland)" \
+  # hyprland-devel pinned to the installed EVR so it can never drag hyprland
+  # forward mid-session. These stay installed (see header).
+  install_pkgs "${TOOLCHAIN[@]}" "hyprland-devel-$(installed_evr hyprland)" \
     || die "Could not install build deps (COPR may have dropped this build). Bump per versions.env, log out/in, rerun."
-  record_new_pkgs
   setup_lua_shim
 }
 
-# Shared back half: verify, lock on success, clean up.
 finish_build() {
   echo "🔎 Verifying plugin..."
   if verify_plugin; then
     apply_versionlock
   else
-    warn "Verification failed; NOT locking versions. Inspect 'hyprctl plugin list' / 'hyprpm update -v'."
+    warn "Verification failed; NOT locking versions. Inspect 'hyprpm reload -v' / 'hyprpm update -v'."
   fi
-  record_new_pkgs
-  if (( KEEP_DEPS )); then
-    echo "⏭️  --keep-deps: leaving build deps installed (remove later with --cleanup)."
-  else
-    echo "🧹 Cleaning up build-only dependencies..."
-    cleanup_deps
-    if in_session; then
-      if plugin_loaded; then echo "  ✅ plugin still loaded"; else warn "plugin no longer listed after cleanup."; fi
-    fi
-  fi
-  return 0
+  check_login_hook
 }
 
 do_install() {
@@ -371,25 +292,22 @@ do_install() {
   fi
 
   echo "🧩 Updating Hyprland headers (hyprpm update)..."
-  hyprpm update || die "hyprpm update failed (see: hyprpm update -v). Build deps are recorded; run '$0 --cleanup'."
+  hyprpm update || die "hyprpm update failed (see: hyprpm update -v)."
 
   if ! plugin_present; then
     echo "🔗 Adding $PLUGIN_URL @ $RESOLVED_REV"
-    hyprpm add "$PLUGIN_URL" "$RESOLVED_REV" || die "hyprpm add failed. Run '$0 --cleanup' to remove build deps."
+    hyprpm add "$PLUGIN_URL" "$RESOLVED_REV" || die "hyprpm add failed."
   fi
   hyprpm enable "$PLUGIN_NAME" || warn "'hyprpm enable' failed (already enabled?)."
-  hyprpm reload || warn "hyprpm reload reported an issue."
 
   finish_build
   echo "🎉 $PLUGIN_NAME @ $RESOLVED_REV installed. Bind: hl.plugin.hyprexpo.expo(\"toggle\")"
 }
 
 do_update() {
-  preflight_versions
   prepare_build
   echo "🔄 Updating headers + plugins..."
-  hyprpm update || die "hyprpm update failed. Run '$0 --cleanup' to remove build deps."
-  hyprpm reload || warn "hyprpm reload reported an issue."
+  hyprpm update || die "hyprpm update failed (see: hyprpm update -v)."
   finish_build
 }
 
@@ -397,13 +315,15 @@ do_uninstall() {
   local ans
   read -r -p "❓ Disable + remove $PLUGIN_NAME and its version locks? (hyprland.lua is not touched) [y/N] " ans
   [[ "$ans" =~ ^[Yy]([Ee][Ss])?$ ]] || { echo "Cancelled."; exit 0; }
-  sudo_begin
+  sudo_setup
   hyprpm disable "$PLUGIN_NAME" || warn "disable reported an issue."
   hyprpm_remove
   hyprpm reload || true
-  [[ "${VERSIONLOCK:-1}" == "1" ]] && remove_versionlock
-  cleanup_deps
-  echo "🎉 $PLUGIN_NAME uninstalled."
+  if [[ "${VERSIONLOCK:-1}" == "1" ]]; then
+    sudo dnf versionlock delete "${LOCK_PKGS[@]}" hyprland-devel >/dev/null 2>&1 || true
+    echo "🔓 Removed version locks."
+  fi
+  echo "🎉 $PLUGIN_NAME uninstalled. Build deps were kept; drop them with: sudo dnf remove hyprland-devel"
 }
 
 # ---------------------------------------------------------------------------
@@ -412,24 +332,22 @@ do_uninstall() {
 MODE=""
 while (( $# )); do
   case "$1" in
-    --install|--update|--cleanup|--uninstall) MODE="${1#--}" ;;
-    --force)     FORCE=1 ;;
-    --keep-deps) KEEP_DEPS=1 ;;
-    -h|--help)   usage; exit 0 ;;
+    --install|--update|--uninstall) MODE="${1#--}" ;;
+    --force)   FORCE=1 ;;
+    -h|--help) usage; exit 0 ;;
     *) usage >&2; die "Invalid flag: $1" ;;
   esac
   shift
 done
 [[ -n "$MODE" ]] || { usage; exit 1; }
 
-(( EUID != 0 )) || die "Run as your normal user, not root/sudo: hyprpm needs your session and per-user cache (you'll be asked for the password once)."
-command -v sudo   >/dev/null || die "'sudo' is required."
-command -v hyprpm >/dev/null || die "'hyprpm' not found (part of the hyprland package)."
+(( EUID != 0 )) || die "Run as your normal user, not root/sudo: hyprpm needs your session and per-user cache (password is asked once)."
+command -v hyprpm  >/dev/null || die "'hyprpm' not found (part of the hyprland package)."
 command -v hyprctl >/dev/null || die "'hyprctl' not found (part of the hyprland package)."
+TMP_DIR="$(mktemp -d /tmp/hypr_plugins.XXXXXX)"
 
 case "$MODE" in
   install)   do_install ;;
   update)    do_update ;;
-  cleanup)   cleanup_deps ;;
   uninstall) do_uninstall ;;
 esac

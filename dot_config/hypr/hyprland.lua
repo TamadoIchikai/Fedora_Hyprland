@@ -113,6 +113,9 @@ exec %s
 end)
 ]==]
 hl.on("hyprland.start", function()
+    -- Hyprland does NOT load hyprpm plugins by itself: load enabled ones
+    -- (hyprexpo) every session. Errors/outdated headers raise a notification.
+    hl.exec_cmd("hyprpm reload")
     hl.exec_cmd("bash -lc 'exec " .. autostart_wrapper .. "'")
     -- Alt+Tab switcher UI (see the ALT + TAB binds)
     hl.exec_cmd("qs -c altTab -d")
@@ -281,7 +284,14 @@ local mainAlt   = mainMod .. " + " .. secondMod
 
 -- Applications
 hl.bind("SUPER + A", function()
-    hl.plugin.hyprexpo.expo("toggle")
+    -- Guard: if the plugin isn't loaded (yet), retry loading it instead of
+    -- erroring with "attempt to call a nil value".
+    local expo = hl.plugin and hl.plugin.hyprexpo
+    if expo then
+        expo.expo("toggle")
+    else
+        hl.exec_cmd("hyprpm reload --notify")
+    end
 end)
 hl.bind("SHIFT + backspace", hl.dsp.exec_cmd("wtype -k 'delete'"))
 
