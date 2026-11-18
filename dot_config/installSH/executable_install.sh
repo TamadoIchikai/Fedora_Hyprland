@@ -255,8 +255,9 @@ Manual steps after installation:
 4. Resticprofile backups:
      rclone config                       # set up the "gdrive" remote
      rclone lsd gdrive:                  # verify the remote
-     resticprofile -c /mnt/sda2/Resticprofiles/profiles.yaml -n default snapshots
-     resticprofile -c /mnt/sda2/Resticprofiles/profiles.yaml -n default schedule --all
+     # RESTIC_SOURCE_BASE comes from ~/.zprofile (log in again after first install)
+     resticprofile -c "$RESTIC_SOURCE_BASE/Resticprofiles/profiles.yaml" -n default snapshots
+     cd "$RESTIC_SOURCE_BASE/Resticprofiles" && resticprofile -c profiles.yaml -n default schedule --all   # run from here: sets the units' WorkingDirectory
 
 5. Inside a Hyprland session, build the Hyprland plugins:
      ~/.config/installSH/install.sh --explicit <index of "Hyprland plugins">   (see --list)
