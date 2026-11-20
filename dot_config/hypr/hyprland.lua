@@ -288,6 +288,16 @@ hl.bind("SUPER + A", function()
     -- erroring with "attempt to call a nil value".
     local expo = hl.plugin and hl.plugin.hyprexpo
     if expo then
+        -- Always show workspaces 1-9 as a fixed 3x3 grid. Set here (not in the
+        -- top-level config) because the plugin is loaded async by hyprpm.
+        hl.config({ plugin = { hyprexpo = {
+            overview_mode    = "grid",
+            dynamic_grid     = 0,
+            columns          = 3,
+            rows             = 3,
+            workspace_method = "first 1",
+            max_workspace    = 9,
+        } } })
         expo.expo("toggle")
     else
         hl.exec_cmd("hyprpm reload --notify")
