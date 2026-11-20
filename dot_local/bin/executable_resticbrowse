@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# resticbrowse - browse restic backups in Thunar via a read-only FUSE mount.
+#
+#   resticbrowse [profile]        (profile defaults to "default")
+#
+# Mounts the profile's repository with `resticprofile ... mount` (run from
+# $RESTIC_SOURCE_BASE/Resticprofiles), so the profile's run-before hook
+# (prepare-restic-password.py) asks for the password through a desktop
+# notification: Enter Password -> a foot window for keepassxc-cli. Thunar
+# opens at ~/Downloads/resticbrowse once the mount is up; the mount stays
+# until you press Ctrl-C or close this terminal. Closing Thunar does NOT
+# unmount. run-finally (cleanup-restic-password.py) removes the password file.
+# Restore = copy files out of snapshots/<time>/... (the mount is read-only).
+#
+# While mounted restic holds a non-exclusive lock: backups still run, but
+# forget/prune wait (lock-wait) for you to unmount.
+
+PROFILE="${1:-default}"
+BASE="${RESTIC_SOURCE_BASE:?RESTIC_SOURCE_BASE is not set (defined in ~/.zprofile; log in again)}"
+WORKDIR="$BASE/Resticprofiles"
+CONFIG="$WORKDIR/profiles.yaml"
+MOUNT_DIR="$HOME/Downloads/resticbrowse"
+WATCHER_PID=""
+MOUNT_PID=""
+
+[[ -f "$CONFIG" ]] || { echo "❌ $CONFIG not found (is $BASE mounted?)" >&2; exit 1; }
+command -v resticprofile >/dev/null || { echo "❌ resticprofile not found in PATH" >&2; exit 1; }
+
+open_thunar() { setsid -f thunar "$MOUNT_DIR" >/dev/null 2>&1 || true; }
+
+unmount() {
+    mountpoint -q "$MOUNT_DIR" 2>/dev/null || return 0
+    fusermount3 -u "$MOUNT_DIR" 2>/dev/null || fusermount3 -uz "$MOUNT_DIR" 2>/dev/null || true
+}
+
+# Any exit path (Ctrl-C, terminal closed, kill, error): unmount, which makes
+# restic exit normally, then give resticprofile time to run its run-finally
+# hook (password-file cleanup) before we leave.
+cleanup() {
+    trap - EXIT INT TERM HUP
+    set +e   # best effort: one failing step must not skip the unmount
+    [[ -n "$WATCHER_PID" ]] && kill "$WATCHER_PID" 2>/dev/null
+    unmount
+    if [[ -n "$MOUNT_PID" ]]; then
+        local i
+        for ((i = 0; i < 60; i++)); do
+            kill -0 "$MOUNT_PID" 2>/dev/null || break
+            sleep 0.5
+        done
+        kill -0 "$MOUNT_PID" 2>/dev/null && kill "$MOUNT_PID" 2>/dev/null
+        wait "$MOUNT_PID" 2>/dev/null
+        local rc=$?
+        unmount
+        # Killed by a signal (e.g. terminal closed) -> resticprofile never ran
+        # its run-finally hook: run the same password cleanup ourselves.
+        if (( rc > 128 )) && [[ -e "$WORKDIR/.restic-password.txt" ]]; then
+            echo "🧹 resticprofile was interrupted; removing the password file"
+            uv run --project "$WORKDIR" python "$WORKDIR/cleanup-restic-password.py"
+        fi
+    fi
+    if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+        echo "⚠️  $MOUNT_DIR is still mounted; run: fusermount3 -uz $MOUNT_DIR" >&2
+    else
+        echo "🔒 $MOUNT_DIR is not mounted (done)."
+    fi
+}
+
+mkdir -p "$MOUNT_DIR"
+
+# Already mounted by another resticbrowse: just open it. A dead FUSE mount
+# (crashed restic) reports as a mountpoint but can't be listed: clear it.
+if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+    if ls "$MOUNT_DIR" >/dev/null 2>&1; then
+        echo "ℹ️  Already mounted at $MOUNT_DIR; opening Thunar (unmount from the terminal that mounted it)."
+        open_thunar
+        exit 0
+    fi
+    echo "🧹 Clearing stale mount at $MOUNT_DIR"
+    fusermount3 -uz "$MOUNT_DIR" 2>/dev/null || true
+fi
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+# Open Thunar once the mount is up (the password hook and the first Google
+# Drive listing can take a while). Gives up if this script ends first.
+(
+    while kill -0 "$$" 2>/dev/null; do
+        if mountpoint -q "$MOUNT_DIR" 2>/dev/null; then
+            open_thunar
+            exit 0
+        fi
+        sleep 1
+    done
+) &
+WATCHER_PID=$!
+
+echo "📦 Mounting restic profile '$PROFILE' at $MOUNT_DIR ..."
+echo "   🔔 Answer the Resticprofile notification: Enter Password (opens a foot window)."
+echo "   Thunar opens once mounted. Press Ctrl-C (or close this terminal) to unmount."
+
+# Run as a child we `wait` on, so a signal (Ctrl-C, terminal closed) reaches
+# our traps immediately instead of after the mount ends. `<&0` keeps the
+# terminal as stdin (bash would give a background job /dev/null), so the
+# password hook can still prompt. Same working directory as the systemd
+# timers, so the uv hooks behave alike.
+cd "$WORKDIR"
+resticprofile -c "$CONFIG" -n "$PROFILE" mount "$MOUNT_DIR" <&0 &
+MOUNT_PID=$!
+wait "$MOUNT_PID"
