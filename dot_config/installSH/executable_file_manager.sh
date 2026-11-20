@@ -51,15 +51,39 @@ fi
 # --- Thumbnailers ---
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/thumbnailers" "$HOME/.local/share/mime/packages"
 
-# STL/STEP thumbnails come from f3d. Its stock thumbnailers fail under tumbler
+# STL/STEP/3MF thumbnails come from f3d. Its stock thumbnailers fail under tumbler
 # (X/DRI3 connection breaks), so override them with offscreen EGL rendering.
 # Same file names in ~/.local/share/thumbnailers take priority over /usr/share/thumbnailers.
-info "Setting up f3d (STL/STEP) thumbnailers with EGL backend..."
-for p in native occt; do
-  sed 's/^Exec=f3d /Exec=f3d --rendering-backend=egl /' \
+# model/3mf is dropped from the assimp entry; 3mf.thumbnailer below handles it instead.
+info "Setting up f3d (STL/STEP/3MF) thumbnailers with EGL backend..."
+for p in native occt assimp; do
+  sed -e 's/^Exec=f3d /Exec=f3d --rendering-backend=egl /' \
+    -e '/^MimeType=/{s/;model\/3mf//;s/model\/3mf;\{0,1\}//}' \
     "/usr/share/thumbnailers/f3d-plugin-$p.thumbnailer" \
     >"$HOME/.local/share/thumbnailers/f3d-plugin-$p.thumbnailer"
 done
+
+# 3MF: render with f3d; if that fails (e.g. Bambu multi-part projects), fall
+# back to the preview image the slicer embeds in the archive.
+info "Setting up 3MF thumbnailer..."
+cat >"$HOME/.local/bin/3mf-thumbnailer" <<'CONF'
+#!/bin/sh
+# Usage: 3mf-thumbnailer <size> <input.3mf> <output.png>
+f3d --rendering-backend=egl --config=thumbnail --load-plugins=assimp --verbose=quiet \
+  --output="$3" --resolution="$1,$1" "$2" && [ -s "$3" ] && exit 0
+for f in Metadata/plate_1.png Metadata/thumbnail.png; do
+  unzip -p "$2" "$f" >"$3" 2>/dev/null && [ -s "$3" ] && exit 0
+done
+exit 1
+CONF
+chmod +x "$HOME/.local/bin/3mf-thumbnailer"
+
+cat >"$HOME/.local/share/thumbnailers/3mf.thumbnailer" <<CONF
+[Thumbnailer Entry]
+TryExec=f3d
+Exec=$HOME/.local/bin/3mf-thumbnailer %s %i %o
+MimeType=model/3mf;
+CONF
 
 info "Setting up FreeCAD (.FCStd) thumbnailer..."
 cat >"$HOME/.local/bin/fcstd-thumbnailer" <<'CONF'
