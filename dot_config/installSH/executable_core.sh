@@ -23,6 +23,16 @@ copr_enable lionheartp/Hyprland
 # quickshell runs ~/.config/quickshell/quickshell_modules (alt-tab + Wi-Fi menu)
 dnf_install hyprlock hyprshutdown hyprland-guiutils wlsunset swaybg quickshell
 
+# Fedora 45 made kmscon the text console. kmscon keeps the GPU (DRM master)
+# open, so Hyprland started from tty1 can't take it (aquamarine fails -> crash).
+# Use the classic getty console instead; kmscon isn't needed for Hyprland.
+if rpm -q kmscon >/dev/null 2>&1; then
+  sudo systemctl disable kmsconvt@.service >/dev/null 2>&1 || true
+  sudo rm -f /etc/systemd/system/autovt@.service
+  sudo systemctl enable getty@tty1.service
+  sudo systemctl daemon-reload
+fi
+
 # Install hyprland at the pinned EVR; fall back to latest when the COPR has
 # dropped the old build (it only keeps the newest in its repodata).
 if [[ -n "$HYPRLAND_EVR" ]]; then
