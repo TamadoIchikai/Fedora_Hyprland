@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Wi-Fi
+GenericName=Network Manager
+Comment=Quickshell Wi-Fi menu (networks, VPN, Ethernet)
+Exec=qs -c quickshell_modules ipc call wifi openCentered
+Icon=nm-device-wireless
+Terminal=false
+Categories=Network;
+Keywords=wifi;wi-fi;wireless;network;vpn;ethernet;internet;

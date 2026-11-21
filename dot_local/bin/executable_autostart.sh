@@ -180,7 +180,14 @@ medium_startup() {
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
     run_once_pattern "thunar --daemon" thunar --daemon
-    run_once_pattern "qs -c quickshell_modules -d" qs -c quickshell_modules -d
+    # Quickshell modules (alt-tab + Wi-Fi menu). Usually already started by
+    # hyprland.lua; ask Quickshell itself so a second instance never starts.
+    if qs -c quickshell_modules ipc show >/dev/null 2>&1; then
+        log "skip: already running: quickshell_modules"
+    else
+        log "start detached: qs -c quickshell_modules -d"
+        detach_run qs -c quickshell_modules -d
+    fi
     # MonitorWatcher is started by its systemd user service
     # (MonitorWatcher.service, WantedBy=graphical-session.target) so that it is
     # tied to the compositor session and torn down cleanly on logout. Starting it

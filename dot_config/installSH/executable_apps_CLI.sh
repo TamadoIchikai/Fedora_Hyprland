@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # CLI + Wayland desktop tools (foot is needed by file_manager.sh later).
+# nm-connection-editor + qrencode-libs: Quickshell Wi-Fi menu ("More settings", QR codes).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,7 +14,7 @@ dnf_install \
   fzf zoxide ripgrep gawk socat btop duf gdu lazygit trash-cli qalculate \
   restic rclone fuse fuse-libs \
   wl-clipboard cliphist wtype setxkbmap swappy swayimg ImageMagick \
-  nm-connection-editor \
+  nm-connection-editor qrencode-libs \
   xournalpp lua-lgi
 
 # resticprofile: install into ~/.local/bin (the upstream installer defaults to ./bin).
