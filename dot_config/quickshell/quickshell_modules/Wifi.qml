@@ -79,16 +79,44 @@ Scope {
     readonly property WifiDevice wifiDevice: devices.find(d => d.type === DeviceType.Wifi) ?? null
     readonly property var wiredDevices: devices.filter(d => d.type === DeviceType.Wired)
 
-    // Connected first, then saved, then strongest. Hidden SSIDs are skipped.
-    readonly property var networks: {
-        if (!wifiDevice || !Networking.wifiEnabled)
-            return [];
-        return wifiDevice.networks.values
+    // Snapshot of the networks: connected first, then saved, then strongest
+    // (hidden SSIDs skipped). NOT a live binding: re-sorting on every signal
+    // change rebuilt the list (and reset the scroll) all the time. Rows still
+    // bind to the live network objects, so icons/state update in place; order
+    // and membership only change on snapshotNetworks(): open, rescan done,
+    // Wi-Fi switched, connection change, forget.
+    property var networks: []
+
+    function snapshotNetworks(): void {
+        if (!wifiDevice || !Networking.wifiEnabled) {
+            networks = [];
+            return;
+        }
+        networks = wifiDevice.networks.values
             .filter(n => n.name !== "")
             .sort((a, b) => (b.connected - a.connected)
                 || (b.known - a.known)
                 || (b.signalStrength - a.signalStrength)
                 || a.name.localeCompare(b.name));
+    }
+
+    // Wi-Fi switched / connected or disconnected: re-snapshot (only while open).
+    Connections {
+        target: Networking
+        function onWifiEnabledChanged(): void {
+            if (!root.open)
+                return;
+            if (Networking.wifiEnabled)
+                root.rescan();
+            root.snapshotNetworks();
+        }
+    }
+    Connections {
+        target: root.wifiDevice
+        function onConnectedChanged(): void {
+            if (root.open)
+                root.snapshotNetworks();
+        }
     }
 
     // ---- VPN (nmcli) ----
@@ -145,7 +173,12 @@ Scope {
         id: vpnList
         command: ["nmcli", "-t", "-e", "yes", "-f", "NAME,UUID,TYPE,STATE,FILENAME", "connection", "show"]
         stdout: StdioCollector {
-            onStreamFinished: root.vpns = root.parseVpns(text)
+            // Only on a real change: a new array would rebuild the whole list.
+            onStreamFinished: {
+                const v = root.parseVpns(text);
+                if (JSON.stringify(v) !== JSON.stringify(root.vpns))
+                    root.vpns = v;
+            }
         }
     }
 
@@ -309,6 +342,7 @@ Scope {
         if (forgetArmed === n.name) {
             forgetArmed = "";
             n.forget();
+            Qt.callLater(snapshotNetworks);
         } else {
             forgetArmed = n.name;
             forgetTimeout.restart();
@@ -330,14 +364,24 @@ Scope {
         if (rescanning || !wifiDevice || !Networking.wifiEnabled)
             return;
         rescanning = true;
+        // Quickshell only lists networks while its scanner is on: enable it for
+        // the scan window only (rescanTimer turns it off again).
+        wifiDevice.scannerEnabled = true;
         Quickshell.execDetached(["nmcli", "device", "wifi", "rescan"]);
         rescanTimer.restart();
     }
 
+    // NetworkManager needs a few seconds to collect results; then take the
+    // new snapshot (the only time the list membership changes by itself).
     Timer {
         id: rescanTimer
         interval: 3000
-        onTriggered: root.rescanning = false
+        onTriggered: {
+            root.rescanning = false;
+            root.snapshotNetworks();
+            if (root.wifiDevice)
+                root.wifiDevice.scannerEnabled = false;
+        }
     }
 
     // ---- Rows ----
@@ -479,7 +523,10 @@ Scope {
         query = "";
         selIndex = -1;
         failed = {};
+        // Cached list right away, then one scan; after that only manual rescans.
+        snapshotNetworks();
         open = true;
+        rescan();
     }
 
     function close(): void {
@@ -614,14 +661,8 @@ Scope {
         function rescan(): void { root.rescan(); }
     }
 
-    // Scan only while the menu is open.
-    Binding {
-        target: root.wifiDevice
-        property: "scannerEnabled"
-        value: root.open
-        when: root.wifiDevice !== null
-        restoreMode: Binding.RestoreNone
-    }
+    // No continuous scanner (scannerEnabled stays off): one `nmcli` rescan per
+    // open plus manual ones, so the list doesn't change under the cursor.
 
     // A row: icon | name | detail column | optional trash button.
     component NetRow: Rectangle {
@@ -1089,6 +1130,19 @@ Scope {
                         boundsBehavior: Flickable.StopAtBounds
                         model: root.entries
 
+                        // A new model (rescan, search, Wi-Fi toggle) recreates the rows
+                        // and jumps to the top: put the scroll position back.
+                        property real keptY: 0
+                        property bool restoring: false
+                        onContentYChanged: if (!restoring) keptY = contentY
+                        onModelChanged: {
+                            restoring = true;
+                            Qt.callLater(() => {
+                                contentY = Math.max(0, Math.min(keptY, contentHeight - height));
+                                restoring = false;
+                            });
+                        }
+
                         ScrollBar.vertical: ScrollBar {
                             id: scrollBar
                             policy: list.overflowing ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
@@ -1129,7 +1183,11 @@ Scope {
                             readonly property bool pskShown: kind === "wifi" && root.pskNetwork !== null
                                 && root.pskNetwork === modelData.net
 
-                            implicitHeight: row.y + row.implicitHeight
+                            // A snapshotted network that went out of range (object gone)
+                            // collapses until the next snapshot instead of an empty row.
+                            readonly property bool gone: kind === "wifi" && net === null
+                            visible: !gone
+                            implicitHeight: gone ? 0 : row.y + row.implicitHeight
                                 + (qrShown ? qrBox.height + 8 : 0)
                                 + (pskShown ? pskBox.height + 8 : 0)
 
