@@ -1,0 +1,8 @@
+# Third-party skill: only skills/drawio-skill from the repo, refreshed weekly.
+[".config/agent-skills/drawio-skill"]
+type = "archive"
+url = "https://github.com/agents365-ai/drawio-skill/archive/refs/heads/main.tar.gz"
+stripComponents = 3
+include = ["*/skills/drawio-skill/**"]
+exact = true
+refreshPeriod = "168h"

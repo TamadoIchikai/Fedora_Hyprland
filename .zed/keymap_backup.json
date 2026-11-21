@@ -1,0 +1,226 @@
+[
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      "tab": "editor::Indent",
+      "shift-tab": "editor::Outdent",
+      "ctrl-shift-v": "editor::Paste",
+      "j k": ["workspace::SendKeystrokes", "escape"],
+      "k j": ["workspace::SendKeystrokes", "escape"]
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "shift-j": "menu::SelectNext",
+      "shift-k": "menu::SelectPrev"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "tab": "editor::Indent",
+      "shift-tab": "editor::Outdent",
+      "ctrl-shift-v": "editor::Paste",
+      "H": ["workspace::SendKeystrokes", "^"],
+      "L": ["workspace::SendKeystrokes", "$"],
+      "K": ["workspace::SendKeystrokes", "ctrl-u"],
+      "J": ["workspace::SendKeystrokes", "ctrl-d"],
+      "j": ["workspace::SendKeystrokes", "g j"],
+      "k": ["workspace::SendKeystrokes", "g k"]
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual",
+    "bindings": {
+      "tab": "editor::Indent",
+      "shift-tab": "editor::Outdent",
+      "ctrl-shift-v": "editor::Paste",
+      "H": ["workspace::SendKeystrokes", "^"],
+      "L": ["workspace::SendKeystrokes", "$"],
+      "K": ["workspace::SendKeystrokes", "ctrl-u"],
+      "J": ["workspace::SendKeystrokes", "ctrl-d"],
+      "j": ["workspace::SendKeystrokes", "g j"],
+      "k": ["workspace::SendKeystrokes", "g k"]
+    }
+  },
+  {
+    "context": "Editor && !menu",
+    "bindings": {
+      "ctrl-h": "pane::ActivatePreviousItem",
+      "ctrl-l": "pane::ActivateNextItem"
+    }
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      "ctrl-h": "pane::ActivatePreviousItem",
+      "ctrl-l": "pane::ActivateNextItem"
+    }
+  },
+  {
+    "context": "SettingsWindow",
+    "bindings": {
+      "ctrl-h": "settings_editor::FocusPreviousFile",
+      "ctrl-l": "settings_editor::FocusNextFile"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-o": "pane::GoBack",
+      "ctrl-i": "pane::GoForward",
+      "ctrl-q": "workspace::CloseWindow",
+      "ctrl-shift-w": "pane::ReopenClosedItem",
+      "ctrl-\\": "pane::SplitRight",
+      "ctrl-shift-o": "workspace::Open",
+      "ctrl-shift-k": "command_palette::Toggle",
+
+      "ctrl-shift-h": "project_panel::ToggleFocus",
+      "ctrl-j": "terminal_panel::ToggleFocus"
+    }
+  },
+
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "ctrl-shift-h": "workspace::ToggleLeftDock"
+    }
+  },
+  {
+    // Step 3: If Terminal is currently focused, hide the bottom dock
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-w": "pane::CloseActiveItem"
+    }
+  },
+
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-g": "go_to_line::Toggle"
+    },
+    "unbind": {
+      "ctrl-shift-j": "editor::JoinLines"
+    }
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-`": "terminal_panel::Toggle"
+    }
+  },
+  {
+    "context": "Editor && (showing_code_actions || showing_completions)",
+    "bindings": {
+      "alt-j": "editor::ContextMenuNext",
+      "alt-k": "editor::ContextMenuPrevious"
+    }
+  },
+  {
+    "context": "Picker > Editor",
+    "bindings": {
+      "alt-j": "menu::SelectNext",
+      "alt-k": "menu::SelectPrevious",
+      "tab": "menu::SelectNext",
+      "shift-tab": "menu::SelectPrevious",
+      "ctrl-p": "menu::SelectNext",
+      "ctrl-shift-p": "menu::SelectPrevious"
+    }
+  },
+  {
+    "context": "FileFinder",
+    "bindings": {
+      "alt-j": "menu::SelectNext",
+      "alt-k": "menu::SelectPrevious",
+      "tab": "menu::SelectNext",
+      "shift-tab": "menu::SelectPrevious",
+      "ctrl-p": "menu::SelectNext",
+      "ctrl-shift-p": "menu::SelectPrevious"
+    }
+  },
+  {
+    "context": "Editor",
+    "unbind": {
+      "ctrl-shift-l": "editor::SelectAllMatches"
+    }
+  },
+  {
+    "context": "Editor",
+    "unbind": {
+      "ctrl-shift-l": "editor::SelectAllMatches"
+    }
+  },
+  {
+    "context": "Editor",
+    "unbind": {
+      "ctrl-shift-l": "editor::SelectAllMatches"
+    }
+  },
+  {
+    "context": "Editor",
+    "unbind": {
+      "ctrl-shift-l": "editor::SelectAllMatches"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-shift-l": "agent::ToggleFocus"
+    }
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-alt-i": "agent::ToggleFocus"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-alt-shift-l": "workspace::ToggleRightDock"
+    }
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-alt-b": "workspace::ToggleRightDock"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-alt-shift-h": "workspace::ToggleLeftDock"
+    }
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-b": "workspace::ToggleLeftDock"
+    }
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-shift-j": "workspace::ToggleBottomDock"
+    }
+  },
+  {
+    "context": "Workspace",
+    "unbind": {
+      "ctrl-j": "workspace::ToggleBottomDock"
+    }
+  },
+  {
+    "context": "VimControl && !menu",
+    "unbind": {
+      "ctrl-j": "vim::Down"
+    }
+  },
+  {
+    "context": "vim_mode == literal",
+    "unbind": {
+      "ctrl-j": ["vim::Literal", ["ctrl-j", "\n"]]
+    }
+  }
+]

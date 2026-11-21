@@ -5,17 +5,18 @@
 #
 # Fedora / Linux
 #
-# Shared Windows + Fedora configuration:
+# Layout (all provided by chezmoi, see ~/.local/share/chezmoi):
 #
-#   /mnt/sda2/Customization/Zed/
-#   └── zed_configs/
-#       ├── <Zed config files>
-#       └── skills/
+#   ~/.config/zed            -> ~/.local/share/chezmoi/.zed   (Zed edits land in git)
+#   ~/.config/agent-skills/  <name>/SKILL.md  (drawio-skill = .chezmoiexternal.toml)
+#   ~/.agents/skills         -> ~/.config/agent-skills
+#   ~/.claude/skills/<name>  -> ~/.config/agent-skills/<name>  (made by this script)
 #
-# Linux:
-#
-#   ~/.config/zed  -> /mnt/sda2/Customization/Zed/zed_configs
-#   ~/.agents/skills -> /mnt/sda2/Customization/Zed/zed_configs/skills
+# Why both skill links: Zed's built-in agent reads ~/.agents/skills, but the
+# Claude agent in Zed (claude-agent-acp = Claude Code) only reads
+# ~/.claude/skills. Skills are linked one by one so ~/.claude/skills/synced
+# (managed by claude.ai) is left alone. chezmoi re-runs --link-skills on every
+# apply (.chezmoiscripts/run_after_link-claude-skills.sh).
 #
 # ============================================================
 
@@ -50,14 +51,18 @@ case "${1:-}" in
     --register)
         MODE="register"
         ;;
+    --link-skills)
+        MODE="link-skills"
+        ;;
     -h|--help)
         cat <<'EOF'
 Usage:
-  apps_zed.sh                 Install Zed and configure symlinks
+  apps_zed.sh                 Install Zed and link skills into ~/.claude/skills
   apps_zed.sh --install       Same as above
   apps_zed.sh --check         Show installed/latest version (no changes)
   apps_zed.sh --update        Run the official installer and refresh state
   apps_zed.sh --register      Write update-checker flag for an existing install
+  apps_zed.sh --link-skills   Re-link shared skills into ~/.claude/skills only
   apps_zed.sh --help          Show this help
 EOF
         exit 0
@@ -72,12 +77,10 @@ esac
 # Configuration
 # ============================================================
 
-COMMON_ZED_DIR="/mnt/sda2/Customization/Zed"
-COMMON_CONFIG_DIR="${COMMON_ZED_DIR}/zed_configs"
-COMMON_SKILLS_DIR="${COMMON_ZED_DIR}/skills"
-
+SKILLS_DIR="${HOME}/.config/agent-skills"
 ZED_CONFIG_DIR="${HOME}/.config/zed"
 AGENT_SKILLS_DIR="${HOME}/.agents/skills"
+CLAUDE_SKILLS_DIR="${HOME}/.claude/skills"
 
 # ============================================================
 # Colors / output helpers
@@ -211,97 +214,6 @@ if [[ "${MODE}" == "register" ]]; then
 fi
 
 # ============================================================
-# Check dependencies
-# ============================================================
-
-info "Checking required commands..."
-
-for command in curl mountpoint mv mkdir ln readlink; do
-    if ! command -v "$command" >/dev/null 2>&1; then
-        error "Required command not found: ${command}"
-        exit 1
-    fi
-done
-
-success "Required commands are available."
-
-# ============================================================
-# Check external drive
-# ============================================================
-
-info "Checking external drive..."
-
-if ! mountpoint -q /mnt/sda2; then
-    error "/mnt/sda2 is not mounted."
-    error "Mount the drive first, then run this script again."
-    exit 1
-fi
-
-success "/mnt/sda2 is mounted."
-
-# ============================================================
-# Check common directories
-# ============================================================
-
-info "Checking shared Zed directories..."
-
-if [[ ! -d "${COMMON_ZED_DIR}" ]]; then
-    error "Common Zed directory does not exist:"
-    error "  ${COMMON_ZED_DIR}"
-    exit 1
-fi
-
-if [[ ! -d "${COMMON_CONFIG_DIR}" ]]; then
-    error "Zed configuration directory does not exist:"
-    error "  ${COMMON_CONFIG_DIR}"
-    exit 1
-fi
-
-if [[ ! -d "${COMMON_SKILLS_DIR}" ]]; then
-    error "Agent skills directory does not exist:"
-    error "  ${COMMON_SKILLS_DIR}"
-    exit 1
-fi
-
-success "Shared Zed directories are available."
-
-# ============================================================
-# Install Zed
-# ============================================================
-
-info "Installing Zed Editor..."
-
-if command -v zed >/dev/null 2>&1; then
-    success "Zed is already installed."
-else
-    info "Running official Zed installer..."
-
-    curl -f https://zed.dev/install.sh | sh
-
-    success "Zed installation completed."
-fi
-
-# ============================================================
-# Refresh PATH
-# ============================================================
-#
-# The Zed installer normally places the binary in ~/.local/bin.
-# The current shell may not have that directory in PATH yet.
-#
-# ============================================================
-
-if [[ -d "${HOME}/.local/bin" ]]; then
-    export PATH="${HOME}/.local/bin:${PATH}"
-fi
-
-if command -v zed >/dev/null 2>&1; then
-    success "Zed executable found: $(command -v zed)"
-else
-    warning "Zed was installed, but 'zed' is not currently in PATH."
-    warning "You may need to restart your shell."
-fi
-
-# ============================================================
 # Backup existing destination
 # ============================================================
 
@@ -418,60 +330,95 @@ create_symlink() {
 }
 
 # ============================================================
-# Zed configuration
+# Claude skills (~/.claude/skills/<name> -> shared skills)
 # ============================================================
 
-info "Configuring Zed..."
+link_claude_skills() {
+    local skill_dir name link target
+    local linked=0
 
-create_symlink \
-    "${COMMON_CONFIG_DIR}" \
-    "${ZED_CONFIG_DIR}"
+    info "Linking shared skills into ${CLAUDE_SKILLS_DIR}..."
+    mkdir -p -- "${CLAUDE_SKILLS_DIR}"
 
-# ============================================================
-# Agent skills
-# ============================================================
+    for skill_dir in "${SKILLS_DIR}"/*/; do
+        [[ -f "${skill_dir}SKILL.md" ]] || continue
+        name="$(basename -- "${skill_dir}")"
+        create_symlink "${SKILLS_DIR}/${name}" "${CLAUDE_SKILLS_DIR}/${name}"
+        linked=$((linked + 1))
+    done
 
-info "Configuring Zed Agent Skills..."
+    # Drop our links whose shared skill was removed or renamed.
+    for link in "${CLAUDE_SKILLS_DIR}"/*; do
+        [[ -L "${link}" ]] || continue
+        target="$(readlink -- "${link}")"
+        if [[ "${target}" == "${SKILLS_DIR}/"* && ! -e "${link}" ]]; then
+            rm -f -- "${link}"
+            info "Removed stale skill link: ${link}"
+        fi
+    done
 
-create_symlink \
-    "${COMMON_SKILLS_DIR}" \
-    "${AGENT_SKILLS_DIR}"
+    success "Linked ${linked} shared skill(s) into ${CLAUDE_SKILLS_DIR}."
+}
 
-# ============================================================
-# Final verification
-# ============================================================
-
-info "Verifying installation..."
-
-echo
-echo "Zed configuration:"
-printf '  %s -> %s\n' \
-    "${ZED_CONFIG_DIR}" \
-    "$(readlink -- "${ZED_CONFIG_DIR}")"
-
-echo
-echo "Agent skills:"
-printf '  %s -> %s\n' \
-    "${AGENT_SKILLS_DIR}" \
-    "$(readlink -- "${AGENT_SKILLS_DIR}")"
-
-echo
-
-if [[ -L "${ZED_CONFIG_DIR}" ]] &&
-   [[ "$(readlink -- "${ZED_CONFIG_DIR}")" == "${COMMON_CONFIG_DIR}" ]]; then
-    success "Zed configuration link verified."
-else
-    error "Zed configuration link verification failed."
-    exit 1
+if [[ "${MODE}" == "link-skills" ]]; then
+    link_claude_skills
+    exit 0
 fi
 
-if [[ -L "${AGENT_SKILLS_DIR}" ]] &&
-   [[ "$(readlink -- "${AGENT_SKILLS_DIR}")" == "${COMMON_SKILLS_DIR}" ]]; then
-    success "Agent skills link verified."
+# ============================================================
+# Install Zed
+# ============================================================
+
+for command in curl mkdir ln readlink; do
+    if ! command -v "$command" >/dev/null 2>&1; then
+        error "Required command not found: ${command}"
+        exit 1
+    fi
+done
+
+info "Installing Zed Editor..."
+
+if command -v zed >/dev/null 2>&1; then
+    success "Zed is already installed."
 else
-    error "Agent skills link verification failed."
-    exit 1
+    info "Running official Zed installer..."
+
+    curl -f https://zed.dev/install.sh | sh
+
+    success "Zed installation completed."
 fi
+
+# ============================================================
+# Refresh PATH
+# ============================================================
+#
+# The Zed installer normally places the binary in ~/.local/bin.
+# The current shell may not have that directory in PATH yet.
+#
+# ============================================================
+
+if [[ -d "${HOME}/.local/bin" ]]; then
+    export PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+if command -v zed >/dev/null 2>&1; then
+    success "Zed executable found: $(command -v zed)"
+else
+    warning "Zed was installed, but 'zed' is not currently in PATH."
+    warning "You may need to restart your shell."
+fi
+
+# ============================================================
+# Skills + chezmoi-managed links
+# ============================================================
+
+link_claude_skills
+
+for path in "${ZED_CONFIG_DIR}" "${AGENT_SKILLS_DIR}"; do
+    if [[ ! -e "${path}" ]]; then
+        warning "${path} is missing; run: chezmoi apply"
+    fi
+done
 
 # ============================================================
 # Register installation for the login update checker
@@ -493,24 +440,6 @@ installsh_flag_write "zed" \
 
 echo
 success "Zed setup completed successfully."
-
-echo
-echo "Shared configuration:"
-echo "  ${COMMON_CONFIG_DIR}"
-
-echo
-echo "Linux Zed configuration:"
-echo "  ${ZED_CONFIG_DIR}"
-echo "    -> ${COMMON_CONFIG_DIR}"
-
-echo
-echo "Shared agent skills:"
-echo "  ${COMMON_SKILLS_DIR}"
-
-echo
-echo "Linux agent skills:"
-echo "  ${AGENT_SKILLS_DIR}"
-echo "    -> ${COMMON_SKILLS_DIR}"
 
 echo
 echo "You can now start Zed with:"

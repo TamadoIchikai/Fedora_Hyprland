@@ -1,0 +1,183 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "inline_code_actions": false,
+  "markdown_preview": {
+    "open_markdown_files_in_preview": false
+  },
+  "cursor_shape": "bar",
+  "cursor_animation": {
+    "enabled": false
+  },
+  "ssh_connections": [
+    {
+      "host": "ducduy",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/home/ducduy/TriDepTrai"
+          ]
+        }
+      ]
+    }
+  ],
+  "diff_view_style": "split",
+  "agent_ui_font_size": 16.0,
+  "buffer_font_weight": 400.0,
+  "cli_default_open_behavior": "existing_window",
+  "proxy": "",
+  "agent_servers": {
+    "claude-acp": {
+      "favorite_config_option_values": {
+        "model": ["opus"]
+      },
+      "default_config_options": {
+        "agent": "default",
+        "mode": "plan",
+        "model": "opus"
+      },
+      "type": "registry"
+    },
+    "opencode": {
+      "default_config_options": {
+        "model": "opencode/deepseek-v4.1-flash-free",
+        "mode": "plan"
+      },
+      "type": "registry"
+    }
+  },
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+
+  // VS Code: editor.inlineSuggest.experimental.emptyResponseInformation / Copilot visibility
+  "show_edit_predictions": false,
+
+  "git_panel": {
+    "dock": "left",
+    "sort_by_path": true,
+    "fallback_branch_name": "master"
+  },
+
+  "git": {
+    "blame": {
+      "show_avatar": true
+    },
+    "enable_diff": true,
+    "enable_status": true,
+    "git_gutter": "hide"
+  },
+
+  "terminal": {
+    "font_size": 15.0,
+    "shell": "system"
+  },
+
+  "disable_ai": false,
+  "vim_mode": true,
+
+  // VS Code: telemetry.telemetryLevel = off
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+
+  "agent": {
+    "default_width": 500.0,
+    "flexible": false,
+    "dock": "right",
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini"
+    },
+    "enabled": true,
+    "button": true,
+    "model_parameters": []
+  },
+
+  // VS Code: files.autoSave = onFocusChange
+  "autosave": "on_focus_change",
+
+  // VS Code: editor.formatOnSave = true
+  "format_on_save": "on",
+
+  // VS Code: editor.formatOnType = false
+  "use_on_type_format": false,
+
+  "soft_wrap": "editor_width",
+
+  // VS Code: breadcrumbs.enabled = false
+  "toolbar": {
+    "breadcrumbs": false
+  },
+
+  // VS Code: editor.codeLens = false
+  "code_lens": "off",
+
+  // VS Code: workbench.startupEditor = none
+  "restore_on_startup": "empty_tab",
+
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+
+  "base_keymap": "VSCode",
+
+  "ui_font_size": 16,
+  "buffer_font_size": 15.0,
+
+  "theme": {
+    "mode": "dark",
+    "light": "One Dark",
+    "dark": "One Dark"
+  },
+
+  // VS Code: files.watcherExclude
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/.jj",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/.classpath",
+    "**/.settings",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.vscode/**",
+    "**/coverage/**",
+    "**/__generated__/**",
+    "**/tmp/**",
+    "**/.cache/**"
+  ],
+
+  "languages": {
+    "Python": {
+      "language_servers": [
+        "pyrefly",
+        "!ty",
+        "!pyright",
+        "!pylsp",
+        "!basedpyright",
+        "!ruff"
+      ]
+    }
+  }
+}

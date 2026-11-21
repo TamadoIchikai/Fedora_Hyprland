@@ -1,0 +1,75 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "show_edit_predictions": false,
+  "git_panel": {
+    "dock": "left",
+    "sort_by_path": true,
+    "fallback_branch_name": "master"
+  },
+  "terminal": {
+    "shell": {
+      "program": "powershell.exe"
+    }
+  },
+  "disable_ai": false,
+  "vim_mode": true,
+  "telemetry": {
+    "diagnostics": true,
+    "metrics": true
+  },
+  "agent": {
+    "dock": "right",
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini"
+    },
+    "always_allow_tool_actions": false,
+    "enabled": true,
+    "button": true,
+    "model_parameters": []
+  },
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000
+    }
+  },
+  "soft_wrap": "editor_width",
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+  "base_keymap": "VSCode",
+  "ui_font_size": 16,
+  "buffer_font_size": 15,
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+  "languages": {
+    "Python": {
+      "language_servers": [
+        "ty",
+        "pyright",
+        "!basedpyright"
+      ]
+    }
+  }
+}
