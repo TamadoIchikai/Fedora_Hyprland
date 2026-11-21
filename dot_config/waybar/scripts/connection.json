@@ -15,7 +15,7 @@
     "format-disconnected": "󰖪",
     "tooltip-format": "{essid} {frequency}MHz {signalStrength}%",
     "interval": 5,
-    "on-click": "networkmanager_dmenu",
+    "on-click": "qs -c quickshell_modules ipc call wifi toggle",
     "format-icons": [
 	    "󰤯",   
 	    "󰤟",   

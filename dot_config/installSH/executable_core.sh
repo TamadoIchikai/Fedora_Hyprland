@@ -20,7 +20,8 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 
 # --- Hyprland ecosystem ---
 copr_enable lionheartp/Hyprland
-dnf_install hyprlock hyprshutdown hyprland-guiutils wlsunset swaybg
+# quickshell runs ~/.config/quickshell/quickshell_modules (alt-tab + Wi-Fi menu)
+dnf_install hyprlock hyprshutdown hyprland-guiutils wlsunset swaybg quickshell
 
 # Install hyprland at the pinned EVR; fall back to latest when the COPR has
 # dropped the old build (it only keeps the newest in its repodata).

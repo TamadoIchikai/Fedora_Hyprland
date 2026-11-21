@@ -382,7 +382,7 @@ def dmenu_cmd(prompt, active_lines=None):
             command.extend(["-m", "-q"])
     # Passphrase prompts
     obscure = CONF.getboolean("dmenu_passphrase", "obscure", fallback=False)
-    if prompt == "Passphrase" and obscure is True:
+    if prompt.strip() == "Passphrase" and obscure is True:
         obscure_color = CONF.get(
             "dmenu_passphrase", "obscure_color", fallback="#222222"
         )
@@ -938,8 +938,16 @@ def get_selection(all_actions):
     highlight = CONF.getboolean("dmenu", "highlight", fallback=False)
     inp = []
 
+    active_icon = expanduser(CONF.get("dmenu", "active_icon", fallback=""))
+    fuzzel_icon = highlight is True and cmd_base == "fuzzel" and active_icon
     if highlight is True and cmd_base == "rofi":
         inp = [str(action) for action in all_actions]
+    elif fuzzel_icon:
+        # Mark active rows with an icon (rofi extended dmenu protocol)
+        inp = [
+            str(action) + (f"\0icon\x1f{active_icon}" if action.is_active else "")
+            for action in all_actions
+        ]
     elif highlight is True and cmd_base == "wofi":
         inp = [
             get_wofi_highlight_markup(action)
@@ -960,6 +968,10 @@ def get_selection(all_actions):
 
     prompt = CONF.get("dmenu", "prompt", fallback="Networks")
     command = dmenu_cmd(f"{prompt} ", active_lines=active_lines)
+    if cmd_base == "fuzzel":
+        # Shrink window to the longest row (+ room for icon column)
+        longest = max((len(str(a)) for a in all_actions), default=0)
+        command.extend(["--width", str(max(longest + 3, len(prompt) + 8))])
     sel = subprocess.run(
         command,
         capture_output=True,
@@ -972,7 +984,7 @@ def get_selection(all_actions):
     if not sel.rstrip():
         sys.exit()
 
-    if highlight is True and cmd_base == "rofi":
+    if (highlight is True and cmd_base == "rofi") or fuzzel_icon:
         action = [i for i in all_actions if str(i).strip() == sel.strip()]
     elif highlight is True and cmd_base == "wofi":
         action = [
@@ -1182,7 +1194,7 @@ def get_passphrase():
                 pin = res[0].split("D ")[1]
         return pin
     return subprocess.run(
-        dmenu_cmd("Passphrase"),
+        dmenu_cmd("Passphrase "),
         stdin=subprocess.DEVNULL,
         capture_output=True,
         check=False,

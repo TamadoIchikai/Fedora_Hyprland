@@ -3,7 +3,7 @@
 // Based on Switcher.qml by ducduy9304, from
 //   https://github.com/ducduy9304/hyprland-caelestia
 //   (home/.config/caelestia/nix/switcher.patch, branch ubuntu-26.04)
-// Adapted to run standalone (`qs -c altTab`) without the Caelestia shell, and
+// Adapted to run standalone (part of `qs -c quickshell_modules`) without Caelestia, and
 // trimmed for speed: opaque, no animations, one snapshot per window.
 //
 // Hyprland owns the keys (see ~/.config/hypr/hyprland.lua) and calls:
@@ -19,7 +19,7 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Widgets
 
-ShellRoot {
+Scope {
     id: root
 
     // Parking workspace (WM_PARK_WORKSPACE in ~/.config/abstractions/hyprland/workspace.sh).

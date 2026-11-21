@@ -117,8 +117,9 @@ hl.on("hyprland.start", function()
     -- (hyprexpo) every session. Errors/outdated headers raise a notification.
     hl.exec_cmd("hyprpm reload")
     hl.exec_cmd("bash -lc 'exec " .. autostart_wrapper .. "'")
-    -- Alt+Tab switcher UI (see the ALT + TAB binds)
-    hl.exec_cmd("qs -c altTab -d")
+    -- Quickshell modules: Alt+Tab switcher (see the ALT + TAB binds) and the
+    -- Wi-Fi menu (waybar network on-click), ~/.config/quickshell/quickshell_modules
+    hl.exec_cmd("qs -c quickshell_modules -d")
 end)
 ---
 -------------------------------
@@ -319,7 +320,7 @@ hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(displayPicker))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(keyboardManager))
 hl.bind(mainAlt .. "+ CTRL + P", hl.dsp.exec_cmd("hyprctl reload"))
 hl.bind(secondMod .. " + O", hl.dsp.exec_cmd(calculator))
--- Alt+Tab switcher (~/.config/quickshell/altTab, started by `qs -c altTab -d`).
+-- Alt+Tab switcher (~/.config/quickshell/quickshell_modules/AltTab.qml, started by `qs -c quickshell_modules -d`).
 -- Based on hypr-user.lua by ducduy9304, https://github.com/ducduy9304/hyprland-caelestia
 -- Hold ALT: Tab / Shift+Tab move the selection, releasing ALT focuses it,
 -- ALT + Escape cancels. The old fuzzel switcher is still in `appSwitcher`.
@@ -460,11 +461,27 @@ hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true 
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
 
--- Alt+Tab switcher (quickshell altTab): appear and disappear instantly
+-- Alt+Tab switcher and Wi-Fi menu (quickshell_modules): appear and disappear instantly
 hl.layer_rule({
     name    = "alttab-no-anim",
     match   = { namespace = "^alttab$" },
     no_anim = true,
+})
+hl.layer_rule({
+    name    = "wifi-no-anim",
+    match   = { namespace = "^wifi$" },
+    no_anim = true,
+})
+
+-- nm-connection-editor ("More settings…" in the quickshell Wi-Fi menu): float exactly
+-- where the menu was (on 1920x1080: 400x525 at 1464,514; Wifi.qml menuWidth 400,
+-- marginRight 56, marginBottom 8). Only the main window; edit dialogs are untouched.
+hl.window_rule({
+    name  = "nm-connection-editor-floating",
+    match = { class = "^nm-connection-editor$", title = "^Network Connections$" },
+    size  = { "monitor_w*0.2083", "monitor_h*0.4861" },
+    move  = { "monitor_w*0.7625", "monitor_h*0.4759" },
+    float = true,
 })
 
 -- Pavucontrol
