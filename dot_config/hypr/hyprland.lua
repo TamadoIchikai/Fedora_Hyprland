@@ -301,7 +301,11 @@ hl.bind("SUPER + A", function()
         } } })
         expo.expo("toggle")
     else
-        hl.exec_cmd("hyprpm reload --notify")
+        -- Not loaded: retry, then check it REALLY loaded. hyprpm says "Loaded"
+        -- even when Hyprland rejects the .so (e.g. built against an old lib).
+        hl.exec_cmd("hyprpm reload; hyprctl plugin list | grep -q 'Plugin hyprexpo' "
+            .. "|| notify-send -u critical 'hyprexpo unable to load' "
+            .. "'Rebuild: ~/.config/installSH/optional/hypr_plugins.sh --install --force'")
     end
 end)
 hl.bind("SHIFT + backspace", hl.dsp.exec_cmd("wtype -k 'delete'"))
