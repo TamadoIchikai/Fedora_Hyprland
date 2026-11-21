@@ -11,6 +11,19 @@ WARP_USER="$(installsh_target_user)"
 # --- 1. Add Cloudflare repo + install ---
 curl -fsSL https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo \
   | sudo tee /etc/yum.repos.d/cloudflare-warp.repo >/dev/null
+# Cloudflare publishes a new Fedora release dir late (e.g. no /rpm/45 when F45
+# came out): pin the repo to the newest release that exists. Revert to
+# $releasever by re-running this script once theirs is published.
+releasever="$(rpm -E %fedora)"
+for v in $(seq "$releasever" -1 $((releasever - 3))); do
+  if curl -fsS -o /dev/null --max-time 15 "https://pkg.cloudflareclient.com/rpm/$v/repodata/repomd.xml"; then
+    if [ "$v" != "$releasever" ]; then
+      echo "Cloudflare has no Fedora $releasever repo yet; using $v."
+      sudo sed -i "s|/rpm/\$releasever|/rpm/$v|" /etc/yum.repos.d/cloudflare-warp.repo
+    fi
+    break
+  fi
+done
 sudo dnf makecache
 dnf_install cloudflare-warp
 

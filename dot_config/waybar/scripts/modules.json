@@ -1,4 +1,6 @@
 {
+  // Waybar 0.15.0 (Fedora 44) segfaults in this module when a player changes
+  // state (upstream #5124); fixed by the mpris rewrite in 0.16 (Fedora 45).
   "mpris": {
     "format": "[   {status_icon} | {dynamic} ]",
     "format-paused": "[   {status_icon} | {dynamic} ]",

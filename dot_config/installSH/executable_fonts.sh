@@ -10,7 +10,8 @@ FONT_DIR="$HOME/.local/share/fonts"
 NERD_FONTS_VERSION="v3.2.1"
 LIBRON_VERSION="v0.25"
 
-dnf_install fontawesome-fonts \
+# fontawesome4-fonts: F44's "fontawesome-fonts" alias for it is gone in F45.
+dnf_install fontawesome4-fonts \
   google-noto-sans-jp-fonts google-noto-serif-jp-fonts google-noto-cjk-fonts
 require_cmd wget unzip fc-cache
 
