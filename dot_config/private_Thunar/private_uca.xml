@@ -366,7 +366,7 @@
 		<name>Open Directory as Admin</name>
 		<submenu>Tools</submenu>
 		<unique-id>1791836280000000-5</unique-id>
-		<command>thunar admin://%f</command>
+		<command>bash -c '"$HOME/.local/bin/thunar-admin.sh" "$1"' -- %f</command>
 		<description>Open the selected directory as administrator</description>
 		<range>*</range>
 		<patterns>*</patterns>
