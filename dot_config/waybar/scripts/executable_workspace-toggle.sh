@@ -10,6 +10,9 @@ source "$HOME/.config/abstractions/wm.sh"
 
 APP_CLASS="${1:-}"
 LAUNCH_CMD="${2:-}"
+# "toggle" (default): show here, or park if already shown here.
+# "show": show here, never park (used by ~/.local/bin/localsend-send.sh).
+MODE="${3:-toggle}"
 
 DEBUG="${DEBUG:-0}"
 LOG_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/waybar-toggle-app.log"
@@ -107,6 +110,11 @@ is_valid_address "$window_addr" || graceful_exit "invalid window address"
 focused_mon="$(WM_monitor_focused 2>/dev/null)"
 
 if [ "$app_ws" = "$current_ws" ] && [ "$app_mon" = "$focused_mon" ]; then
+  if [ "$MODE" = "show" ]; then
+    # Already visible here: keep it, just focus.
+    WM_window_focus "$window_addr"
+    graceful_exit "done (already shown)"
+  fi
   # App is visible here (same tag on the focused monitor): hide it to park.
   WM_window_move_to_workspace "$window_addr" "$HIDDEN_WORKSPACE" false
 else

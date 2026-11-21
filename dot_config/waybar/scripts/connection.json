@@ -29,7 +29,13 @@
 "custom/localsend": {
     "format":"{icon}",
     "format-icons": "",
-    "on-click": "$HOME/.config/waybar/scripts/workspace-toggle.sh org.localsend.localsend_app LocalSend.Appimage"
+    "tooltip-format": "Left: send clipboard\nRight: pick files to send\nMiddle: show/hide LocalSend",
+    // Left: clipboard (copied files / image / text) -> LocalSend's Send tab, then pick a device.
+    "on-click": "$HOME/.local/bin/localsend-send.sh --clipboard",
+    // Right: file picker first, then the same.
+    "on-click-right": "$HOME/.local/bin/localsend-send.sh --pick",
+    // Middle: show/park the window without adding anything.
+    "on-click-middle": "$HOME/.config/waybar/scripts/workspace-toggle.sh org.localsend.localsend_app LocalSend.AppImage"
 },
 
 "custom/warp": {

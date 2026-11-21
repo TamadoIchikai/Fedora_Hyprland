@@ -9,9 +9,11 @@
 // (started from ~/.config/hypr/hyprland.lua; ~/.local/bin/autostart.sh as fallback).
 //   AltTab.qml  Alt+Tab window switcher (Hyprland global shortcuts alttab:*)
 //   Wifi.qml    Wi-Fi menu (`qs -c quickshell_modules ipc call wifi toggle`)
+//   DropZone.qml  drag-and-drop zone next to the LocalSend file picker
 import Quickshell
 
 ShellRoot {
     AltTab {}
     Wifi {}
+    DropZone {}
 }

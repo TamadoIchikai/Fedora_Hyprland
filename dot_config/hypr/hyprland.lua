@@ -472,6 +472,12 @@ hl.layer_rule({
     match   = { namespace = "^wifi$" },
     no_anim = true,
 })
+-- LocalSend drop zone next to the share-icon file picker (DropZone.qml)
+hl.layer_rule({
+    name    = "localsend-drop-no-anim",
+    match   = { namespace = "^localsend-drop$" },
+    no_anim = true,
+})
 
 -- nm-connection-editor ("More settings…" in the quickshell Wi-Fi menu): float exactly
 -- where the menu was (on 1920x1080: 400x525 at 1464,514; Wifi.qml menuWidth 400,
@@ -519,6 +525,18 @@ hl.window_rule({
 })
 
 -- Zenity devices dialog
+-- File picker of the waybar share icon (right click, ~/.local/bin/localsend-send.sh --pick).
+-- zenity 4 opens it through the portal, so the class is xdg-desktop-portal-gtk.
+hl.window_rule({
+    name  = "zenity-localsend-picker-floating",
+    match = { class = "xdg-desktop-portal-gtk", title = "^Send with LocalSend$" },
+    size  = { "monitor_w*0.4281", "monitor_h*0.5139" },
+    move  = { "monitor_w*0.5682", "monitor_h*0.4509" },
+    float = true,
+    -- Instant, like its drop zone (DropZone.qml, layer rule localsend-drop-no-anim).
+    no_anim = true,
+})
+
 hl.window_rule({
     name  = "zenity-devices-floating",
     match = { class = "zenity", title = "Devices" },
