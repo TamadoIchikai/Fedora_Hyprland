@@ -180,7 +180,7 @@ medium_startup() {
     run_once_name "move-on-unfocus.sh" "$HOME/.config/waybar/scripts/move-on-unfocus.sh"
     run_once_name "deviceMonitor.sh" "$HOME/.local/bin/deviceMonitor.sh"
     run_once_pattern "thunar --daemon" thunar --daemon
-    run_once_pattern "qs -c altTab -d" qs -c altTab -d
+    run_once_pattern "qs -c quickshell_modules -d" qs -c quickshell_modules -d
     # MonitorWatcher is started by its systemd user service
     # (MonitorWatcher.service, WantedBy=graphical-session.target) so that it is
     # tied to the compositor session and torn down cleanly on logout. Starting it
