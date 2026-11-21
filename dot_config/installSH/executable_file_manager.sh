@@ -6,8 +6,10 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
+# No thunar-archive-plugin: archives are handled by PeaZip custom actions
+# (~/.config/Thunar/uca.xml), so its Extract/Create Archive entries are redundant.
 dnf_install \
-  thunar thunar-archive-plugin thunar-volman \
+  thunar thunar-volman \
   gvfs gvfs-fuse gvfs-smb gvfs-mtp udisks2 \
   peazip-qt6 unzip unrar 7zip \
   shared-mime-info xdg-utils desktop-file-utils \
