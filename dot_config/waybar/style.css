@@ -1,6 +1,8 @@
-/* ===============================
-   Global Styles
-   =============================== */
+/* =============================================================================
+   Waybar style
+   Palette: bar #222226 | box #111111, border #444444 | text #cbcdcb
+   ============================================================================= */
+
 * {
     font-family:
         "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font",
@@ -16,9 +18,6 @@ window#waybar {
     border-radius: 6px;
 }
 
-/* ===============================
-   Buttons
-   =============================== */
 button {
     border: none;
     border-radius: 0;
@@ -31,136 +30,147 @@ button:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* ===============================
-   Workspaces
-   =============================== */
-#workspaces {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-}
-
-#workspaces button {
-    padding: 0 6px;
-    background: transparent;
-    color: #aaa;
-    border: 2px dashed transparent;
-    border-bottom: 2px solid transparent; /* invisible underline */
-}
-
-/* Focused workspace = white underline */
-#workspaces button.active {
-    color: #ffffff;
-    border-bottom: 2px solid #9198a1;
-    border-left: 2px dashed gray;
-    border-right: 2px dashed gray;
-    border-top: 2px dashed gray;
-}
-
-/* Urgent workspace = red underline */
-#workspaces button.urgent {
-    color: #ff5555;
-    border-bottom: 2px solid #ff5555;
-    border-left: 2px dashed gray;
-    border-right: 2px dashed gray;
-    border-top: 2px dashed gray;
-}
-
-/* ===============================
-   Groups (boxed modules)
-   =============================== */
-#media,
+/* =============================================================================
+   Boxes: every top-level module / group sits in the same rounded box
+   ============================================================================= */
+#custom-appmenu,
 #hardware,
-#connection {
+#mprisbox,
+#custom-layout,
+#workspaces,
+#submap,
+#tray,
+#media,
+#battery,
+#connection,
+#clock,
+#custom-timer {
     background: #111111;
     border: 1px solid #444444;
     border-radius: 6px;
-    padding-right: 5px;
-    padding-left: 5px;
-}
-
-#battery {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-right: 5px;
-    padding-left: 5px;
-}
-
-#clock {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-right: 7px;
-    padding-left: 8px;
-}
-
-#mprisbox {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    min-width: 200px;
-    padding-left: 7px;
-    padding-right: 7px;
-}
-#custom-layout {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-left: 8px;
-    padding-right: 8px;
-    color: #cbcdcb;
-}
-
-#submap {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-left: 6px;
-    padding-right: 6px;
-    color: #cbcdcb;
+    padding: 0 5px;
 }
 
 #custom-appmenu {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 0 10px;
     color: #51a2da;
     font-size: 15px;
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
 }
-
+#mprisbox {
+    min-width: 200px;
+    padding: 0 7px;
+}
+#custom-layout {
+    padding: 0 8px;
+}
+#submap {
+    padding: 0 6px;
+}
 #tray {
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-right: 3px;
-    padding-left: 5px;
+    padding: 0 3px 0 5px;
+}
+#clock {
+    padding: 0 7px 0 8px;
 }
 
-/* ===============================
-   Individual Modules
-   =============================== */
-#battery,
+/* =============================================================================
+   Workspaces
+   `>` = the workspace buttons only. With "workspace-taskbar" (waybar 0.16) each
+   window icon is a button *inside* its workspace button, so a plain
+   `#workspaces button.active` would also frame the active window's icon.
+   ============================================================================= */
+#workspaces {
+    padding: 0;
+}
+
+#workspaces > button {
+    padding: 0 6px;
+    color: #aaaaaa;
+    border: 2px dashed transparent;
+    border-bottom: 2px solid transparent;
+}
+
+/* Focused workspace: dashed frame, solid underline */
+#workspaces > button.active {
+    color: #ffffff;
+    border-color: gray;
+    border-bottom: 2px solid #9198a1;
+}
+
+/* Urgent workspace: red label and underline */
+#workspaces > button.urgent {
+    color: #ff5555;
+    border-color: gray;
+    border-bottom: 2px solid #ff5555;
+}
+
+/* Window icons inside a workspace: no frame, small hover tint only */
+#workspaces > button button {
+    padding: 0 2px;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    min-height: 0;
+}
+#workspaces > button button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   Modules inside the boxes
+   ============================================================================= */
 #cpu,
 #memory,
-#disk,
-#temperature,
-#backlight,
-#network,
 #pulseaudio,
-#wireplumber,
-#custom-media,
-#mode,
-#idle_inhibitor,
-#power-profiles-daemon,
-#mpd,
-#language,
-#keyboard-state,
-#privacy-item {
-    color: #cbcdcb;
+#network,
+#battery {
     padding: 4px;
+}
+
+#cpu.good,
+#memory.good {
+    color: #55ac3f;
+}
+#cpu.warning,
+#memory.warning {
+    color: #b38d38;
+}
+#cpu.critical,
+#memory.critical {
+    color: #c42927;
+}
+
+#battery.warning {
+    color: #ffff00;
+}
+#battery.critical {
+    color: #ff0000;
+}
+
+/* Muted / off */
+#pulseaudio.muted,
+#network.disconnected,
+#bluetooth.disabled,
+#custom-warp.disconnected {
+    color: #888888;
+}
+
+/* Connection group: share | bluetooth | wifi | warp */
+#custom-localsend {
+    padding-right: 4px;
+}
+#bluetooth,
+#custom-warp {
+    padding-right: 3px;
+}
+#custom-warp.connected {
+    color: #ffffff;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    color: #ff5555;
 }
 
 /* Notifications (icon only) */
@@ -169,164 +179,62 @@ button:hover {
     padding-right: 10px;
 }
 
-/* ===============================
-   CPU / RAM Color States
-   =============================== */
-#cpu.good {
-    color: #55ac3f;
-} /* green */
-#cpu.warning {
-    color: #b38d38;
-} /* yellow */
-#cpu.critical {
-    color: #c42927;
-} /* red */
-
-#memory.good {
-    color: #55ac3f;
-}
-#memory.warning {
-    color: #b38d38;
-}
-#memory.critical {
-    color: #c42927;
-}
-
-/* ===============================
-   Dimmed / Muted States
-   =============================== */
-#pulseaudio.muted,
-#wireplumber.muted,
-#network.disconnected,
-#bluetooth.disabled {
-    color: #888888;
-}
-
-#battery.critical {
-    color: #ff0000;
-}
-#battery.warning {
-    color: #ffff00;
-}
-
-/* ===============================
-   System Tray
-   =============================== */
-
-#tray > .needs-attention {
-    -gtk-icon-effect: highlight;
-    color: #ff5555;
-}
-
-#custom-localsend {
-    padding-right: 4px;
-}
-
-#custom-warp.connected {
-    padding-right: 3px;
-    color: white;
-}
-
-#custom-warp.disconnected {
-    padding-right: 3px;
-    color: #888888;
-}
-
-#bluetooth,
-#bluetooth.disable {
-    padding-right: 3px;
-}
-
-/* Waybar Timer */
+/* =============================================================================
+   Timer (classes set by scripts/timer.sh)
+   ============================================================================= */
 #custom-timer {
-    /*color: #cdd6f4;*/
     font-size: 15px;
     font-weight: 900;
+    padding: 0 4px 0 6px;
     transition: all 0.2s ease;
-    background: #111111;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding-right: 4px;
-    padding-left: 6px;
 }
 
-/* --- STATE: DISABLED (00:00, Idle) --- */
+/* 00:00, idle */
 #custom-timer.disabled {
-    background: #111111;
-    color: #cbcdcb;
     opacity: 0.6;
     font-weight: normal;
-    animation-duration: 1s;
-    animation-timing-function: ease-in-out;
-    animation-direction: alternate;
 }
 
-/* --- STATE: IDLE (Active but 00:00) --- */
-#custom-timer.idle {
-    background: #111111;
-    color: #cbcdcb;
-}
-
-/* --- STATE: SELECTION MODE --- */
+/* Selection mode */
 #custom-timer.select {
     background-color: #373948;
     color: #85b2fa;
 }
 
-/* --- STATE: RUNNING (Normal Timer & Pomodoro Work) --- */
-#custom-timer.running {
-    color: #cbcdcb;
-    background: #111111;
-}
-
-/* --- STATE: POMODORO BREAK (New) --- */
+/* Pomodoro break / status message ("Work 1/4") */
 #custom-timer.pomo_break {
-    color: #f9e2af; /* Yellow/Gold to distinguish break from work */
+    color: #f9e2af;
 }
-
-/* --- STATE: POMODORO MESSAGE (New: "Work 1/4") --- */
 #custom-timer.pomo_msg {
-    color: #cba6f7; /* Lavender/Purple for status messages */
+    color: #cba6f7;
 }
 
-/* --- STATE: PAUSED --- */
 #custom-timer.paused {
     background-color: #404040;
     color: #f9e2af;
-    /*border: 1px solid #f9e2af; */
 }
 
-/* --- STATE: WARNING (< 10s or 30s alert) --- */
+/* < 10 s / 30 s alert */
 #custom-timer.warning {
-    animation-name: red-alert;
-    animation-duration: 1s;
-    animation-timing-function: ease-in-out;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+    animation: red-alert 1s ease-in-out infinite alternate;
 }
 
-/* --- STATE: DONE --- */
 #custom-timer.done {
     background-color: #bfbfbf;
     color: #11111b;
 }
 
-/* --- STATE: RESET ANIMATION --- */
 #custom-timer.reset {
     color: #ff4d4d;
 }
 
-/* -----------------------------------------------------------------------------
- * KEYFRAMES: Red Color Fading
- * ----------------------------------------------------------------------------- */
 @keyframes red-alert {
-    0% {
-        color: #ff4d4d; /* Bright, visible Red */
+    from {
+        color: #ff4d4d;
         opacity: 1;
     }
-    100% {
+    to {
         color: #ff4d4d;
-        opacity: 0.8; /* Fade cleanly to 80% transparency */
-        text-shadow: none;
+        opacity: 0.8;
     }
 }
