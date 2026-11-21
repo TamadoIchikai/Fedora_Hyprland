@@ -25,6 +25,10 @@ WARP_SVC="warp-svc.service"                    # root daemon (system unit)
 WARP_DESKTOP_SVC="warp-desktop-svc.service"    # desktop helper (user unit)
 SVC_START_TIMEOUT=10                           # daemon readiness wait (seconds)
 
+# Waybar's custom/warp has no polling ("interval": "once", "signal": 8):
+# refresh it whenever the state may have changed.
+WAYBAR_SIGNAL=8
+
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 LOG_FILE="${RUNTIME_DIR}/warp-toggle.log"
 
@@ -34,6 +38,8 @@ log() {
   (( DEBUG )) || return 0
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOG_FILE" 2>/dev/null || true
 }
+
+refresh_waybar() { pkill -RTMIN+"$WAYBAR_SIGNAL" -x waybar 2>/dev/null || true; }
 
 # Always exit 0 so Waybar doesn't mark the module failed
 graceful_exit() { log "exit: $*"; exit 0; }
@@ -178,6 +184,7 @@ toggle() {
     set_target_state "on"
   fi
 
+  refresh_waybar
   graceful_exit "toggle done"
 }
 

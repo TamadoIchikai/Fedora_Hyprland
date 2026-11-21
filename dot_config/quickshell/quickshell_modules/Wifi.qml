@@ -1,4 +1,4 @@
-// Wi-Fi menu (replaces the fuzzel `networkmanager_dmenu`, which stays as a fallback).
+// Wi-Fi menu (replaces the old fuzzel `networkmanager_dmenu`, no longer in the dotfiles).
 //
 // Opened from the waybar network module:
 //   qs -c quickshell_modules ipc call wifi toggle      (also: open / close / rescan)
@@ -342,7 +342,7 @@ Scope {
 
     // ---- Rows ----
 
-    // Actions reachable by typing (only listed while searching).
+    // Actions: listed at the bottom of the list, and ranked into search results.
     readonly property var actions: [
         {
             kind: "action", key: "rescan", icon: "󰑐", label: "Rescan networks",
@@ -360,6 +360,16 @@ Scope {
             label: root.networkingEnabled ? "Turn networking off" : "Turn networking on",
             keywords: ["networking", "network", "offline", "online", "airplane"],
             run: () => root.toggleNetworking()
+        },
+        {
+            kind: "action", key: "warp", icon: "󰴴", label: "Toggle Cloudflare WARP",
+            keywords: ["warp", "cloudflare", "1.1.1.1", "vpn"],
+            // Same script as right-clicking the waybar Wi-Fi/WARP icon; it
+            // notifies and refreshes the waybar icon itself.
+            run: () => {
+                Quickshell.execDetached([`${Quickshell.env("HOME")}/.config/waybar/scripts/warp-waybar.sh`, "toggle"]);
+                root.close();
+            }
         },
         {
             kind: "action", key: "show-password", icon: "󰈈", label: "Show Wi-Fi password",
@@ -411,8 +421,10 @@ Scope {
     // Rows shown: everything, or the matches sorted best first (stable).
     readonly property var liveEntries: {
         const q = query;
+        // No search: every row, then all actions at the bottom (also reachable
+        // by scrolling / arrow keys, not only by typing).
         if (q === "")
-            return allEntries;
+            return [...allEntries, ...actions];
         const scored = [];
         // Actions need 2+ letters so a single key doesn't bury the networks.
         if (q.length >= 2) {
@@ -546,6 +558,11 @@ Scope {
     function activate(n: WifiNetwork): void {
         if (!n || n.stateChanging)
             return;
+        // Clicking the row whose password box is open closes it.
+        if (pskNetwork === n) {
+            cancelPassword();
+            return;
+        }
         setFailed(`wifi:${n.name}`, false);
         if (n.connected) {
             n.disconnect();
@@ -956,14 +973,8 @@ Scope {
                             Component.onCompleted: forceActiveFocus()
                             onTextChanged: root.query = text.trim().toLowerCase()
 
-                            Keys.onEscapePressed: {
-                                if (root.forgetArmed !== "")
-                                    root.forgetArmed = "";
-                                else if (text !== "")
-                                    text = "";
-                                else
-                                    root.close();
-                            }
+                            // Escape always closes the menu, wherever the focus is.
+                            Keys.onEscapePressed: root.close()
                             Keys.onUpPressed: win.moveSelection(-1)
                             Keys.onDownPressed: win.moveSelection(1)
                             Keys.onTabPressed: win.moveSelection(1)
@@ -1249,15 +1260,28 @@ Scope {
                                 }
 
                                 visible: entry.pskShown
-                                x: 42
+                                // Eye (26 px) centred under the Wi-Fi icon (row x 10..32), so the
+                                // field starts at x 42, the name column.
+                                x: 8
                                 y: row.y + row.height + 8 + (entry.qrShown ? qrBox.height + 8 : 0)
                                 width: parent.width - x - 4
                                 spacing: 4
 
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: 6
+                                    spacing: 8
 
+                                    // Show/hide, directly under the row's Wi-Fi icon.
+                                    FooterButton {
+                                        Layout.preferredWidth: 26
+                                        implicitHeight: 30
+                                        text: pskField.reveal ? "󰈈" : "󰈉"
+                                        family: root.iconFontFamily
+                                        pointSize: root.fontSize + 2
+                                        onClicked: pskField.reveal = !pskField.reveal
+                                    }
+
+                                    // Starts under the network name, fills the rest.
                                     TextField {
                                         id: pskField
 
@@ -1277,16 +1301,8 @@ Scope {
                                             border.width: 1
                                             border.color: pskField.activeFocus ? root.activeBorderColor : root.borderColor
                                         }
-                                        Keys.onEscapePressed: root.cancelPassword()
+                                        Keys.onEscapePressed: root.close()
                                         onAccepted: root.submitPsk(text)
-                                    }
-
-                                    FooterButton {
-                                        implicitHeight: 30
-                                        text: pskField.reveal ? "󰈈" : "󰈉"
-                                        family: root.iconFontFamily
-                                        pointSize: root.fontSize + 2
-                                        onClicked: pskField.reveal = !pskField.reveal
                                     }
 
                                     FooterButton {
@@ -1298,7 +1314,7 @@ Scope {
 
                                 Text {
                                     visible: root.pskError !== ""
-                                    Layout.leftMargin: 4
+                                    Layout.leftMargin: 38
                                     text: root.pskError
                                     color: root.errorColor
                                     font.family: root.fontFamily

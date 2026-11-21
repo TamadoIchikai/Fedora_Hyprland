@@ -16,6 +16,8 @@
     "tooltip-format": "{essid} {frequency}MHz {signalStrength}%",
     "interval": 5,
     "on-click": "qs -c quickshell_modules ipc call wifi toggle",
+    // Right click: toggle Cloudflare WARP (the script refreshes custom/warp via signal 8).
+    "on-click-right": "$HOME/.config/waybar/scripts/warp-waybar.sh toggle",
     "format-icons": [
 	    "󰤯",   
 	    "󰤟",   
@@ -31,14 +33,19 @@
 },
 
 "custom/warp": {
+    // Same clicks as the network module (bigger target): left = Wi-Fi menu,
+    // right = toggle WARP. No polling: runs once at start, then on
+    // `pkill -RTMIN+8 waybar` (sent by warp-waybar.sh after each toggle).
     "exec": "$HOME/.config/waybar/scripts/warp-waybar.sh",
     "return-type": "json",
-    "interval": 2,
-    "on-click": "$HOME/.config/waybar/scripts/warp-waybar.sh toggle"
+    "interval": "once",
+    "signal": 8,
+    "on-click": "qs -c quickshell_modules ipc call wifi toggle",
+    "on-click-right": "$HOME/.config/waybar/scripts/warp-waybar.sh toggle"
 },
 
 "group/connection": {
     "orientation": "horizontal",
-    "modules": ["custom/warp","custom/localsend","bluetooth","network"]
+    "modules": ["custom/localsend","bluetooth","network","custom/warp"]
   }
 }
