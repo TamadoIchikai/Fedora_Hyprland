@@ -142,7 +142,7 @@ set_target_state() {
   fi
 
   log "Attempting $active"
-  notify-send "$icon  WARP" "$active..." -u low >/dev/null 2>&1 || true
+  notify-send -e "$icon  WARP" "$active..." -u low >/dev/null 2>&1 || true
 
   if [ "$target" = "on" ]; then
     if start_warp_services && warp-cli connect >/dev/null 2>&1; then
@@ -162,10 +162,10 @@ set_target_state() {
   fi
 
   if [ "$ok" = "1" ]; then
-    notify-send "$icon  WARP" "$active" -u low >/dev/null 2>&1 || true
+    notify-send -e "$icon  WARP" "$active" -u low >/dev/null 2>&1 || true
     log "$active successful"
   else
-    notify-send "$icon  WARP" "Failed to $active" -u normal >/dev/null 2>&1 || true
+    notify-send -e "$icon  WARP" "Failed to $active" -u normal >/dev/null 2>&1 || true
     log "$active timeout/failure"
     warp-cli disconnect >/dev/null 2>&1 || true
   fi
